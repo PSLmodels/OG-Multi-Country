@@ -1,0 +1,191 @@
+\documentclass[letterpaper,12pt]{article}
+
+	\usepackage{threeparttable}
+	\usepackage[format=hang,font=normalsize,labelfont=bf]{caption}
+	\usepackage{amsmath}
+	\usepackage{array}
+	\usepackage{delarray}
+	\usepackage{amssymb}
+	\usepackage{amsthm}
+	\usepackage{natbib}
+	\usepackage{setspace}
+	\usepackage{float,color}
+	\usepackage[pdftex]{graphicx}
+	\usepackage{hyperref}
+	\usepackage{multirow}
+	\usepackage{enumerate}
+	\hypersetup{colorlinks,linkcolor=red,urlcolor=blue,citecolor=red}
+	\theoremstyle{definition}
+	\newtheorem{theorem}{Theorem}
+	\newtheorem{acknowledgement}[theorem]{Acknowledgement}
+	\newtheorem{algorithm}[theorem]{Algorithm}
+	\newtheorem{axiom}[theorem]{Axiom}
+	\newtheorem{case}[theorem]{Case}
+	\newtheorem{claim}[theorem]{Claim}
+	\newtheorem{conclusion}[theorem]{Conclusion}
+	\newtheorem{condition}[theorem]{Condition}
+	\newtheorem{conjecture}[theorem]{Conjecture}
+	\newtheorem{corollary}[theorem]{Corollary}
+	\newtheorem{criterion}[theorem]{Criterion}
+	\newtheorem{definition}{Definition} % Number definitions on their own
+	\newtheorem{derivation}{Derivation} % Number derivations on their own
+	\newtheorem{example}[theorem]{Example}
+	\newtheorem{exercise}[theorem]{Exercise}
+	\newtheorem{lemma}[theorem]{Lemma}
+	\newtheorem{notation}[theorem]{Notation}
+	\newtheorem{problem}[theorem]{Problem}
+	\newtheorem{proposition}{Proposition} % Number propositions on their own
+	\newtheorem{remark}[theorem]{Remark}
+	\newtheorem{solution}[theorem]{Solution}
+	\newtheorem{summary}[theorem]{Summary}
+	\numberwithin{equation}{section}
+	\newcommand\ve{\varepsilon}
+	\graphicspath{{./figures/}}
+	\renewcommand\theenumi{\roman{enumi}}
+	\DeclareMathOperator*{\Max}{Max}
+	\bibliographystyle{aer}
+
+\begin{document}
+
+
+
+\begin{spacing}{1.5}
+
+%section 1
+
+\LARGE{Step-by-Step Model Buildup} \normalsize
+
+\section{Simple S-period I-Country OLG Model}
+	Consider a model with no complicated demographics.  Every period a unit measure of labor is born in each of $I$ countries and these workers live for exactly $S$ period.
+
+	Each country produces the same single good which is mobile across country borders.
+
+	Households of age $s$ in country $i$ in period $t$ solve the following maximization problem.
+	\begin{equation}
+		\max_{\{c_{i,s+j,t+j}\}_{j=0}^{S-s}} U_{ist} = \sum_{j=0}^{S-s} \beta^j \frac{1}{1-\sigma} c_{i,s+j,t+j}^{1-\sigma} \nonumber
+	\end{equation}
+	subject to the following budget constraint each period.
+	\begin{equation} \label{Eq_HHbc}
+		c_{ist} = w_{it} e_{st} + (1+r_{it}-\delta)a_{ist} - a_{i,s+1,t+1}
+	\end{equation}
+	with $a_{i1t} = a_{i,S+1,t} = 0$
+
+	The solution to this problem yields the following intertemporal Euler equation.
+	\begin{equation} \label{Eq_HHEuler1}
+		c_{ist}^{-\sigma} = \beta c_{i,s+1,t+1}^{-\sigma}(1+r_{i,t+1}-\delta)
+	\end{equation}
+
+	The representative firm in each country maximizes profits subject to a Cobb-Douglas production function.
+	\begin{equation}
+		\max_{n_{it},k_{it}} \Pi_{it} = k_{it}^\alpha \left( A_{i} n_{it} \right)^{1-\alpha} - w_{it}n_{it} - r{it}k_{it} \nonumber
+	\end{equation}
+
+	This yields the following factor price equations.
+	\begin{align}
+		y_{it} & = k_{it}^\alpha \left( A_{i} n_{it} \right)^{1-\alpha} \\
+		r_{it} & = \alpha \frac{y_{it}}{k_{it}} \\
+		w_{it} & = (1-\alpha) \frac{y_{it}}{n_{it}}
+	\end{align}
+
+	Labor and capital market clearing conditions in each country give the following.
+	\begin{align}
+		k_{it} & = \sum_{s=1}^S a_{ist} - k_{it}^f\\
+		n_{it} & = \sum_{s=1}^S e_{is}
+	\end{align}
+	where $k_{it}^f$ denotes domestically-owned capital located in foreign countries.
+
+	Capital is allocated across countries so that the rate of return is equalized.
+	\begin{equation} \label{Eq_requal}
+		r_{it} = r_t
+	\end{equation}
+
+	And the net sum of all foreign-located capital across countries must be zero.
+	\begin{equation}
+		\sum_{i=1}^I k^f_{it} = 0
+	\end{equation}
+
+	Given a set of state variables today $X_t = \{a_{ist},k^f{it}\} \forall i,s$ we can calculate the following.
+	\begin{align}
+		k_{it} & = \sum_{s=1}^S a_{ist} - k_{it}^f; \forall i \label{Eq_kdef}\\
+		n_{it} & = \sum_{s=1}^S e_{is}; \forall i \\
+		y_{it} & = k_{it}^\alpha \left( A_{i} n_{it} \right)^{1-\alpha} ; \forall i \\
+		r_{it} & = \alpha \frac{y_{it}}{k_{it}}; \forall i \label{Eq_rdef}\\
+		w_{it} & = (1-\alpha) \frac{y_{it}}{n_{it}}; \forall i \label{Eq_wdef}\\		
+    	c_{ist} & = w_{it} e_{st} + (1+r_{1t}-\delta)a_{ist} - a_{i,s+1,t+1} ; \forall i,s \label{Eq_cdef}
+	\end{align}
+
+	The $IS$ values of $X_t$ in every period must satisfy the following equtions $IS$.
+	\begin{align}
+		& c_{ist}^{-\sigma} - \beta c_{i,s+1,t+1}^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,s \label{Eq_Euler2}\\ 
+		& r_{it} - r_{1t} = 0; \forall i>1 \\
+		& \sum_{i=1}^I k^f_{it} = 0 \label{Eq_Itnl}
+	\end{align}
+
+	To find the steady state we impose $a_{ist} = \bar a_{is}$ and $k^f_{it}=\bar k^f_i$ for all $t$ and using equations \eqref{Eq_kdef} - \eqref{Eq_cdef} search over these values to find the ones that set the values of equations \eqref{Eq_Euler2} - \eqref{Eq_Itnl} to zero.  This involves using fsolve.
+
+	To find the transition path we make an initial guess of a history of $\{r^0_t\}$ and $\{w^0_{it}\}$ values for $t=1$ to $T$ with the values of $\bar r$ and $\bar w_i$ for $t>T$.  We also have  known initial value for $a_{is1}$ and $k^f_{i1}$. With this information we search over the value of $c_{is1}$ for each household to find the value that sets $a_{iS,S-s}$ (their final savings) to zero when we chain equations \eqref{Eq_Euler2} and \eqref{Eq_cdef}.  That is, we solve for each households optimal time path of consumption and savings given the assumed history of factor prices.  We can then use equations \eqref{Eq_kdef} through \eqref{Eq_wdef} to find histories $\{r^{new}_t\}$ and $\{w^{new}_{it}\}$.  If these are not sufficiently different from the previous guess, we are done and have the transition path.  If they are different we use a new guess at the histories give by the equations below which are a convex combination of the old guess and the implied new histories.
+
+	\begin{align}
+		r^{j+1}_t & = \chi r^{j}_t + (1-\chi) r^{new}_t; \forall t \le T\\
+		w^{j+1}_t & = \chi w^{j}_t + (1-\chi) w^{new}_t; \forall t \le T 
+	\end{align}
+
+\section{Add Demographics and Growth}
+	Denote the population of age $s$ people in country $i$ in period $t$ as $N_{ist}$.  Denote the fraction of children born to people of age $s$ in country $i$ in period $t$ as $f_{ist}$ and the immigration rate as $m_{ist}$.  The mortality hazard is denoted $\rho_{ist}$.  We assume that $\rho_{ist}=0$ if $s<68$ and $\rho_{iSt}=1$.  We also assume that $f_{ist} = 0$ for $s<23$ and $s>45$.
+
+	The population dynamics are given by:
+	\begin{align}
+		N_{i,1,t+1} & = \sum_{s=1}^S N_{ist} f_{ist} \\
+		N_{i,s+1,t+1} & = N_{ist} (1+m_{ist}-\rho_{ist}); 1<s\le S
+	\end{align}
+
+	We define the total world population as:
+	\begin{equation}
+		N_t = \sum_{i=1}^I \sum_{s=1}^S N_{ist}
+	\end{equation}
+
+	The populations are, strictly speaking, state variables, but their steady state can be found independent of the other variables.  For the model to be stationarizable, it must be that in the long run, by period $T_1$, that the fertility, immigration, and mortality rates are the same for all countries.
+	\begin{align}
+		f_{ist} & = \bar f_s; t \ge T_1 \\
+		m_{ist} & = \bar m_s; t \ge T_1 \\
+		\rho_{ist} & = \bar \rho_s; t \ge T_1
+	\end{align}
+
+	Inheiritances are partially intended bequests and are the assets of agents that die at the end of period $t$ to the survivors in that period.  Let $BQ_{it}$ denote total bequests in period $t$ for country $i$ and $bq_{ist}$ denote the bequest received by a person $s$ years old in that same country and time period.
+	\begin{align}
+		BQ_{it} & = \sum_{s=67}^S a_{ist} \rho_{ist} N_{ist} \\
+		& = \sum_{s=23}^{67} bq_{ist} (1-\rho_{ist}) N_{ist}
+	\end{align}
+
+	While relative populations stabilize in the steady state, the overall population may be growing or shrinking.  Hence, all aggregate variables will need to be stationarized by dividing by the total population of a country.  To help with this, we define the growth rate of the world population as $g^N_t = \tfrac{N_{it}}{N_{t-1}}-1$.
+
+	We also allow for technical progress by having the endowment of labor per household rise by a constant amount each period.  We denote this endowment as $\bar \ell_t$ and denote its growth rate as $g^A$.
+
+	This means aggregate variables will grow at the rate $g^A+g^N_t$ and per capita variables will grow at rate $g^A$.  The stationarized versions of our behavioral equations are given below, where a carat denotes the stationarized variable.  Note that $N_{ist}$ is interpretable as the fraction of the world population in country $i$ of age $s$ at time $t$ so that $\sum_{i=1}^I \sum_{s=1}^S \hat N_{ist} = 1$.
+
+	\begin{align}
+		g^N_t & = \sum_{i=1}^I \sum_{s=1}^S \hat N_{ist} (f_{ist}+m_{ist}-\rho_{ist}) ; \forall i\\
+		\hat N_{i,1,t+1} & = e^{-g^N_t}\sum_{s=23}^{45} \hat N_{ist} f_{ist} ; \forall i\\
+		\hat N_{i,s+1,t+1} & = e^{-g^N_t}\hat N_{ist} (1+m_{ist}-\rho_{ist}); \forall i, 1<s\le S \\
+		\hat k_{it} & = \sum_{s=1}^S \hat a_{ist} \hat N_{ist} - \hat k_{it}^f; \forall i \\
+		\hat n_{it} & = \sum_{s=1}^S e_{is} \hat N_{ist}; \forall i \\
+		\hat y_{it} & = \hat k_{it}^\alpha \left( A_{i} \hat n_{it} \right)^{1-\alpha} ; \forall i \\
+		r_{it} & = \alpha \frac{\hat y_{it}}{\hat k_{it}}; \forall i \\
+		\hat w_{it} & = (1-\alpha) \frac{\hat y_{it}}{\hat n_{it}}; \forall i \\
+		\hat BQ_{it} & = \sum_{s=67}^S \hat a_{ist} \rho_{ist} \hat N_{ist} ; \forall i \\
+		\hat BQ_{it} & = \sum_{s=23}^{67} \hat bq_{ist} (1-\rho_{ist}) \hat N_{ist}	; \forall i \\
+    	\hat c_{ist} & = \hat w_{it} e_{st} + (1+r_{1t}-\delta)\hat a_{ist} + \hat{bq}_{ist} - \hat a_{i,s+1,t+1}e^{g^A} ; \forall i,s \\
+		& \hat c_{ist}^{-\sigma} - \beta \left(\hat c_{i,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,s \\ 
+		& r_{it} - r_{1t} = 0; \forall i>1 \\
+		& \sum_{i=1}^I \hat k^f_{it} \left( \sum_{s=1}^S \hat N_{ist} \right) = 0
+	\end{align}
+
+	Note that the first three equations of the above system can be solved for steady state values independent of the rest of the system as long as the steady state values of the fertility, immigration, and mortality rates are known.
+
+	Once we have these we can find the steady state values for the rest of the system as we did above.
+
+	Also note that for the transition path we can find the time paths for the $\hat N$ varaibles indepentdent of the time-path iteration used to find the other variables.
+	
+
+\end{spacing}
+\end{document}
