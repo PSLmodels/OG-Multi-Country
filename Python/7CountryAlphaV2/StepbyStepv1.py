@@ -11,21 +11,21 @@ from matplotlib import pyplot as plt
 """
 
 #Describe what they are
-S = 4
+S = 60
 Countries = 2
-T = 8
+T = int(round(2.5*S))
 beta = .95
 sigma = 1 #Leave it at 1, fsolve struggles with the first sigma we used (3).
 delta = .1
 alpha = .3
 e = np.ones((Countries, S, T+S+1))
 A = np.ones(Countries) #Techonological Change
-#A=np.array([1.33,1.77,2,1])
-diff=.000000001
+#A=np.array([1.5,1.5])
+diff=.0000000000001
 distance=10
 xi=.8
 MaxIters=300
-PrintSS=True
+PrintSS=False
 CalcTPI=True
 GraphWPath=True
 GraphRPath=True
@@ -145,9 +145,9 @@ def get_householdchoices_path(c_1, wpath_chunk, rpath_chunk, e_chunk, starting_a
 
 	for s in range(1,S):
 		c_path[:,s] = (beta * (1 + rpath_chunk[:,s] - delta))**(1/sigma) * c_path[:,s-1]
-                asset_path[:,s] = wpath_chunk[:,s]*e[:,0,s-1] + (1 + rpath_chunk[:,s-1] - delta)*asset_path[:,s-1] - asset_path[:,s]
+                asset_path[:,s] = wpath_chunk[:,s]*e[:,0,s-1] + (1 + rpath_chunk[:,s-1] - delta)*asset_path[:,s-1] - c_path[:,s-1]
 
-	asset_path[:,s+1] = wpath_chunk[:,s]*e_chunk[:,s] + (1 + rpath_chunk[:,s] - delta)*asset_path[:,s] - asset_path[:,s]
+	asset_path[:,s+1] = wpath_chunk[:,s]*e_chunk[:,s] + (1 + rpath_chunk[:,s] - delta)*asset_path[:,s] - c_path[:,s]
 
 	#Document this 
 	return c_path[:,0:S-current_s], asset_path[:,0:S+1-current_s]
@@ -175,7 +175,7 @@ def find_optimal_starting_consumptions(c_1, wpath_chunk, rpath_chunk, epath_chun
 
 	return Euler
 
-def get_prices(assets_tpath, kf_tpath):
+def get_prices(Kpath, kf_tpath):
     	"""
     Description:
         Based on the given paths, the paths for wages and rental rates are figured
@@ -192,40 +192,22 @@ def get_prices(assets_tpath, kf_tpath):
     	"""
 
 	#Gets non-price variables needed to caluclate prices
-        #print "kf_tpath",kf_tpath[:,:-1]
-        #print assets_tpath
-        #print assets_tpath[:,-1,:]
-        asum=np.sum(assets_tpath,axis=1)
-	kpath = asum - kf_tpath
-        #print "asum",asum
-        #print asum.shape
-        #print "kf_tpath",kf_tpath
-        #print "kpath",kpath
-	#print "kpath shape",kpath.shape
         n = np.sum(e, axis=1)
-        #print n.shape
-        #print A.shape
         ypath=np.zeros((Countries,S+T+1))
         for i in xrange(Countries):
-            ypath[i,:] = (kpath[i,:]**alpha) * ((A[i]*n[i,:])**(1-alpha))
-        #print ypath
-
-        #print "ypath shape", ypath.shape
-
+            ypath[i,:] = (Kpath[i,:]**alpha) * ((A[i]*n[i,:])**(1-alpha))
 	#Gets prices
-	rpath = alpha * ypath / kpath
+	rpath = alpha * ypath / Kpath
 	wpath = (1-alpha) * ypath / n
-        #print rpath
-        #print wpath
 
 	#Stacks extra year of steady state for later code that tries to use outside index
 	#rpath = np.column_stack((rpath, rpath[:,-1]))
 	#wpath = np.column_stack((wpath, wpath[:,-1]))
 
 	#Returns only the first country's interest rate, since they should be the same in theory
-	return wpath, rpath#[0,:]
+	return wpath, rpath
 
-def get_foreignK_path(apath,rpath):
+def get_foreignK_path(Kpath,rpath):
         """
         Description:
            This calculates the timepath of the foreign capital stock. This is based on equation (1.12 and 1.13).
@@ -238,13 +220,16 @@ def get_foreignK_path(apath,rpath):
         #Sums the labor productivities across cohorts
         n = np.sum(e[:,:,:], axis=1)
         #Sums the assets across cohorts to give the domestic capital stock
-        asum=np.sum(apath,axis=1)
+
         #Declares the array that will later be used.
         kfPath=np.zeros((Countries,S+T+1))
+        kDPath=np.zeros((Countries,S+T+1))
+
+        for i in xrange(1,Countries):
+            kDPath[i,:]=(rpath[i,:]/alpha)**(1/(alpha-1))*n[i,:]*A[i]
 
         #This is using equation 1.13 solved for the foreign capital stock to caluclate the foreign capital stock
-        for i in xrange(1,Countries):
-            kfPath[i,:]=asum[i,:]-(rpath[i,:]/alpha)**(1/(alpha-1))*n[i,:]*A[i]
+        kfPath=Kpath-kDPath
 
         #To satisfy 1.18, the first country's assets is the negative of the sum of all the other countries' assets
         kfPath[0,:]=-np.sum(kfPath,axis=0)
@@ -258,7 +243,7 @@ def get_wpath1_rpath1(w_path0, r_path0):#UNDER CONSTRUCTION
 
         Inputs:
             -w_path0: initial w path
-            -r_path0: initial r path
+            -r_path0: initial r path:
         Outputs:
             -w_path1: calculated w path
             -r_path1: calculated r path
@@ -295,7 +280,9 @@ def get_wpath1_rpath1(w_path0, r_path0):#UNDER CONSTRUCTION
 		cpath_indiv, assetpath_indiv = get_householdchoices_path(opt_consump_1, w_path0[:,t:t+S], r_path0[:,t:t+S], e[:,0,t:t+S], starting_assets, current_s)
 
 		#Just sets assets after death to zero. It will be super close to zero thanks to the euler equation in fsolve, but setting it to zero makes it easier to look at and check for errors
-		#assetpath_indiv[:,-1] = 0
+		#assetpath_indiv[:,-1] = 0 #Play with this if needed
+
+                #print assetpath_indiv[:,-1]
 
 		for i in range(Countries):
 			np.fill_diagonal(c_timepath[i,s:s+S,:], cpath_indiv[i,:])
@@ -310,17 +297,20 @@ def get_wpath1_rpath1(w_path0, r_path0):#UNDER CONSTRUCTION
 
 		cpath_indiv, assetpath_indiv = get_householdchoices_path(optimalconsumption, w_path0[:,t:t+S], r_path0[:,t:t+S], e[:,0,t:t+S], starting_assets, current_s)
 
-		assetpath_indiv[:,-1] = 0
+		#assetpath_indiv[:,-1] = 0 #Play with this if needed
 
+                #print assetpath_indiv[:,-1]
 		for i in range(Countries):
 			np.fill_diagonal(c_timepath[i,:,t:], cpath_indiv[i,:])
 			np.fill_diagonal(assets_timepath[i,:,t:], assetpath_indiv[i,:])
-        #print "assetpath_indiv shape", assetpath_indiv.shape
-        #print "r path shape",r_path0.shape
+        
+        Kpath=np.sum(assets_timepath,axis=1)
+        for i in xrange(Countries):
+            Kpath[i,T:]=k_ss[i]
         
         #TO FIX
-        kfpath=get_foreignK_path(assets_timepath, r_path0)
- 	w_path1, r_path1 = get_prices(assets_timepath,kfpath)
+        kfpath=get_foreignK_path(Kpath, r_path0)
+ 	w_path1, r_path1 = get_prices(Kpath,kfpath)
 
         return w_path1, r_path1, c_timepath, assets_timepath
 
@@ -393,33 +383,35 @@ for c in range(Countries):
 	w_initguess[c,T+1:] = w_initguess[c,T]
 	r_initguess[c,T+1:] = r_initguess[c,T]
 
+
+#print "R_initguess MURICA",r_initguess[0,:]
+#print "R_initguess NOT MURICA",r_initguess[1,:]
+
+
 #Gets new paths for wages and rental rates to see how close it is to the original code
 wstart=w_initguess
 #print "wstart dimensions",wstart.shape
 rstart=r_initguess
 #print "rstart dimensions",rstart.shape
 Iter=0
-
+dist1=10
+dist2=10
 if CalcTPI==True:
     while distance>diff and Iter<MaxIters:
             wpath0,rpath0, cpath0, apath0=get_wpath1_rpath1(wstart,rstart)
-            #print "Wpath0",wpath0[:T]
-            #print "Rpath0",rpath0[:T]
-            #print wstart[:T]
-            #print rstart[:T]
+            #if Iter==0:
+                #print "wpath0",wpath0
+                #print "rpath0",rpath0
             dist1=sp.linalg.norm(wstart[:,:T]-wpath0[:,:T],2)
             dist2=sp.linalg.norm(rstart[:,:T]-rpath0[:,:T],2)
             distance=(dist1+dist2)/2
-            #print wstart.shape
-            #print wpath0.shape
 
             wstart=wstart*xi+(1-xi)*wpath0
             rstart=rstart*xi+(1-xi)*rpath0
 
             #print Iter
             Iter+=1
-
-            if distance<diff:
+            if distance<diff or Iter==MaxIters:
                 wend=wstart
                 rend=rstart
 
