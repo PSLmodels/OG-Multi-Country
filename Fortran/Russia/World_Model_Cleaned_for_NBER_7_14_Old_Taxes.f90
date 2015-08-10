@@ -1842,8 +1842,8 @@ ENDIF
 		   !Rescale Endowment to be constant with population growth
            DO YEAR = 0, YEARS
            ENDOWMENT(YEAR) = ENDOWMENT_UNSCALED(YEAR)*&
-           &((POP(FIRST_WORK_YEAR, YEAR, Y_CLASSES+1, FIRST_COUNTRY) * (1.+TECH) ** YEAR)/&
-           & POP(FIRST_WORK_YEAR, 0, Y_CLASSES+1, FIRST_COUNTRY))
+           &(POP(FIRST_WORK_YEAR,0,Y_CLASSES+1,FIRST_COUNTRY)/&
+           &(POP(FIRST_WORK_YEAR,YEAR,Y_CLASSES+1,FIRST_COUNTRY)*(1.+TECH)**YEAR))
            ENDDO
 !
 !		   This block just makes an initial guess that all variables in all years will be the same as in

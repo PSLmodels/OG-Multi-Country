@@ -25,29 +25,28 @@ MaxIters=300 #Maximum number of iterations on TPI.
 PrintSS=True #Prints the result of the Steady State functions
 CalcTPI=True #Activates the calculation of Time Path Iteration
 #NOTE: Graphing only works if CalcTPI is activated.
-GraphWPath=True #Activates graphing the Wage path
-GraphRPath=True #Activates graphing the Rental Rate path
-GraphConsPath=True #Activates graphing the consumption path. Not functioning yet.
-CountryNamesON=True #Turns on the labels for real country names
-GraphKPath=True #Activates graphing the capital stock path.
-GraphYPath=True #Activates graphing the aggregate output path.
+Graphs=True #Activates graphing the graphs.
+CountryNamesON=True #Turns on labels for the graphs. Replaces "Country x" with proper names.
 
 #STEADY STATE FUNCTIONS
 
 def getOtherVariables(assets, kf):
     	"""
     	Description:
-        	Based on the assets and capital held by foreigners, we calculate the other variables.
+        	-Based on the assets and capital held by foreigners, we calculate the other variables.
     	Inputs:
-        	-assets: Matrix of assets
-        	-kf: Domestic capital held by foreigners
+        	-assets [Countries,S+1]: Matrix of assets
+        	-kf[Countries, ]: Domestic capital held by foreigners
+        Objects in function:
+                -NONE that aren't Already listed
+
     	Output:
-        	-k: Capital
-        	-n: Sum of labor productivities
-        	-y: Output
-        	-r: Rental Rate
-        	-w: Wage
-        	-c_vec: Vector of consumptions
+        	-k[Countries,]: Capital (1.10)
+        	-n[Countries,]: Sum of labor productivities (1.11)
+        	-y[Countries,]: Output (1.12)
+        	-r[Countries,]: Rental Rate (1.13)
+        	-w[Countries,]: Wage (1.14)
+        	-c_vec[Countries,S]: Vector of consumptions (1.15)
     	"""
         #Calculations based on the write up	
 	k = np.sum(assets[:,:], axis=1) - kf
@@ -56,18 +55,31 @@ def getOtherVariables(assets, kf):
         r = alpha * y / k
         w = (1-alpha) * y / n
 
-        c_vec = np.einsum("i, is -> is", w, e[:,:,0]) + np.einsum("i, is -> is",(1 + r - delta) , assets[:,:-1]) - assets[:,1:]
+        c_vec = np.einsum("i, is -> is", w, e[:,:,0]) + np.einsum("i, is -> is",(1 + r - delta) \
+                , assets[:,:-1]) - assets[:,1:]
 
 	return k, n, y, r, w, c_vec
 
 def SteadyStateSolution(guess):
     	"""
         Description: 
-    	    This is the function that will be optimized by fsolve.
+    	    -This is the function that will be optimized by fsolve.
         Inputs:
-    	    guess: vector that pieced together from assets and kf.
+    	    -guess[Countries,S+1]: vector that pieced together from assets and kf.
+        Objects in Function:
+            -kf[Countries,]:
+            -assets[Countries,S]:
+            -k[Countries,]:
+            -n[Countries,]:
+            -y[Countries,]:
+            -r[Countries,]:
+            -w[Countries,]:
+            -c_vec[Countries, S]:
+            -Euler_c:
+            -Euler_r:
+            -Euler_kf:
         Output:
-            all_Euler: Similar to guess, it's a vector that's has both assets and kf.
+            -all_Euler: Similar to guess, it's a vector that's has both assets and kf.
     	
     	"""
 	#Takes a 1D guess of length Countries*S and reshapes it to match what the original input into the fsolve looked like since fsolve flattens numpy arrays
@@ -88,8 +100,14 @@ def SteadyStateSolution(guess):
 	Euler_r = r[1:] - r[0]
 	Euler_kf = np.sum(kf)
 
+        print "Euler C", Euler_c.shape
+        print "Euler r",Euler_r.shape
+        print "Euler kf",Euler_kf.shape
+
 	#Makes a new 1D vector of length Countries*S that contains all the Euler equations
 	all_Euler = np.append(np.append(np.ravel(Euler_c), np.ravel(Euler_r)), Euler_kf)
+
+        print "all_Euler",all_Euler.shape
 
 	return all_Euler
 
@@ -101,6 +119,11 @@ def getSteadyState(assets_init, kf_init):
 	Inputs:
 	    -assets_init:Intial guess for asset path
 	    -kf_init:Initial guess on foreigner held capital  
+
+        Objects in Function:
+            -guess:
+            -ss:
+
 	Outputs:
 	    -assets_ss:Calculated assets steady state
 	    -kf_ss:Calculated foreign capital
@@ -132,14 +155,18 @@ def get_householdchoices_path(c_1, wpath_chunk, rpath_chunk, e_chunk, starting_a
 	    -e_chunk: Worker productivities of an agents lifetime, a section of the global matrix
 	    -starting_assets: Initial assets of the agent. Will be 0s if we are beginning in the year the agent was born
 	    -current_s: Current age of the agent
+
+        Objects in Function:
+            -NONE
+
 	Outputs:
-	    -c_path: Path of consumption until the agent dies
-	    -asset_path: Path of assets until the agent dies
+	    -c_path[Countries, S]: Path of consumption until the agent dies
+	    -asset_path[Countries, S+1]: Path of assets until the agent dies
 	"""
         #Initializes the cpath and asset path vectors
 	c_path = np.zeros((Countries, S))
 	asset_path = np.zeros((Countries, S+1))
-
+        #print c_1.shape
         #For each country, the cpath and asset path vectors' are the initial values provided.
 	c_path[:,0] = c_1
 	asset_path[:,0] = starting_assets
@@ -148,7 +175,8 @@ def get_householdchoices_path(c_1, wpath_chunk, rpath_chunk, e_chunk, starting_a
 	for s in range(1,S):
 		c_path[:,s] = (beta * (1 + rpath_chunk[:,s] - delta))**(1/sigma) * c_path[:,s-1]
                 asset_path[:,s] = wpath_chunk[:,s]*e[:,s,s-1] + (1 + rpath_chunk[:,s-1] - delta)*asset_path[:,s-1] - c_path[:,s-1]
-	asset_path[:,s+1] = wpath_chunk[:,s]*e_chunk[:,s] + (1 + rpath_chunk[:,s] - delta)*asset_path[:,s] - c_path[:,s]
+	
+        asset_path[:,s+1] = wpath_chunk[:,s]*e_chunk[:,s] + (1 + rpath_chunk[:,s] - delta)*asset_path[:,s] - c_path[:,s]
 
 	#Returns the relevant part of c_path and asset_path for all countries 
 	return c_path[:,0:S-current_s], asset_path[:,0:S+1-current_s]
@@ -164,6 +192,10 @@ def find_optimal_starting_consumptions(c_1, wpath_chunk, rpath_chunk, epath_chun
             -epath_chunk: Worker productivities of an agents lifetime, another part.
             -starting_assets: Initial assets of the agent. It's 0 at the beginning of life.
             -current_s: Current age of the agent
+
+        Objects in Function:
+            -cpath:
+            -assets_path:
 
         Outputs:
             -Euler:A flattened version of the assets_path matrix
@@ -186,6 +218,10 @@ def get_prices(Kpath, kf_tpath):
         Inputs:
             -assets_tpath: Asset timepath
             -kf_tpath: Foreign held capital timepath.
+
+        Objects in Function:
+            -ypath:
+            -Kdpath:
 
         Outputs:
             -wpath: Wage path
@@ -218,8 +254,15 @@ def get_foreignK_path(Kpath,rpath):
         Description:
            This calculates the timepath of the foreign capital stock. This is based on equation (1.12 and 1.13).
         Inputs:
-            apath-Asset path, from our calculations
-            rpath-Rental Rate path, also from our calculation
+            apath:Asset path, from our calculations
+            rpath:Rental Rate path, also from our calculation
+        
+        Objects in Function:
+            kDpath:
+            n:
+            kf_ss:
+            A:
+
         Outputs:
             kfPath-Path of domestic capital held by foreigners.
         """
@@ -244,48 +287,73 @@ def get_foreignK_path(Kpath,rpath):
         for i in xrange(Countries):
             kfPath[i,T:]=kf_ss[i]
 
-        print kfPath[0,:]
+        #print kfPath[0,:]
         
         return kfPath
 
-def get_wpath1_rpath1(w_path0, r_path0):
+def get_wpath1_rpath1(w_path0, r_path0, starting_assets):
         """
         Description:
             Takes initial paths of wages and rental rates, gives the consumption path and the the wage and rental paths that are implied by that consumption path.
 
         Inputs:
             -w_path0: initial w path
-            -r_path0: initial r path:
+            -r_path0: initial r path
+        
+        Objects in Function:
+            -current_s:
+            -opt_consump:
+            -starting_assets:
+            -cpath_indiv:
+            -assetpath_indiv:
+            -optimalconsumption:
+            -C_timepath:
+            -assets_timepath:
+            -kfpath:
+            -agent assets:
+
+
         Outputs:
             -w_path1: calculated w path
             -r_path1: calculated r path
-            -c_timepath: timepath of consumption implied from initial guess
-            -assets_timepath: timepath of assets implied from initial guess
+            -CPath:
+            -Kpath:
+            -ypath1: timepath of assets implied from initial guess
 
         """
         #Initializes timepath variables
 	c_timepath = np.zeros((Countries,S,T+1))
-	test = np.zeros((Countries,S,T+1))
+	#test = np.zeros((Countries,S,T+1))
 	assets_timepath = np.zeros((Countries,S+1, S+T+1)) #Countries,S+1,S+T+1
+        assets_timepath[:,:,0]=starting_assets
+
+        c_timepath[:,S-1,0]=w_path0[:,0]*e[:,S-1,0]+(1+r_path0[:,0]-delta)*assets_timepath[:,S-1,0]
 
 	#Makes an initial guess for fsolve. Will be used in each generation
-	c_guess = np.ones(Countries)*.8
+	#c_guess = np.ones(Countries)*.9
 
 	#Fills the upper triangle
-	for s in xrange(S-1, -1, -1):
-                starting_assets=np.ones((Countries))*.1*s
+	for s in xrange(S-2, -1, -1):
+                #c_guess=np.diagonal(c_timepath[:,S-s:,:s-1])
+                #print c_guess.shape
+                #starting_assets=np.ones((Countries))*.1*s
+                agent_assets=starting_assets[:,s]
 
 		#We are only doing this for all generations alive in time t=0
 		t = 0
 		#We are iteration through each generation in time t=0
 		current_s = s
 
+                c_guess=c_timepath[:,s+1,t]/(beta*(1+r_path0[:,t+1]-delta))**(1/sigma)
+
 		#Gets optimal initial consumption beginning in the current age of the agent using chunks of w and r that span the lifetime of the given generation
 		
-		opt_consump_1 = opt.fsolve(find_optimal_starting_consumptions, c_guess, args = (w_path0[:,t:t+S], r_path0[:,t:t+S], e[:,s,t:t+S], starting_assets, current_s))
+		opt_consump_1 = opt.fsolve(find_optimal_starting_consumptions, c_guess, args = \
+                        (w_path0[:,t:t+S], r_path0[:,t:t+S], e[:,s,t:t+S],agent_assets, current_s))
 		
 		#Gets optimal timepaths beginning initial consumption and starting assets
-		cpath_indiv, assetpath_indiv = get_householdchoices_path(opt_consump_1, w_path0[:,t:t+S], r_path0[:,t:t+S], e[:,s,t:t+S], starting_assets, current_s)
+		cpath_indiv, assetpath_indiv = get_householdchoices_path\
+                        (opt_consump_1, w_path0[:,t:t+S], r_path0[:,t:t+S], e[:,s,t:t+S], agent_assets, current_s)
 
 		for i in xrange(Countries):
 			np.fill_diagonal(c_timepath[i,s:,:], cpath_indiv[i,:])
@@ -294,11 +362,14 @@ def get_wpath1_rpath1(w_path0, r_path0):
 	#Fills everything except for the upper triangle
 	for t in xrange(1,T):
 		current_s = 0 #This is always zero because this section deals with people who haven't been born yet in time T=0
-		starting_assets = np.zeros((Countries))
+		agent_assets = np.zeros((Countries))
+                c_guess=c_timepath[:,s+1,t]/(beta*(1+r_path0[:,t+1]-delta))**(1/sigma)
 
-		optimalconsumption = opt.fsolve(find_optimal_starting_consumptions, c_guess, args = (w_path0[:,t:t+S], r_path0[:,t:t+S], e[:,s,t:t+S], starting_assets, current_s))
+		optimalconsumption = opt.fsolve(find_optimal_starting_consumptions, c_guess, args = \
+                        (w_path0[:,t:t+S], r_path0[:,t:t+S], e[:,s,t:t+S], agent_assets, current_s))
 
-		cpath_indiv, assetpath_indiv = get_householdchoices_path(optimalconsumption, w_path0[:,t:t+S], r_path0[:,t:t+S], e[:,s,t:t+S], starting_assets, current_s)
+		cpath_indiv, assetpath_indiv = get_householdchoices_path\
+                        (optimalconsumption, w_path0[:,t:t+S], r_path0[:,t:t+S], e[:,s,t:t+S], agent_assets, current_s)
 
                 for i in xrange(Countries):
 			np.fill_diagonal(c_timepath[i,:,t:], cpath_indiv[i,:])
@@ -331,10 +402,14 @@ def CountryLabel(Country): #Activated by line 28
         Converts the generic country label given for the graphs and converts it to a proper name
 
     Inputs:
-        Country: This is simply the generic country label
+        -Country: This is simply the generic country label
+
+    Objects in Function:
+        -NONE
+
 
     Outputs:
-        Name: The proper name of the country which you decide. Make sure the number of country names lines
+        -Name: The proper name of the country which you decide. Make sure the number of country names lines
             up with the number of countries, otherwise, the function will not proceed.
     '''
     #Each country is given a number
@@ -403,7 +478,7 @@ rstart=r_initguess
 Iter=1 #Serves as the iteration counter
 if CalcTPI==True: #Time Path Iteration, activated by line 24
     while distance>diff and Iter<MaxIters: #The timepath iteration runs until the distance gets below a threshold or the iterations hit the maximum
-            wpath0,rpath0, cpath0, kpath0, ypath0=get_wpath1_rpath1(wstart,rstart)
+            wpath0,rpath0, cpath0, kpath0, ypath0=get_wpath1_rpath1(wstart,rstart,np.column_stack((np.zeros(Countries),assets_init,np.zeros(Countries))))
             dist1=sp.linalg.norm(wstart-wpath0,2) #Norm of the wage path
             dist2=sp.linalg.norm(rstart-rpath0,2) #Norm of the intrest rate path
             distlist=[dist1,dist2] #Lists the two norms taken
@@ -426,8 +501,8 @@ if CalcTPI==True: #Time Path Iteration, activated by line 24
 
 #GRAPHING ZONE
 
-if GraphWPath==True and CalcTPI==True: #WAGE PATH
-    for i in xrange(Countries): #Loops through individual countries and plots their individual wage paths up to time period T
+if Graphs==True and CalcTPI==True:
+    for i in xrange(Countries): #Wages
         label1='Country '+str(i)
         if CountryNamesON==True:
             label1=CountryLabel(label1)
@@ -438,8 +513,7 @@ if GraphWPath==True and CalcTPI==True: #WAGE PATH
     plt.legend(loc="upper right")
     plt.show()
 
-if GraphRPath==True and CalcTPI==True: #INTREST RATE PATH
-    for i in xrange(Countries): #Like above, it loops through and plots the individual countries' intrest rate paths up to time period T
+    for i in xrange(Countries): #Rental Rates
         label1='Country '+str(i)
         if CountryNamesON==True:
             label1=CountryLabel(label1)
@@ -450,9 +524,7 @@ if GraphRPath==True and CalcTPI==True: #INTREST RATE PATH
     plt.legend(loc="upper right")
     plt.show()
 
-
-if GraphConsPath==True and CalcTPI==True: #AGGREGATE CONSUMPTION PATH
-    for i in xrange(Countries):
+    for i in xrange(Countries): #Aggregate Consumption
         label1='Country '+str(i)
         if CountryNamesON==True:
             label1=CountryLabel(label1)
@@ -463,8 +535,7 @@ if GraphConsPath==True and CalcTPI==True: #AGGREGATE CONSUMPTION PATH
     plt.legend(loc="upper right")
     plt.show()
 
-if GraphKPath==True and CalcTPI==True: #AGGREGATE CAPITAL STOCK PATH
-    for i in xrange(Countries):
+    for i in xrange(Countries): #Aggregate Capital Stock
         label1='Country '+str(i)
         if CountryNamesON==True:
             label1=CountryLabel(label1)
@@ -475,7 +546,6 @@ if GraphKPath==True and CalcTPI==True: #AGGREGATE CAPITAL STOCK PATH
     plt.legend(loc="upper right")
     plt.show()
 
-if GraphYPath==True and CalcTPI==True: #AGGREGATE OUTPUT PATH
     for i in xrange(Countries):
         label1='Country '+str(i)
         if CountryNamesON==True:
