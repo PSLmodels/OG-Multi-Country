@@ -9,7 +9,7 @@ S = 10 #Upper bound of age for agents
 Countries = 2 #Number of Countries
 T = int(round(2.5*S)) #Number of time periods to convergence, based on Rick Evans' function.
 
-T_1 = S #This is like TransYear in the FORTRAN I think
+T_1 = S-3 #This is like TransYear in the FORTRAN I think
 if S > 50:
 	T_1 = 50
 StartFertilityAge = int(S/80.*23)#The age when agents have their first children
@@ -32,20 +32,20 @@ xi=.8 #Parameter used to take the convex conjugate of paths
 MaxIters=300 #Maximum number of iterations on TPI.
 
 #Program Levers
+PrintAges = True #Prints the different key ages in the demographics
 PrintSS=True #Prints the result of the Steady State functions
 CalcTPI=True #Activates the calculation of Time Path Iteration
 #NOTE: Graphing only works if CalcTPI is activated.
-Graphs=True #Activates graphing the graphs.
+Graphs=False #Activates graphing the graphs.
 CountryNamesON=True #Turns on labels for the graphs. Replaces "Country x" with proper names.
 
-"""
-print "T =", T
-print "T_1", T_1
-print "StartFertilityAge", StartFertilityAge
-print "EndFertilityAge", EndFertilityAge
-print "StartDyingAge", StartDyingAge
-print "MaxImmigrantAge", MaxImmigrantAge
-"""
+if PrintAges:
+	print "T =", T
+	print "T_1", T_1
+	print "StartFertilityAge", StartFertilityAge
+	print "EndFertilityAge", EndFertilityAge
+	print "StartDyingAge", StartDyingAge
+	print "MaxImmigrantAge", MaxImmigrantAge
 
 #DEMOGRAPHICS FUNCTIONS
 
@@ -55,13 +55,28 @@ def getDemographics():
 		-Imports data from csv files for initial populations, fertility rates, mortality rates, and net migrants. 
 		-Stores these data sets in their respective matrices, and calculates population distribuitons through year T.
 		-NOTE: FOR NOW THIS FUNCTION ONLY USES DATA FOR THE USA. NEEDS TO EVENTUALLY ADD MORE COUNTRIES
+
 	Inputs:
 		-None, but uses the global variables T, T_1, StartFertilityAge, EndFertilityAge, StartDyingAge, and MaxImmigrantAge
+
+	Objects in Function:
+		-USAPopdata: (S+1) vector that has the initial population of the U.S straight from the csv
+		-USAFertdata: (T_1,EndFertilityAge+2-StartFertilityAge) vector that has U.S. fertility straight from the csv
+		-USAMortdata: (T_1,S+1-StartDyingAge) vector that has U.S. mortality straight from the csv
+		-USAMigdata: (MaxImmigrantAge) vector that contains the number of net U.S. migrants straight from the csv
+		-g_N: (T) vector that contains the exogenous population growth rates
+		-g_A: Constant that represents the technical growth rate
+		-l_endowment: (T) vector labor endowment per household
+		-f_bar: (Countries) vector that represents the fertility rate after period T_1
+		-p_bar: (Countries) vector that represents the mortality rate after period T_1
+		-m_bar: (Countries) vector that represents the immigration rate after period T_1
+
 	Output:
 		-FertilityRates: Numpy array that contains fertilty rates for all countries, ages, and years
 		-MortalityRates: Numpy array that contains mortality rates for all countries, ages, and years
 		-Migrants: Numpy array that contains net migration for all countries and ages
 		-N_matrix: Numpy array that contains population numbers for all countries, ages, and years
+		-Nhat matrix: Numpy array that contains the population percentage for all countries, ages, and years
 	"""
 
 	#Imports and scales data for the USA. Imports a certain number of generations according to the value of S
@@ -85,7 +100,7 @@ def getDemographics():
 	Nhat_matrix[:,:,0] = N_matrix[:,:,0]/np.sum(N_matrix[:,:,0])
 
 	#Fertility Will be equal to 0 for all ages that don't bear children
-	FertilityRates[:,StartFertilityAge:EndFertilityAge+1,:T_1] = np.einsum("ts,it->ist", USAFertdata, np.ones((Countries,T_1)))
+	FertilityRates[:,StartFertilityAge:EndFertilityAge+1,:T_1] = np.einsum("ts,i->ist", USAFertdata, np.ones(Countries))
 
 	#Mortality be equal to 0 for all young people who aren't old enough to die
 	MortalityRates[:,StartDyingAge:-1,:T_1] = np.einsum("ts,it->ist", USAMortdata, np.ones((Countries,T_1)))
@@ -115,6 +130,7 @@ def getDemographics():
 	#Calculates population numbers for each country
 	for t in range(1,T):
 		#Gets the total number of children and and percentage of children and stores them in generation 0 of their respective matrices
+		#See equations 2.1 and 2.10
 		N_matrix[:,0,t] = np.sum((N_matrix[:,:,t-1]*FertilityRates[:,:,t-1]),axis=1)
 		Nhat_matrix[:,0,t] = np.exp(-g_N[t-1])*np.sum((Nhat_matrix[:,:,t-1]*FertilityRates[:,:,t-1]),axis=1)
 
@@ -122,9 +138,9 @@ def getDemographics():
 		ImmigrationRate = Migrants[:,:,t-1]/N_matrix[:,:,t-1]
 
 		#Gets the population and percentage of population for the next year, taking into account immigration and mortality
+		#See equations 2.2 and 2.11
 		N_matrix[:,1:,t] = N_matrix[:,:-1,t-1]*(1+ImmigrationRate[:,:-1]-MortalityRates[:,:-1,t-1])
 		Nhat_matrix[:,1:,t] = np.exp(-g_N[t-1])*Nhat_matrix[:,:-1,t-1]*(1+ImmigrationRate[:,:-1]-MortalityRates[:,:-1,t-1])
-		#print "For t =", t, "\ng_N[t] = np.sum(\n", Nhat_matrix[:,:,t], "\n*(\n", FertilityRates[:,:,t], "\n+\n", ImmigrationRate, "\n-\n", MortalityRates[:,:,t],"\n))"
 		
 		#Gets the growth rate for the next year
 		g_N[t] = np.sum(Nhat_matrix[:,:,t]*(FertilityRates[:,:,t] + ImmigrationRate - MortalityRates[:,:,t]), axis=(0, 1))
@@ -139,10 +155,12 @@ def plotDemographics(index, years, name):
 	"""
 	Description:
 		Plots the population distribution of a given country for any number of specified years
+
 	Inputs:
 		index: Integer that indicates which country to plot
 		years: List that contains each year to plot
 		name: String of the country's name. Used in the legend of the plot
+
 	Outputs:
 		None
 	"""
@@ -166,12 +184,23 @@ def getBequests(assets, current_t):
 	"""
 	Description:
 		-Gets the value of the bequests given to each generation
+
 	Inputs:
 		-assets: Assets for each generation in a given year
 		-current_t: Integer that indicates the current year. Used to pull information from demographics global matrices like FertilityRates
+
+	Objects in Function: 
+		-BQ: T
+		-num_bequest_receivers:
+		-bq_Distribution:
+
 	Output:
 		-bq: Numpy array that contains the number of bequests for each generation in each country.
+
 	"""
+
+	if current_t >= T:
+		current_t = T-1
 
 	#Initializes bequests
 	bq = np.zeros((Countries, S+1))
@@ -185,11 +214,13 @@ def getBequests(assets, current_t):
 	bq_Distribution = BQ/num_bequest_receivers
 	bq[:,StartFertilityAge:StartDyingAge+1] = np.einsum("i,s->is", bq_Distribution, np.ones(StartDyingAge+1-StartFertilityAge))
 
+
+	#print BQ.shape, num_bequest_receivers.shape, bq_Distribution.shape,bq.shape
 	return bq
 
 FertilityRates, MortalityRates, Migrants, N_matrix, Nhat_matrix = getDemographics()
 
-plotDemographics(0,[0,19],"USA")
+#plotDemographics(0,[0,19],"USA")
 
 def hatvariables(Kpathreal, kfpathreal, Nhat_matrix):
 
@@ -425,26 +456,21 @@ def get_prices(Kpath, kf_tpath):
 
 	"""
 
-	#Initializes the path for output, y.
-	ypath=np.zeros((Countries,S+T+1))
-
 	Kdpath=Kpath-kf_tpath
 
 	#Gets non-price variables needed to caluclate prices
 	n = np.sum(e, axis=1) #Sum of the labor productivities
 
-	#EINSUM POTENTIAL
-	for i in xrange(Countries):
-		ypath[i,:] = (Kpath[i,:]**alpha) * ((A[i]*n[i,:])**(1-alpha))
+	#Gets the path for output, y
+	ypath = (Kpath**alpha) * (np.einsum("i,is->is", A, n)**(1-alpha))
 
 	#Gets prices
 	rpath = alpha * ypath / Kpath
 	wpath = (1-alpha) * ypath / n
 
-	#EINSUM POTENTIAL
-	for i in xrange(Countries):
-		rpath[i,T:]=r_ss[i]
-		wpath[i,T:]=w_ss[i]
+	#Tiles the steady-state for each year beyond the steady state
+	rpath[:,T:] = np.einsum("i,s->is", r_ss, np.ones(S+1))
+	wpath[:,T:] = np.einsum("i,s->is", w_ss, np.ones(S+1))
 
 	#Returns only the first country's interest rate, since they should be the same in theory
 	return wpath, rpath, ypath
@@ -454,8 +480,8 @@ def get_foreignK_path(Kpath,rpath):
         Description:
            This calculates the timepath of the foreign capital stock. This is based on equation (1.12 and 1.13).
         Inputs:
-            apath:Asset path, from our calculations
-            rpath:Rental Rate path, also from our calculation
+            apath: Asset path, from our calculations
+            rpath: Rental Rate path, also from our calculation
         
         Objects in Function:
             kDpath[Countries,S+T+1]: Path of domestic owned capital
@@ -464,20 +490,18 @@ def get_foreignK_path(Kpath,rpath):
             A[Countries,]: Parameters from above
 
         Outputs:
-            kfPath[Countries,S+T+1]-Path of domestic capital held by foreigners.
+            kfPath[Countries,S+T+1]: Path of domestic capital held by foreigners.
         """
+
         #Sums the labor productivities across cohorts
         n = np.sum(e, axis=1)
-        #Sums the assets across cohorts to give the domestic capital stock
 
         #Declares the array that will later be used.
         kfPath=np.zeros((Countries,S+T+1))
         kDPath=np.zeros((Countries,S+T+1))
 
-        #Goes through each country and individually calculates the domestic owned capital stock.
-        #EINSUM POTENTIAL
-        for i in xrange(1,Countries):
-            kDPath[i,:]=(rpath[i,:]/alpha)**(1/(alpha-1))*n[i,:]*A[i]
+        #Gets the domestic-owned capital stock for each country except for the first country
+        kDPath[1:,:]=(rpath[1:,:]/alpha)**(1/(alpha-1))*np.einsum("i,is->is", A[1:], n[1:,:])
 
         #This is using equation 1.13 solved for the foreign capital stock to caluclate the foreign capital stock
         kfPath=Kpath-kDPath
@@ -486,8 +510,7 @@ def get_foreignK_path(Kpath,rpath):
         kfPath[0,:]=-np.sum(kfPath,axis=0)
 
 		#Making every year beyond t equal to the steady-state
-        for i in xrange(Countries):
-            kfPath[i,T:]=kf_ss[i]
+        kfPath[:,T:] = np.einsum("i,s->is", kf_ss, np.ones(S+1))
         
         return kfPath
 
@@ -523,7 +546,7 @@ def get_wpath1_rpath1(w_path0, r_path0, starting_assets):
 	"""
 
 	#Initializes timepath variables
-	c_timepath = np.zeros((Countries,S,T+1))
+	c_timepath = np.zeros((Countries,S,S+T+1))
 	assets_timepath = np.zeros((Countries,S+1, S+T+1)) #Countries,S+1,S+T+1
 	assets_timepath[:,:,0]=starting_assets
 	bequests_timepath = np.zeros((Countries, S+1, S+T+1)) #Is this too big?
@@ -553,9 +576,7 @@ def get_wpath1_rpath1(w_path0, r_path0, starting_assets):
 			np.fill_diagonal(c_timepath[i,s:,:], cpath_indiv[i,:])
 			np.fill_diagonal(assets_timepath[i,s:,:], assetpath_indiv[i,:])
 
-		#bequests_timepath[:,:,S-s-2] = getBequests(assets_timepath[:,:,S-s-2], s)
-		#print s, S-s-2
-		#print np.transpose(np.round(bequests_timepath[0,:,:], decimals=3))
+		bequests_timepath[:,:,S-s-2] = getBequests(assets_timepath[:,:,S-s-2], s)
 
 		#print np.round(cpath_indiv[0,:], decimals=3), opt_consump[0]
 		#print np.round(np.transpose(c_timepath[0,:,:T_1-s+3]), decimals=3)
@@ -581,20 +602,17 @@ def get_wpath1_rpath1(w_path0, r_path0, starting_assets):
 			np.fill_diagonal(c_timepath[i,:,t:], cpath_indiv[i,:])
 			np.fill_diagonal(assets_timepath[i,:,t:], assetpath_indiv[i,:])
 
-		#bequests_timepath[:,:,t+S-2] = getBequests(assets_timepath[:,:,t+S-2], t+S-2)
-		#print t
-		#print np.transpose(np.round(bequests_timepath[0,:,:], decimals=3))
+		bequests_timepath[:,:,t+S-2] = getBequests(assets_timepath[:,:,t+S-2], t+S-2)
 
 	#Calculates the total amount of capital in each country
 	Kpath=np.sum(assets_timepath,axis=1)
-	#After time period T, the total capital stock is forced to be the steady state
-	for i in xrange(Countries):
-		Kpath[i,T:]=k_ss[i]
 
 	#Calculates Aggregate Consumption
 	Cpath=np.sum(c_timepath,axis=1)
-	for i in xrange(Countries):
-		Cpath[i,T:]=Cpath[i,T-1]
+
+	#After time period T, the total capital stock and total consumption is forced to be the steady state
+	Kpath[:,T:] = np.einsum("i,t->it", k_ss, np.ones(S+1))
+	Cpath[:,T:] = np.einsum("i,t->it", Cpath[:,T-1], np.ones(S+1))
 
 	#Gets the foriegned owned capital
 	kfpath=get_foreignK_path(Kpath, r_path0)
@@ -645,8 +663,8 @@ def CountryLabel(Country): #Activated by line 28
 assets_guess = np.ones((Countries, S-1))*.15
 kf_guess = np.zeros((Countries))
 
-w_initguess = np.zeros((Countries, T+S+1)) #T+S+1
-r_initguess = np.ones((Countries, T+S+1))*.5 #T+S+1
+w_initguess = np.zeros((Countries, T+S+1))
+r_initguess = np.ones((Countries, T+S+1))*.5
 
 #Gets the steady state variables
 assets_ss, kf_ss = getSteadyState(assets_guess, kf_guess)
