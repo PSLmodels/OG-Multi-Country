@@ -439,7 +439,7 @@ for index, region in enumerate(regionlist):
 #Russia.plot_demographics(2058)
 
 
-Japan.plot_population_distribution([2008, 2038])
+USA.plot_population_distribution([2008, 2013])
 
 
 
