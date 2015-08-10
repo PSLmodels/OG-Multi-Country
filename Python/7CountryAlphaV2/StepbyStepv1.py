@@ -67,19 +67,19 @@ def SteadyStateSolution(guess):
         Inputs:
     	    -guess[Countries,S+1]: vector that pieced together from assets and kf.
         Objects in Function:
-            -kf[Countries,]:
-            -assets[Countries,S]:
-            -k[Countries,]:
-            -n[Countries,]:
-            -y[Countries,]:
-            -r[Countries,]:
-            -w[Countries,]:
-            -c_vec[Countries, S]:
-            -Euler_c:
-            -Euler_r:
-            -Euler_kf:
+            -kf[Countries,]:Foreign capital held by foreigners in each country
+            -assets[Countries,S]: Asset path for each country
+            -k[Countries,]:Capital for each country
+            -n[Countries,]:Labor for each country
+            -y[Countries,]:Output for each country
+            -r[Countries,]:Rental Rate for each country
+            -w[Countries,]:Wage for each country
+            -c_vec[Countries, S]: Consumption by cohort in each country
+            -Euler_c[Countries, S-1]: Corresponds to (1.16)
+            -Euler_r[Countries,]: Corresponds to (1.17)
+            -Euler_kf(Scalar): Corresponds to (1.18)
         Output:
-            -all_Euler: Similar to guess, it's a vector that's has both assets and kf.
+            -all_Euler[Countries*S,]: Similar to guess, it's a vector that's has both assets and kf.
     	
     	"""
 	#Takes a 1D guess of length Countries*S and reshapes it to match what the original input into the fsolve looked like since fsolve flattens numpy arrays
@@ -100,14 +100,14 @@ def SteadyStateSolution(guess):
 	Euler_r = r[1:] - r[0]
 	Euler_kf = np.sum(kf)
 
-        print "Euler C", Euler_c.shape
-        print "Euler r",Euler_r.shape
-        print "Euler kf",Euler_kf.shape
+        #print "Euler C", Euler_c.shape
+        #print "Euler r",Euler_r.shape
+        #print "Euler kf",Euler_kf.shape
 
 	#Makes a new 1D vector of length Countries*S that contains all the Euler equations
 	all_Euler = np.append(np.append(np.ravel(Euler_c), np.ravel(Euler_r)), Euler_kf)
 
-        print "all_Euler",all_Euler.shape
+        #print "all_Euler",all_Euler.shape
 
 	return all_Euler
 
@@ -117,24 +117,29 @@ def getSteadyState(assets_init, kf_init):
         This takes the initial guess for assets and kf. Since the function
 	    returns a matrix, this unpacks the individual parts.
 	Inputs:
-	    -assets_init:Intial guess for asset path
-	    -kf_init:Initial guess on foreigner held capital  
+	    -assets_init[Countries,S-1]:Intial guess for asset path
+	    -kf_init[Countries]:Initial guess on foreigner held capital  
 
         Objects in Function:
-            -guess:
-            -ss:
+            -guess[Countries,S]: A combined matrix that has both assets_init and kf_init
+            -ss[S*Countries,]: The result from optimization.
 
 	Outputs:
-	    -assets_ss:Calculated assets steady state
-	    -kf_ss:Calculated foreign capital
+	    -assets_ss[Countries,S-1]:Calculated assets steady state
+	    -kf_ss[Countries,]:Calculated foreign capital
 	"""
+        #print "assets_init", assets_init.shape
+        #print "kf_init", kf_init.shape
+
         #Merges the assets and kf together into one matrix that can be inputted into the fsolve function
 	guess = np.column_stack((assets_init, kf_init))
 
         #Solves for the steady state
 	ss = opt.fsolve(SteadyStateSolution, guess)
 
-	print "\nSteady State Found!\n"
+	#print "guess", guess.shape
+        #print "ss", ss.shape
+        print "\nSteady State Found!\n"
 	ss = np.array(np.split(ss, Countries))
         #Breaks down the steady state into the two separate assets and kf matrices.
 	assets_ss = ss[:,:-1]
@@ -186,6 +191,7 @@ def find_optimal_starting_consumptions(c_1, wpath_chunk, rpath_chunk, epath_chun
         Description:
             Takes the assets path from the get_householdchoices_path function and creates  
         Inputs:
+        Dimension varies
             -c_1: Initial consumption (not necessarily for the year they were born)
             -wpath_chunk: Wages of an agents lifetime, a part of the timepath
             -rpath_chunk: Rental rate of an agents lifetime, another part of the timeparth.
@@ -194,8 +200,8 @@ def find_optimal_starting_consumptions(c_1, wpath_chunk, rpath_chunk, epath_chun
             -current_s: Current age of the agent
 
         Objects in Function:
-            -cpath:
-            -assets_path:
+            -cpath: Path of consumption based on chunk given.
+            -assets_path: Path of assets based on the chunks given
 
         Outputs:
             -Euler:A flattened version of the assets_path matrix
@@ -219,13 +225,13 @@ def get_prices(Kpath, kf_tpath):
             -assets_tpath: Asset timepath
             -kf_tpath: Foreign held capital timepath.
 
-        Objects in Function:
-            -ypath:
-            -Kdpath:
+        Objects in Functions:
+            -Kdpath[Countries, S+T+1]:Path of domestic owned capital stock
 
         Outputs:
-            -wpath: Wage path
-            -rpath: Rental rate path
+            -wpath[Countries, S+T+1]: Wage path
+            -rpath[Countries, S+T+1]: Rental rate path
+            -ypath[Countries, S+T+1]: Output path
 
     	"""
         #Initializes the path for output, y.
@@ -258,13 +264,13 @@ def get_foreignK_path(Kpath,rpath):
             rpath:Rental Rate path, also from our calculation
         
         Objects in Function:
-            kDpath:
-            n:
-            kf_ss:
-            A:
+            kDpath[Countries,S+T+1]: Path of domestic owned capital
+            n[Countries,S+T+1]: Path of total labor
+            kf_ss[Countries,]: Calculated from the steady state. 
+            A[Countries,]: Parameters from above
 
         Outputs:
-            kfPath-Path of domestic capital held by foreigners.
+            kfPath[Countries,S+T+1]-Path of domestic capital held by foreigners.
         """
         #Sums the labor productivities across cohorts
         n = np.sum(e, axis=1)
@@ -297,28 +303,29 @@ def get_wpath1_rpath1(w_path0, r_path0, starting_assets):
             Takes initial paths of wages and rental rates, gives the consumption path and the the wage and rental paths that are implied by that consumption path.
 
         Inputs:
-            -w_path0: initial w path
-            -r_path0: initial r path
+            -w_path0[Countries, S+T+1]: initial w path
+            -r_path0[Countries, S+T+1]: initial r path
         
         Objects in Function:
-            -current_s:
-            -opt_consump:
-            -starting_assets:
-            -cpath_indiv:
-            -assetpath_indiv:
-            -optimalconsumption:
-            -C_timepath:
-            -assets_timepath:
-            -kfpath:
-            -agent assets:
+        Note that these vary in dimension depending on the loop.
+            -current_s: The age of the cohort at time 0
+            -opt_consump: Solved for consumption
+            -starting_assets: Initial assets for the cohorts. 
+            -cpath_indiv: The small chunk of cpath.
+            -assetpath_indiv: The small chunk of assetpath_indiv
+            -optimalconsumption: Solved from the chunks
+            -c_timepath: Overall consumption path
+            -assets_timepath: Overall assets timepath
+            -kfpath: Foreign held domestic capital
+            -agent assets: Assets held by individuals.
 
 
         Outputs:
-            -w_path1: calculated w path
-            -r_path1: calculated r path
-            -CPath:
-            -Kpath:
-            -ypath1: timepath of assets implied from initial guess
+            -w_path1[Countries,S+T+1]: calculated w path
+            -r_path1[Countries,S+T+1]: calculated r path
+            -CPath[Countries,S+T+1]: Calculated aggregate consumption path for each country
+            -Kpath[Countries,S+T+1]: Calculated capital stock path.
+            -ypath1[Countries, S+T+1]: timepath of assets implied from initial guess
 
         """
         #Initializes timepath variables
@@ -402,14 +409,14 @@ def CountryLabel(Country): #Activated by line 28
         Converts the generic country label given for the graphs and converts it to a proper name
 
     Inputs:
-        -Country: This is simply the generic country label
+        -Country (String): This is simply the generic country label
 
     Objects in Function:
         -NONE
 
 
     Outputs:
-        -Name: The proper name of the country which you decide. Make sure the number of country names lines
+        -Name (String): The proper name of the country which you decide. Make sure the number of country names lines
             up with the number of countries, otherwise, the function will not proceed.
     '''
     #Each country is given a number
