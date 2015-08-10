@@ -9,7 +9,7 @@ S = 10 #Upper bound of age for agents
 Countries = 2 #Number of Countries
 T = int(round(2.5*S)) #Number of time periods to convergence, based on Rick Evans' function.
 
-T_1 = S-3 #This is like TransYear in the FORTRAN I think
+T_1 = S #This is like TransYear in the FORTRAN I think
 if S > 50:
 	T_1 = 50
 StartFertilityAge = int(S/80.*23)#The age when agents have their first children
@@ -33,10 +33,10 @@ MaxIters=300 #Maximum number of iterations on TPI.
 
 #Program Levers
 PrintAges = True #Prints the different key ages in the demographics
-PrintSS=True #Prints the result of the Steady State functions
+PrintSS=False #Prints the result of the Steady State functions
 CalcTPI=True #Activates the calculation of Time Path Iteration
 #NOTE: Graphing only works if CalcTPI is activated.
-Graphs=False #Activates graphing the graphs.
+Graphs=True #Activates graphing the graphs.
 CountryNamesON=True #Turns on labels for the graphs. Replaces "Country x" with proper names.
 
 if PrintAges:
@@ -198,7 +198,8 @@ def getBequests(assets, current_t):
 		-bq: Numpy array that contains the number of bequests for each generation in each country.
 
 	"""
-
+	#Makes sure we don't try to pull values from outside indices of MortalityRates.
+	#High enough current_t values will just give the steady-state anyways
 	if current_t >= T:
 		current_t = T-1
 
@@ -214,8 +215,6 @@ def getBequests(assets, current_t):
 	bq_Distribution = BQ/num_bequest_receivers
 	bq[:,StartFertilityAge:StartDyingAge+1] = np.einsum("i,s->is", bq_Distribution, np.ones(StartDyingAge+1-StartFertilityAge))
 
-
-	#print BQ.shape, num_bequest_receivers.shape, bq_Distribution.shape,bq.shape
 	return bq
 
 FertilityRates, MortalityRates, Migrants, N_matrix, Nhat_matrix = getDemographics()
@@ -366,6 +365,26 @@ def getSteadyState(assets_init, kf_init):
         return assets_ss, kf_ss
 
 #TIMEPATH FUNCTIONS
+
+def get_initialguesses(assets_ss, kf_ss):
+	
+	#Sets initial assets and kf, start with something close to the steady state
+	assets_init = assets_ss*.95
+	kf_init = kf_ss*.95
+	w_initguess = np.zeros((Countries, T+S+1))
+	r_initguess = np.ones((Countries, T+S+1))*.5
+
+	#Gets initial k, n, y, r, w, and c
+	k_init, n_init, y_init, r_init, w_init, c_init = getOtherVariables(np.column_stack((np.zeros(Countries), assets_init, np.zeros(Countries))), kf_init)
+
+	#Gets initial guess for w and r paths. This is set up to be linear.
+	for c in range(Countries):
+		w_initguess[c, :T+1] = np.linspace(w_init[c], w_ss[c], T+1)
+		r_initguess[c, :T+1] = np.linspace(r_init[c], r_ss[c], T+1)
+		w_initguess[c,T+1:] = w_initguess[c,T]
+		r_initguess[c,T+1:] = r_initguess[c,T]
+
+	return assets_init, kf_init, w_initguess, r_initguess, k_init, n_init, y_init, c_init
 
 def get_householdchoices_path(c_1, wpath_chunk, rpath_chunk, e_chunk, starting_assets, current_s):
 	"""
@@ -656,51 +675,10 @@ def CountryLabel(Country): #Activated by line 28
     #Add More Country labels here
 
     return Name
-	
-#MAIN CODE
 
-#Initalizes initial guesses
-assets_guess = np.ones((Countries, S-1))*.15
-kf_guess = np.zeros((Countries))
+def get_Timepath(distance, diff, MaxIters, wstart, rstart, assets_init):
 
-w_initguess = np.zeros((Countries, T+S+1))
-r_initguess = np.ones((Countries, T+S+1))*.5
-
-#Gets the steady state variables
-assets_ss, kf_ss = getSteadyState(assets_guess, kf_guess)
-k_ss, n_ss, y_ss, r_ss, w_ss, c_vec_ss = getOtherVariables(np.column_stack((np.zeros(Countries), assets_ss, np.zeros(Countries))), kf_ss)
-
-
-if PrintSS==True: #Prints the results of the steady state, line 23 activates this
-	print "assets steady state", assets_ss
-	print "kf steady state", kf_ss
-	print "k steady state", k_ss
-	print "n steady state",n_ss
-	print "y steady state", y_ss
-	print "r steady state",r_ss
-	print "w steady state", w_ss
-	print "c_vec_ss steady state",c_vec_ss
-
-#Sets initial assets and kf, start with something close to the steady state
-assets_init = assets_ss*.95
-kf_init = kf_ss*.95
-
-#Gets initial k, n, y, r, w, and c
-k_init, n_init, y_init, r_init, w_init, c_vec_init = getOtherVariables(np.column_stack((np.zeros(Countries), assets_init, np.zeros(Countries))), kf_init)
-
-#Gets initial guess for w and r paths. This is set up to be linear.
-for c in range(Countries):
-	w_initguess[c, :T+1] = np.linspace(w_init[c], w_ss[c], T+1)
-	r_initguess[c, :T+1] = np.linspace(r_init[c], r_ss[c], T+1)
-	w_initguess[c,T+1:] = w_initguess[c,T]
-	r_initguess[c,T+1:] = r_initguess[c,T]
-
-#Gets new paths for wages and rental rates to see how close it is to the original code
-wstart=w_initguess
-rstart=r_initguess
-
-Iter=1 #Serves as the iteration counter
-if CalcTPI==True: #Time Path Iteration, activated by line 24
+    Iter=1 #Serves as the iteration counter
     while distance>diff and Iter<MaxIters: #The timepath iteration runs until the distance gets below a threshold or the iterations hit the maximum
 
             wpath0, rpath0, cpath0, kpath0, ypath0 = get_wpath1_rpath1(wstart,rstart, np.column_stack((np.zeros(Countries), assets_init, np.zeros(Countries))))
@@ -722,13 +700,14 @@ if CalcTPI==True: #Time Path Iteration, activated by line 24
                 print "Doesn't converge within the maximum number of iterations"
                 print "Providing the last iteration"
 
-#GRAPHING ZONE
-if Graphs==True and CalcTPI==True:
+    return wend, rend, cpath0, kpath0, ypath0
+
+def plotTimepaths(wpath, rpath, cpath, kpath, ypath):
     for i in xrange(Countries): #Wages
         label1='Country '+str(i)
         if CountryNamesON==True:
             label1=CountryLabel(label1)
-        plt.plot(np.arange(0,T),wend[i,:T], label=label1)
+        plt.plot(np.arange(0,T),wpath[i,:T], label=label1)
     plt.title("Time path for Wages")
     plt.ylabel("Wages")
     plt.xlabel("Time Period")
@@ -739,7 +718,7 @@ if Graphs==True and CalcTPI==True:
         label1='Country '+str(i)
         if CountryNamesON==True:
             label1=CountryLabel(label1)
-        plt.plot(np.arange(0,T),rend[i,:T], label=label1)
+        plt.plot(np.arange(0,T),rpath[i,:T], label=label1)
     plt.title("Time path for Rental Rates")
     plt.ylabel("Rental Rates")
     plt.xlabel("Time Period")
@@ -750,7 +729,7 @@ if Graphs==True and CalcTPI==True:
         label1='Country '+str(i)
         if CountryNamesON==True:
             label1=CountryLabel(label1)
-        plt.plot(np.arange(0,T+1),cpath0[i,:],label=label1)
+        plt.plot(np.arange(0,S+T+1),cpath[i,:],label=label1)
     plt.title("Time Path for Aggregate Consumption")
     plt.ylabel("Consumption Level")
     plt.xlabel("Time Period")
@@ -761,7 +740,7 @@ if Graphs==True and CalcTPI==True:
         label1='Country '+str(i)
         if CountryNamesON==True:
             label1=CountryLabel(label1)
-        plt.plot(np.arange(0,T),kpath0[i,:T],label=label1)
+        plt.plot(np.arange(0,T),kpath[i,:T],label=label1)
     plt.title("Time path for Capital Path")
     plt.ylabel("Capital Stock level")
     plt.xlabel("Time Period")
@@ -772,9 +751,38 @@ if Graphs==True and CalcTPI==True:
         label1='Country '+str(i)
         if CountryNamesON==True:
             label1=CountryLabel(label1)
-        plt.plot(np.arange(0,T),ypath0[i,:T],label=label1)
+        plt.plot(np.arange(0,T),ypath[i,:T],label=label1)
     plt.title("Time path for Output")
     plt.ylabel("Output Stock level")
     plt.xlabel("Time Period")
     plt.legend(loc="upper right")
     plt.show()
+	
+#MAIN CODE
+
+#Initalizes initial guesses
+assets_guess = np.ones((Countries, S-1))*.15
+kf_guess = np.zeros((Countries))
+
+#Gets the steady state variables
+assets_ss, kf_ss = getSteadyState(assets_guess, kf_guess)
+k_ss, n_ss, y_ss, r_ss, w_ss, c_vec_ss = getOtherVariables(np.column_stack((np.zeros(Countries), assets_ss, np.zeros(Countries))), kf_ss)
+
+if PrintSS==True: #Prints the results of the steady state, line 23 activates this
+	print "assets steady state", assets_ss
+	print "kf steady state", kf_ss
+	print "k steady state", k_ss
+	print "n steady state",n_ss
+	print "y steady state", y_ss
+	print "r steady state",r_ss
+	print "w steady state", w_ss
+	print "c_vec_ss steady state",c_vec_ss
+
+if CalcTPI==True: #Time Path Iteration, activated by line 24
+
+	assets_init, kf_init, w_initguess, r_initguess, k_init, n_init, y_init, c_init = get_initialguesses(assets_ss, kf_ss)
+
+	wpath, rpath, cpath, kpath, ypath = get_Timepath(distance, diff, MaxIters, w_initguess, r_initguess, assets_init)
+
+	if Graphs==True:
+		plotTimepaths(wpath, rpath, cpath, kpath, ypath)
