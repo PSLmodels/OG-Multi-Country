@@ -3,7 +3,7 @@ import StepbyStepv1 as Stepfuncs
 
 #Parameters Zone
 I = 2 #Number of countries
-S = 10 #Upper bound of age for agents
+S = 30 #Upper bound of age for agents
 T = int(round(2.5*S)) #Number of time periods to convergence, based on Rick Evans' function.
 
 T_1 = S #This is like TransYear in the FORTRAN I think
