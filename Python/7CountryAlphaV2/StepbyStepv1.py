@@ -431,6 +431,7 @@ def get_prices(params, Kpath, kf_tpath, w_ss, r_ss):
 	-ypath[I, S+T+1]: Output path
 
 	"""
+        Feasible=True
 	S, T, alpha, e, A = params
 
 	Kdpath=Kpath-kf_tpath
