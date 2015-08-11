@@ -234,6 +234,7 @@ def getOtherVariables(params, assets, kf):
 		-w[I,]: Wage (1.14)
 		-c_vec[I,S]: Vector of consumptions (1.15)
 	"""
+        Feasible=True
 
 	I, delta, alpha, e, A = params
 
@@ -246,8 +247,47 @@ def getOtherVariables(params, assets, kf):
 	r = alpha * y / k
 	w = (1-alpha) * y / n
 
+        if np.any(k<0):
+            Feasible=False
+            print "WARNING! INFEASABLE VALUE ENCOUNTERED IN k!"
+            print "The following coordinates have infeasible values:"
+            print np.argwhere(k<0)
+
+        if np.any(n<0):
+            Feasible=False
+            print "WARNING! INFEASABLE VALUE ENCOUNTERED IN n!"
+            print "The following coordinates have infeasible values:"
+            print np.argwhere(n<0)
+
+        if np.any(y<0):
+            Feasible=False
+            print "WARNING! INFEASABLE VALUE ENCOUNTERED IN y!"
+            print "The following coordinates have infeasible values:"
+            print np.argwhere(y<0)
+
+        if np.any(r<0):
+            Feasible=False
+            print "WARNING! INFEASABLE VALUE ENCOUNTERED IN r!"
+            print "The following coordinates have infeasible values:"
+            print np.argwhere(r<0)
+
+        if np.any(w<0):
+            Feasible=False
+            print "WARNING! INFEASABLE VALUE ENCOUNTERED IN w!"
+            print "The following coordinates have infeasible values:"
+            print np.argwhere(w<0)
+
+
+
 	c_vec = np.einsum("i, is -> is", w, e[:,:,0]) + np.einsum("i, is -> is",(1 + r - delta) \
 	, assets[:,:-1]) - assets[:,1:]
+
+        if np.any(c_vec<0):
+            Feasible=False
+            print "WARNING! INFEASABLE VALUE ENCOUNTERED IN c_vec!"
+            print "The following coordinates have infeasible values:"
+            print np.argwhere(c_vec<0)
+
 
 	return k, n, y, r, w, c_vec
 
@@ -291,6 +331,9 @@ def SteadyStateSolution(guess, I, S, beta, sigma, delta, alpha, e, A):
 	Euler_c = c_vec[:,:-1] ** (-sigma) - beta * c_vec[:,1:] ** (-sigma) * (1 + r[0] - delta)
 	Euler_r = r[1:] - r[0]
 	Euler_kf = np.sum(kf)
+
+        if np.any(Euler_c<0): #Punishes the the poor choice of negative values in the fsolve
+            Euler_c=np.ones(I)*9999.
 
 	#Makes a new 1D vector of length I*S that contains all the Euler equations
 	all_Euler = np.append(np.append(np.ravel(Euler_c), np.ravel(Euler_r)), Euler_kf)
@@ -405,6 +448,24 @@ def get_prices(params, Kpath, kf_tpath, w_ss, r_ss):
 	#Tiles the steady-state for each year beyond the steady state
 	rpath[:,T:] = np.einsum("i,s->is", r_ss, np.ones(S+1))
 	wpath[:,T:] = np.einsum("i,s->is", w_ss, np.ones(S+1))
+        if np.any(rpath<0):
+            Feasible=False
+            print "WARNING! INFEASABLE VALUE ENCOUNTERED IN rpath!"
+            print "The following coordinates have infeasible values:"
+            print np.argwhere(rpath<0)
+
+        if np.any(wpath<0):
+            Feasible=False
+            print "WARNING! INFEASABLE VALUE ENCOUNTERED IN wpath!"
+            print "The following coordinates have infeasible values:"
+            print np.argwhere(wpath<0)
+
+        if np.any(ypath<0):
+            Feasible=False
+            print "WARNING! INFEASABLE VALUE ENCOUNTERED IN ypath!"
+            print "The following coordinates have infeasible values:"
+            print np.argwhere(ypath<0)
+
 
 	#Returns only the first country's interest rate, since they should be the same in theory
 	return wpath, rpath, ypath
@@ -514,6 +575,9 @@ def find_optimal_starting_consumptions(c_1, wpath_chunk, rpath_chunk, epath_chun
 	"""
 	#Executes the get_household_choices_path function. Sees above.
 	c_path, assets_path = get_lifetime_decisions(params, c_1, wpath_chunk, rpath_chunk, epath_chunk, starting_assets, current_s)
+
+        if np.any(c_path<0):
+            c_path=np.ones(I)*999.
 
 	Euler = np.ravel(assets_path[:,-1])
 
