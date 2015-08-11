@@ -35,6 +35,7 @@ MaxIters=300 #Maximum number of iterations on TPI.
 PrintAges = True #Prints the different key ages in the demographics
 PrintSS=False #Prints the result of the Steady State functions
 CalcTPI=True #Activates the calculation of Time Path Iteration
+PrintTPIProg = True
 #NOTE: Graphing only works if CalcTPI is activated.
 Graphs=True #Activates graphing the graphs.
 CountryNamesON=True #Turns on labels for the graphs. Replaces "Country x" with proper names.
@@ -257,9 +258,11 @@ def getOtherVariables(assets, kf):
 	"""
 	Description:
 		-Based on the assets and capital held by foreigners, we calculate the other variables.
+
 	Inputs:
 		-assets [Countries,S+1]: Matrix of assets
 		-kf[Countries, ]: Domestic capital held by foreigners
+
 	Objects in function:
 		-NONE that aren't already listed
 
@@ -271,7 +274,10 @@ def getOtherVariables(assets, kf):
 		-w[Countries,]: Wage (1.14)
 		-c_vec[Countries,S]: Vector of consumptions (1.15)
 	"""
-	
+
+	#You have 0 assets when you're born, and 0 when you die
+	assets = np.column_stack((np.zeros(Countries), assets, np.zeros(Countries)))
+
 	k = np.sum(assets[:,1:-1], axis=1) - kf
 	n = np.sum(e[:,:,0], axis=1)
 	y = (k**alpha) * ((A*n)**(1-alpha))
@@ -287,8 +293,10 @@ def SteadyStateSolution(guess):
 	"""
 	Description: 
 		-This is the function that will be optimized by fsolve.
+
 	Inputs:
 		-guess[Countries,S+1]: vector that pieced together from assets and kf.
+
 	Objects in Function:
 		-kf[Countries,]:Foreign capital held by foreigners in each country
 		-assets[Countries,S]: Asset path for each country
@@ -301,6 +309,7 @@ def SteadyStateSolution(guess):
 		-Euler_c[Countries, S-1]: Corresponds to (1.16)
 		-Euler_r[Countries,]: Corresponds to (1.17)
 		-Euler_kf(Scalar): Corresponds to (1.18)
+
 	Output:
 	-all_Euler[Countries*S,]: Similar to guess, it's a vector that's has both assets and kf.
 	
@@ -311,9 +320,6 @@ def SteadyStateSolution(guess):
 	#Sets kf as the last element of the guess vector for each country and assets as everything else
 	assets = guess[:,:-1]
 	kf = guess[:,-1]
-
-	#You have 0 assets when you're born, and 0 when you die
-	assets = np.column_stack((np.zeros(Countries), assets, np.zeros(Countries)))
 
 	#Based on the assets and kf, we get the other vectors
 	k, n, y, r, w, c_vec = getOtherVariables(assets, kf)
@@ -344,30 +350,38 @@ def getSteadyState(assets_init, kf_init):
 	Outputs:
 	    -assets_ss[Countries,S-1]:Calculated assets steady state
 	    -kf_ss[Countries,]:Calculated foreign capital
+	    -k_ss[Countries]: ASK JEFF
+	    -n_ss[Countries]: steady-state labor something
+	    -y_ss[Countries]: steady-state labor something
+	    -y_ss[Countries]: steady-state labor something
+	    -y_ss[Countries]: steady-state labor something
+	    -y_ss[Countries, S]: steady-state consumption vector
 	"""
-        #print "assets_init", assets_init.shape
-        #print "kf_init", kf_init.shape
 
-        #Merges the assets and kf together into one matrix that can be inputted into the fsolve function
+    #Merges the assets and kf together into one matrix that can be inputted into the fsolve function
 	guess = np.column_stack((assets_init, kf_init))
 
-        #Solves for the steady state
+    #Solves for the steady state
 	ss = opt.fsolve(SteadyStateSolution, guess)
 
-	#print "guess", guess.shape
-        #print "ss", ss.shape
-        print "\nSteady State Found!\n"
+	print "\nSteady State Found!\n"
+
+	#Reshapes the ss code
 	ss = np.array(np.split(ss, Countries))
-        #Breaks down the steady state into the two separate assets and kf matrices.
+
+    #Breaks down the steady state matrix into the two separate assets and kf matrices.
 	assets_ss = ss[:,:-1]
 	kf_ss = ss[:,-1]
 
-        return assets_ss, kf_ss
+	#Gets the other steady-state values using assets and kf
+	k_ss, n_ss, y_ss, r_ss, w_ss, c_vec_ss = getOtherVariables(assets_ss, kf_ss)
+
+	return assets_ss, kf_ss, k_ss, n_ss, y_ss, r_ss, w_ss, c_vec_ss
 
 #TIMEPATH FUNCTIONS
 
 def get_initialguesses(assets_ss, kf_ss):
-	
+
 	#Sets initial assets and kf, start with something close to the steady state
 	assets_init = assets_ss*.95
 	kf_init = kf_ss*.95
@@ -375,14 +389,14 @@ def get_initialguesses(assets_ss, kf_ss):
 	r_initguess = np.ones((Countries, T+S+1))*.5
 
 	#Gets initial k, n, y, r, w, and c
-	k_init, n_init, y_init, r_init, w_init, c_init = getOtherVariables(np.column_stack((np.zeros(Countries), assets_init, np.zeros(Countries))), kf_init)
+	k_init, n_init, y_init, r_init, w_init, c_init = getOtherVariables(assets_init, kf_init)
 
 	#Gets initial guess for w and r paths. This is set up to be linear.
-	for c in range(Countries):
-		w_initguess[c, :T+1] = np.linspace(w_init[c], w_ss[c], T+1)
-		r_initguess[c, :T+1] = np.linspace(r_init[c], r_ss[c], T+1)
-		w_initguess[c,T+1:] = w_initguess[c,T]
-		r_initguess[c,T+1:] = r_initguess[c,T]
+	for i in range(Countries):
+		w_initguess[i, :T+1] = np.linspace(w_init[i], w_ss[i], T+1)
+		r_initguess[i, :T+1] = np.linspace(r_init[i], r_ss[i], T+1)
+		w_initguess[i,T+1:] = w_initguess[i,T]
+		r_initguess[i,T+1:] = r_initguess[i,T]
 
 	return assets_init, kf_init, w_initguess, r_initguess, k_init, n_init, y_init, c_init
 
@@ -565,8 +579,9 @@ def get_wpath1_rpath1(w_path0, r_path0, starting_assets):
 	"""
 
 	#Initializes timepath variables
+	print starting_assets.shape, S, T
 	c_timepath = np.zeros((Countries,S,S+T+1))
-	assets_timepath = np.zeros((Countries,S+1, S+T+1)) #Countries,S+1,S+T+1
+	assets_timepath = np.zeros((Countries, S+1, S+T+1)) #Countries,S+1,S+T+1
 	assets_timepath[:,:,0]=starting_assets
 	bequests_timepath = np.zeros((Countries, S+1, S+T+1)) #Is this too big?
 
@@ -581,6 +596,7 @@ def get_wpath1_rpath1(w_path0, r_path0, starting_assets):
 		#We are iterating through each generation in time t=0
 		current_s = s
 
+		#Uses the previous generation's consumption at age s to get the value for our guess
 		c_guess = c_timepath[:,s+1,t]/((beta*(1+r_path0[:,t]-delta))**(1/sigma))
 
 		#Gets optimal initial consumption beginning in the current age of the agent using chunks of w and r that span the lifetime of the given generation
@@ -608,6 +624,7 @@ def get_wpath1_rpath1(w_path0, r_path0, starting_assets):
 		current_s = 0 #This is always zero because this section deals with people who haven't been born yet in time T=0
 		agent_assets = np.zeros((Countries))
 
+		#Uses the previous generation's consumption at age s to get the value for our guess
 		c_guess = c_timepath[:,s+1,t]/((beta*(1+r_path0[:,t+1]-delta))**(1/sigma))
 
 		optimalconsumption = opt.fsolve(find_optimal_starting_consumptions, c_guess, args = \
@@ -679,28 +696,31 @@ def CountryLabel(Country): #Activated by line 28
 def get_Timepath(distance, diff, MaxIters, wstart, rstart, assets_init):
 
     Iter=1 #Serves as the iteration counter
+
     while distance>diff and Iter<MaxIters: #The timepath iteration runs until the distance gets below a threshold or the iterations hit the maximum
 
-            wpath0, rpath0, cpath0, kpath0, ypath0 = get_wpath1_rpath1(wstart,rstart, np.column_stack((np.zeros(Countries), assets_init, np.zeros(Countries))))
+            wpath_new, rpath_new, cpath_new, kpath_new, ypath_new = get_wpath1_rpath1(wstart,rstart, np.column_stack((np.zeros(Countries), assets_init, np.zeros(Countries))))
 
-            dist1=sp.linalg.norm(wstart-wpath0,2) #Norm of the wage path
-            dist2=sp.linalg.norm(rstart-rpath0,2) #Norm of the intrest rate path
-            distlist=[dist1,dist2] #Lists the two norms taken
-            distance=max(distlist) #We take the maximum of the two norms to get the distance
+            dist1=sp.linalg.norm(wstart-wpath_new,2) #Norm of the wage path
+            dist2=sp.linalg.norm(rstart-rpath_new,2) #Norm of the intrest rate path
+            distance=max([dist1,dist2]) #We take the maximum of the two norms to get the distance
 
-            wstart=wstart*xi+(1-xi)*wpath0 #Convex conjugate of the wage path
-            rstart=rstart*xi+(1-xi)*rpath0 #Convex conjugate of the intrest rate path
-
-            print "Iteration:",Iter,", Norm Distance: ", distance#, "Euler Error, ", EError
+            if PrintTPIProg: print "Iteration:",Iter,", Norm Distance: ", distance#, "Euler Error, ", EError
             Iter+=1 #Updates the iteration counter
             if distance<diff or Iter==MaxIters: #When the distance gets below the tolerance or the maximum of iterations is hit, then the TPI finishes.
-                wend=wstart
-                rend=rstart
+                wend=wpath_new
+                rend=rpath_new
+                cend=cpath_new
+                kend=kpath_new
+                yend=ypath_new
             if Iter==MaxIters: #In case it never gets below the tolerance, it will throw this warning and give the last timepath.
                 print "Doesn't converge within the maximum number of iterations"
                 print "Providing the last iteration"
 
-    return wend, rend, cpath0, kpath0, ypath0
+            wstart=wstart*xi+(1-xi)*wpath_new #Convex conjugate of the wage path
+            rstart=rstart*xi+(1-xi)*rpath_new #Convex conjugate of the intrest rate path
+
+    return wend, rend, cend, kend, yend
 
 def plotTimepaths(wpath, rpath, cpath, kpath, ypath):
     for i in xrange(Countries): #Wages
@@ -765,8 +785,7 @@ assets_guess = np.ones((Countries, S-1))*.15
 kf_guess = np.zeros((Countries))
 
 #Gets the steady state variables
-assets_ss, kf_ss = getSteadyState(assets_guess, kf_guess)
-k_ss, n_ss, y_ss, r_ss, w_ss, c_vec_ss = getOtherVariables(np.column_stack((np.zeros(Countries), assets_ss, np.zeros(Countries))), kf_ss)
+assets_ss, kf_ss, k_ss, n_ss, y_ss, r_ss, w_ss, c_vec_ss = getSteadyState(assets_guess, kf_guess)
 
 if PrintSS==True: #Prints the results of the steady state, line 23 activates this
 	print "assets steady state", assets_ss
