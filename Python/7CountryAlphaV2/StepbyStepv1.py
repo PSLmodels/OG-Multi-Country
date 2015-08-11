@@ -400,7 +400,7 @@ def get_initialguesses(assets_ss, kf_ss):
 
 	return assets_init, kf_init, w_initguess, r_initguess, k_init, n_init, y_init, c_init
 
-def get_householdchoices_path(c_1, wpath_chunk, rpath_chunk, e_chunk, starting_assets, current_s):
+def get_lifetime_decisions(c_1, wpath_chunk, rpath_chunk, e_chunk, starting_assets, current_s):
 	"""
 	Description:
 		This solves for equations 1.15 and 1.16 in the StepbyStep pdf for a certain generation
@@ -463,7 +463,7 @@ def find_optimal_starting_consumptions(c_1, wpath_chunk, rpath_chunk, epath_chun
 	"""
 
 	#Executes the get_household_choices_path function. Sees above.
-	c_path, assets_path = get_householdchoices_path(c_1, wpath_chunk, rpath_chunk, epath_chunk, starting_assets, current_s)
+	c_path, assets_path = get_lifetime_decisions(c_1, wpath_chunk, rpath_chunk, epath_chunk, starting_assets, current_s)
 
 	Euler = np.ravel(assets_path[:,-1])
 
@@ -547,7 +547,72 @@ def get_foreignK_path(Kpath,rpath):
         
         return kfPath
 
-def get_wpath1_rpath1(w_path0, r_path0, starting_assets):
+def get_cons_assets_matrix(wpath, rpath, starting_assets):
+
+	#Initializes timepath variables
+	c_timepath = np.zeros((Countries,S,S+T+1))
+	a_timepath = np.zeros((Countries, S+1, S+T+1)) #Countries,S+1,S+T+1
+	a_timepath[:,:,0]=starting_assets
+	bequests_timepath = np.zeros((Countries, S+1, S+T+1)) #Is this too big?
+
+	c_timepath[:,S-1,0] = wpath[:,0]*e[:,S-1,0] + (1 + rpath[:,0] - delta)*a_timepath[:,S-1,0]
+
+	#Fills the upper triangle
+	for s in range(S-2,-1, -1):
+		agent_assets = starting_assets[:,s]
+
+		#We are only doing this for all generations alive in time t=0
+		t = 0
+		#We are iterating through each generation in time t=0
+		current_s = s
+
+		#Uses the previous generation's consumption at age s to get the value for our guess
+		c_guess = c_timepath[:,s+1,t]/((beta*(1+rpath[:,t]-delta))**(1/sigma))
+
+		#Gets optimal initial consumption beginning in the current age of the agent using chunks of w and r that span the lifetime of the given generation
+		opt_consump = opt.fsolve(find_optimal_starting_consumptions, c_guess, args = \
+			(wpath[:,t:t+S], rpath[:,t:t+S], e[:,0,t:t+S],agent_assets, current_s))
+	
+		#Gets optimal timepaths beginning initial consumption and starting assets
+		cpath_indiv, apath_indiv = get_lifetime_decisions\
+			(opt_consump, wpath[:,t:t+S], rpath[:,t:t+S], e[:,0,t:t+S], agent_assets, current_s)
+
+		for i in xrange(Countries):
+			np.fill_diagonal(c_timepath[i,s:,:], cpath_indiv[i,:])
+			np.fill_diagonal(a_timepath[i,s:,:], apath_indiv[i,:])
+
+		bequests_timepath[:,:,S-s-2] = getBequests(a_timepath[:,:,S-s-2], s)
+
+		#print np.round(cpath_indiv[0,:], decimals=3), opt_consump[0]
+		#print np.round(np.transpose(c_timepath[0,:,:T_1-s+3]), decimals=3)
+		#print np.round(starting_assets[0,:], decimals=3)
+		#print np.round(assetpath_indiv[0,:], decimals=3), agent_assets[0]
+		#print np.round(np.transpose(a_timepath[0,:,:T_1]), decimals=3)
+
+	#Fills everything except for the upper triangle
+	for t in xrange(1,T):
+		current_s = 0 #This is always zero because this section deals with people who haven't been born yet in time T=0
+		agent_assets = np.zeros((Countries))
+
+		#Uses the previous generation's consumption at age s to get the value for our guess
+		c_guess = c_timepath[:,s+1,t]/((beta*(1+rpath[:,t+1]-delta))**(1/sigma))
+
+		optimalconsumption = opt.fsolve(find_optimal_starting_consumptions, c_guess, args = \
+			(wpath[:,t:t+S], rpath[:,t:t+S], e[:,0,t:t+S], agent_assets, current_s))
+
+		cpath_indiv, assetpath_indiv = get_lifetime_decisions\
+			(optimalconsumption, wpath[:,t:t+S], rpath[:,t:t+S], e[:,0,t:t+S], agent_assets, current_s)
+
+		for i in range(Countries):
+			np.fill_diagonal(c_timepath[i,:,t:], cpath_indiv[i,:])
+			np.fill_diagonal(a_timepath[i,:,t:], assetpath_indiv[i,:])
+
+		bequests_timepath[:,:,t+S-2] = getBequests(a_timepath[:,:,t+S-2], t+S-2)
+
+	return c_timepath, a_timepath
+
+
+def get_wpath1_rpath1(wpath, rpath, starting_assets):
 	"""
 	Description:
 		Takes initial paths of wages and rental rates, gives the consumption path and the the wage and rental paths that are implied by that consumption path.
@@ -565,7 +630,7 @@ def get_wpath1_rpath1(w_path0, r_path0, starting_assets):
 		-assetpath_indiv: The small chunk of assetpath_indiv
 		-optimalconsumption: Solved from the chunks
 		-c_timepath: Overall consumption path
-		-assets_timepath: Overall assets timepath
+		-a_timepath: Overall assets timepath
 		-kfpath: Foreign held domestic capital
 		-agent assets: Assets held by individuals.
 
@@ -578,70 +643,10 @@ def get_wpath1_rpath1(w_path0, r_path0, starting_assets):
 
 	"""
 
-	#Initializes timepath variables
-	print starting_assets.shape, S, T
-	c_timepath = np.zeros((Countries,S,S+T+1))
-	assets_timepath = np.zeros((Countries, S+1, S+T+1)) #Countries,S+1,S+T+1
-	assets_timepath[:,:,0]=starting_assets
-	bequests_timepath = np.zeros((Countries, S+1, S+T+1)) #Is this too big?
-
-	c_timepath[:,S-1,0] = w_path0[:,0]*e[:,S-1,0] + (1 + r_path0[:,0] - delta)*assets_timepath[:,S-1,0]
-
-	#Fills the upper triangle
-	for s in range(S-2,-1, -1):
-		agent_assets = starting_assets[:,s]
-
-		#We are only doing this for all generations alive in time t=0
-		t = 0
-		#We are iterating through each generation in time t=0
-		current_s = s
-
-		#Uses the previous generation's consumption at age s to get the value for our guess
-		c_guess = c_timepath[:,s+1,t]/((beta*(1+r_path0[:,t]-delta))**(1/sigma))
-
-		#Gets optimal initial consumption beginning in the current age of the agent using chunks of w and r that span the lifetime of the given generation
-		opt_consump = opt.fsolve(find_optimal_starting_consumptions, c_guess, args = \
-			(w_path0[:,t:t+S], r_path0[:,t:t+S], e[:,0,t:t+S],agent_assets, current_s))
-	
-		#Gets optimal timepaths beginning initial consumption and starting assets
-		cpath_indiv, assetpath_indiv = get_householdchoices_path\
-			(opt_consump, w_path0[:,t:t+S], r_path0[:,t:t+S], e[:,0,t:t+S], agent_assets, current_s)
-
-		for i in xrange(Countries):
-			np.fill_diagonal(c_timepath[i,s:,:], cpath_indiv[i,:])
-			np.fill_diagonal(assets_timepath[i,s:,:], assetpath_indiv[i,:])
-
-		bequests_timepath[:,:,S-s-2] = getBequests(assets_timepath[:,:,S-s-2], s)
-
-		#print np.round(cpath_indiv[0,:], decimals=3), opt_consump[0]
-		#print np.round(np.transpose(c_timepath[0,:,:T_1-s+3]), decimals=3)
-		#print np.round(starting_assets[0,:], decimals=3)
-		#print np.round(assetpath_indiv[0,:], decimals=3), agent_assets[0]
-		#print np.round(np.transpose(assets_timepath[0,:,:T_1]), decimals=3)
-
-	#Fills everything except for the upper triangle
-	for t in xrange(1,T):
-		current_s = 0 #This is always zero because this section deals with people who haven't been born yet in time T=0
-		agent_assets = np.zeros((Countries))
-
-		#Uses the previous generation's consumption at age s to get the value for our guess
-		c_guess = c_timepath[:,s+1,t]/((beta*(1+r_path0[:,t+1]-delta))**(1/sigma))
-
-		optimalconsumption = opt.fsolve(find_optimal_starting_consumptions, c_guess, args = \
-			(w_path0[:,t:t+S], r_path0[:,t:t+S], e[:,0,t:t+S], agent_assets, current_s))
-
-		cpath_indiv, assetpath_indiv = get_householdchoices_path\
-			(optimalconsumption, w_path0[:,t:t+S], r_path0[:,t:t+S], e[:,0,t:t+S], agent_assets, current_s)
-
-
-		for i in range(Countries):
-			np.fill_diagonal(c_timepath[i,:,t:], cpath_indiv[i,:])
-			np.fill_diagonal(assets_timepath[i,:,t:], assetpath_indiv[i,:])
-
-		bequests_timepath[:,:,t+S-2] = getBequests(assets_timepath[:,:,t+S-2], t+S-2)
+	c_timepath, a_timepath = get_cons_assets_matrix(wpath, rpath, starting_assets)
 
 	#Calculates the total amount of capital in each country
-	Kpath=np.sum(assets_timepath,axis=1)
+	Kpath=np.sum(a_timepath,axis=1)
 
 	#Calculates Aggregate Consumption
 	Cpath=np.sum(c_timepath,axis=1)
@@ -651,12 +656,12 @@ def get_wpath1_rpath1(w_path0, r_path0, starting_assets):
 	Cpath[:,T:] = np.einsum("i,t->it", Cpath[:,T-1], np.ones(S+1))
 
 	#Gets the foriegned owned capital
-	kfpath=get_foreignK_path(Kpath, r_path0)
+	kfpath=get_foreignK_path(Kpath, rpath)
 
 	#Based on the overall capital path and the foreign owned capital path, we get new w and r paths.
-	w_path1, r_path1, ypath1 = get_prices(Kpath,kfpath)
+	wpath_new, rpath_new, Ypath = get_prices(Kpath,kfpath)
 
-	return w_path1, r_path1, Cpath, Kpath, ypath1
+	return wpath_new, rpath_new, Cpath, Kpath, Ypath
 
 def CountryLabel(Country): #Activated by line 28
     '''
@@ -723,6 +728,7 @@ def get_Timepath(distance, diff, MaxIters, wstart, rstart, assets_init):
     return wend, rend, cend, kend, yend
 
 def plotTimepaths(wpath, rpath, cpath, kpath, ypath):
+
     for i in xrange(Countries): #Wages
         label1='Country '+str(i)
         if CountryNamesON==True:
