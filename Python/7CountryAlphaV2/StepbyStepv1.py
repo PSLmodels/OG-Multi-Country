@@ -327,13 +327,18 @@ def SteadyStateSolution(guess, I, S, beta, sigma, delta, alpha, e, A):
 	params = I, delta, alpha, e, A
 	k, n, y, r, w, c_vec = getOtherVariables(params, assets, kf)
 
-	#Gets Euler equations
-	Euler_c = c_vec[:,:-1] ** (-sigma) - beta * c_vec[:,1:] ** (-sigma) * (1 + r[0] - delta)
-	Euler_r = r[1:] - r[0]
-	Euler_kf = np.sum(kf)
+        if np.any(c_vec<0):
+            Euler_c=np.ones((I,S-1))*9999.
+            Euler_r=r[1:]-r[0]
+            Euler_kf=np.sum(kf)
 
-        if np.any(Euler_c<0): #Punishes the the poor choice of negative values in the fsolve
-            Euler_c=np.ones(I)*9999.
+        else:
+	    Euler_c = c_vec[:,:-1] ** (-sigma) - beta * c_vec[:,1:] ** (-sigma) * (1 + r[0] - delta)
+	    Euler_r = r[1:] - r[0]
+	    Euler_kf = np.sum(kf)
+
+        #if np.any(Euler_c<0): #Punishes the the poor choice of negative values in the fsolve
+            #Euler_c=np.ones((I,S-1))*9999.
 
 	#Makes a new 1D vector of length I*S that contains all the Euler equations
 	all_Euler = np.append(np.append(np.ravel(Euler_c), np.ravel(Euler_r)), Euler_kf)
@@ -355,13 +360,13 @@ def getSteadyState(params, assets_init, kf_init):
 
 	Outputs:
 	    -assets_ss[I,S-1]:Calculated assets steady state
-	    -kf_ss[I,]:Calculated foreign capital
-	    -k_ss[I]: ASK JEFF
-	    -n_ss[I]: steady-state labor something
-	    -y_ss[I]: steady-state labor something
-	    -y_ss[I]: steady-state labor something
-	    -y_ss[I]: steady-state labor something
-	    -y_ss[I, S]: steady-state consumption vector
+	    -kf_ss[I,]:Calculated domestic capital owned by foreigners steady state
+	    -k_ss[I]: Calculated total capital stock steady state
+	    -n_ss[I]: Summed labor productivities steady state
+	    -y_ss[I]: Calculated output steady state
+	    -r_ss[I]: calculated steady state rental rate
+	    -w_ss[I]: calculated steady state wage rate
+	    -c_vec_ss[I, S]: Calculated steady state counsumption
 	"""
 	I, S, beta, sigma, delta, alpha, e, A = params
 
@@ -390,6 +395,34 @@ def getSteadyState(params, assets_init, kf_init):
 #TIMEPATH FUNCTIONS
 
 def get_initialguesses(params, assets_ss, kf_ss, w_ss, r_ss):
+        """
+        Description:
+        With the parameters and steady state values, this function creates
+        initial guesses in a linear path.
+
+        Inputs:
+        -Params (Tuple): Tuple of parameters from Main.py
+        -Assets_ss[I,S,T+S+1]: Steady state assets value
+        -kf_ss[I,]: Steady State value of foreign owned domestic capital
+        -w_ss[I,]: Steady state value of wages
+        -r_ss[I,]: Steady state value of rental rate
+
+        Objects in Function:
+        -othervariable_params (Tuple): A tuple specifically made for GetOtherVariables
+
+
+        Outputs:
+        -assets_init[I,]: Initial Asset path
+        -kf_init[I,]: New initial foreign held capital
+        -w_initguess[I,T+S+1]: Initial guess wage timepath
+        -r_initguess[I,T+S+1]: Initial guess rental rate timepath
+        -k_init[I,]: total capital stock initial guess
+        -n_init[I,]: total labor initial guess
+        -y_init[I,]: output labor initial guess
+        -c_init[I,]: consumption initial guess
+
+
+        """
 
 	I, S, T, delta, alpha, e, A = params
 
