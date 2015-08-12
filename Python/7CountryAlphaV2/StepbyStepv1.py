@@ -427,21 +427,24 @@ def get_initialguesses(params, assets_ss, kf_ss, w_ss, r_ss):
 	I, S, T, delta, alpha, e, A = params
 
 	#Sets initial assets and kf, start with something close to the steady state
-	assets_init = assets_ss*.95
-	kf_init = kf_ss*.95
+	assets_init = assets_ss*.9
+	kf_init = kf_ss*0
 	w_initguess = np.zeros((I, T+S+1))
-	r_initguess = np.ones((I, T+S+1))*.5
+	r_initguess = np.ones((T+S+1))*.5
 
 	#Gets initial k, n, y, r, w, and c
 	othervariable_params = 	I, delta, alpha, e, A
 	k_init, n_init, y_init, r_init, w_init, c_init = getOtherVariables(othervariable_params, assets_init, kf_init)
 
+        print r_ss.shape
+        print r_init.shape
+
 	#Gets initial guess for w and r paths. This is set up to be linear.
 	for i in range(I):
 		w_initguess[i, :T+1] = np.linspace(w_init[i], w_ss[i], T+1)
-		r_initguess[i, :T+1] = np.linspace(r_init[i], r_ss[i], T+1)
+		r_initguess[:T+1] = np.linspace(r_init[0], r_ss[0], T+1)
 		w_initguess[i,T+1:] = w_initguess[i,T]
-		r_initguess[i,T+1:] = r_initguess[i,T]
+		r_initguess[T+1:] = r_initguess[T]
 
 	return assets_init, kf_init, w_initguess, r_initguess, k_init, n_init, y_init, c_init
 
@@ -473,15 +476,15 @@ def get_prices(params, Kpath, kf_tpath, w_ss, r_ss):
 	n = np.sum(e, axis=1) #Sum of the labor productivities
 
 	#Gets the path for output, y
-	ypath = (Kpath**alpha) * (np.einsum("i,is->is", A, n)**(1-alpha))
+	ypath = (Kdpath**alpha) * (np.einsum("i,is->is", A, n)**(1-alpha))
 
 	#Gets prices
-	rpath = alpha * ypath / Kpath
+        rpath = alpha * ypath[0,:] / Kdpath[0,:]
 	wpath = (1-alpha) * ypath / n
 
 	#Tiles the steady-state for each year beyond the steady state
-	rpath[:,T:] = np.einsum("i,s->is", r_ss, np.ones(S+1))
-	wpath[:,T:] = np.einsum("i,s->is", w_ss, np.ones(S+1))
+	rpath[T:] = r_ss[0]	
+        wpath[:,T:] = np.einsum("i,s->is", w_ss, np.ones(S+1))
         if np.any(rpath<0):
             Feasible=False
             print "WARNING! INFEASABLE VALUE ENCOUNTERED IN rpath!"
@@ -531,16 +534,20 @@ def get_foreignK_path(params, Kpath, rpath, k_ss, kf_ss):
         kDPath=np.zeros((I,S+T+1))
 
         #Gets the domestic-owned capital stock for each country except for the first country
-        kDPath[1:,:]=(rpath[1:,:]/alpha)**(1/(alpha-1))*np.einsum("i,is->is", A[1:], n[1:,:])
+        kDPath[1:,:]=(rpath[:]/alpha)**(1/(alpha-1))*np.einsum("i,is->is", A[1:], n[1:,:])
 
         #This is using equation 1.13 solved for the foreign capital stock to caluclate the foreign capital stock
-        kfPath=Kpath-kDPath
+        #For everyone except the first country
+        kfPath[1:,:]=Kpath[1:,:]-kDPath[1:,:]
 
         #To satisfy 1.18, the first country's assets is the negative of the sum of all the other countries' assets
-        kfPath[0,:]=-np.sum(kfPath,axis=0)
+        kfPath[0,:]=-np.sum(kfPath[1:,:],axis=0)
 
 		#Making every year beyond t equal to the steady-state
         kfPath[:,T:] = np.einsum("i,s->is", kf_ss, np.ones(S+1))
+
+        print "This is the kfPath",kfPath
+        print "This is Kpath", Kpath
         
         return kfPath
 
@@ -576,10 +583,10 @@ def get_lifetime_decisions(params, c_1, wpath_chunk, rpath_chunk, e_chunk, start
 
 	#Based on the individual chunks, these are the households choices
 	for s in range(1,S):
-		c_path[:,s] = (beta * (1 + rpath_chunk[:,s] - delta))**(1/sigma) * c_path[:,s-1]
-		asset_path[:,s] = wpath_chunk[:,s]*e_chunk[:,s-1] + (1 + rpath_chunk[:,s-1] - delta)*asset_path[:,s-1] - c_path[:,s-1]
+		c_path[:,s] = (beta * (1 + rpath_chunk[s] - delta))**(1/sigma) * c_path[:,s-1]
+		asset_path[:,s] = wpath_chunk[:,s]*e_chunk[:,s-1] + (1 + rpath_chunk[s-1] - delta)*asset_path[:,s-1] - c_path[:,s-1]
 	
-	asset_path[:,s+1] = wpath_chunk[:,s]*e_chunk[:,s] + (1 + rpath_chunk[:,s] - delta)*asset_path[:,s] - c_path[:,s]
+	asset_path[:,s+1] = wpath_chunk[:,s]*e_chunk[:,s] + (1 + rpath_chunk[s] - delta)*asset_path[:,s] - c_path[:,s]
 
 	#Returns the relevant part of c_path and asset_path for all countries 
 	return c_path[:,0:S-current_s], asset_path[:,0:S+1-current_s]
@@ -627,7 +634,7 @@ def get_cons_assets_matrix(params, wpath, rpath, starting_assets):
 	a_timepath[:,:,0]=starting_assets
 	bq_timepath = np.zeros((I, S+1, S+T+1)) #Is this too big?
 
-	c_timepath[:,S-1,0] = wpath[:,0]*e[:,S-1,0] + (1 + rpath[:,0] - delta)*a_timepath[:,S-1,0]
+	c_timepath[:,S-1,0] = wpath[:,0]*e[:,S-1,0] + (1 + rpath[0] - delta)*a_timepath[:,S-1,0]
 
 	#Fills the upper triangle
 	for s in range(S-2,-1, -1):
@@ -639,17 +646,17 @@ def get_cons_assets_matrix(params, wpath, rpath, starting_assets):
 		current_s = s
 
 		#Uses the previous generation's consumption at age s to get the value for our guess
-		c_guess = c_timepath[:,s+1,t]/((beta*(1+rpath[:,t]-delta))**(1/sigma))
+		c_guess = c_timepath[:,s+1,t]/((beta*(1+rpath[t]-delta))**(1/sigma))
 
 		#Gets optimal initial consumption beginning in the current age of the agent using chunks of w and r that span the lifetime of the given generation
 		household_params = (I, S, beta, sigma, delta)
 
 		opt_consump = opt.fsolve(find_optimal_starting_consumptions, c_guess, args = \
-			(wpath[:,t:t+S], rpath[:,t:t+S], e[:,0,t:t+S],agent_assets, current_s, household_params))
+			(wpath[:,t:t+S], rpath[t:t+S], e[:,0,t:t+S],agent_assets, current_s, household_params))
 
 		#Gets optimal timepaths beginning initial consumption and starting assets
 		cpath_indiv, apath_indiv = get_lifetime_decisions\
-			(household_params, opt_consump, wpath[:,t:t+S], rpath[:,t:t+S], e[:,0,t:t+S], agent_assets, current_s)
+			(household_params, opt_consump, wpath[:,t:t+S], rpath[t:t+S], e[:,0,t:t+S], agent_assets, current_s)
 
 		for i in xrange(I):
 			np.fill_diagonal(c_timepath[i,s:,:], cpath_indiv[i,:])
@@ -670,13 +677,13 @@ def get_cons_assets_matrix(params, wpath, rpath, starting_assets):
 		agent_assets = np.zeros((I))
 
 		#Uses the previous generation's consumption at age s to get the value for our guess
-		c_guess = c_timepath[:,s+1,t]/((beta*(1+rpath[:,t+1]-delta))**(1/sigma))
+		c_guess = c_timepath[:,s+1,t]/((beta*(1+rpath[t+1]-delta))**(1/sigma))
 
 		optimalconsumption = opt.fsolve(find_optimal_starting_consumptions, c_guess, args = \
-			(wpath[:,t:t+S], rpath[:,t:t+S], e[:,0,t:t+S], agent_assets, current_s, household_params))
+			(wpath[:,t:t+S], rpath[t:t+S], e[:,0,t:t+S], agent_assets, current_s, household_params))
 
 		cpath_indiv, assetpath_indiv = get_lifetime_decisions\
-			(household_params, optimalconsumption, wpath[:,t:t+S], rpath[:,t:t+S], e[:,0,t:t+S], agent_assets, current_s)
+			(household_params, optimalconsumption, wpath[:,t:t+S], rpath[t:t+S], e[:,0,t:t+S], agent_assets, current_s)
 
 		for i in range(I):
 			np.fill_diagonal(c_timepath[i,:,t:], cpath_indiv[i,:])
@@ -736,6 +743,10 @@ def get_wpathnew_rpathnew(params, wpath, rpath, starting_assets, k_ss, kf_ss, w_
 	#After time period T, the total capital stock and total consumption is forced to be the steady state
 	Kpath[:,T:] = np.einsum("i,t->it", k_ss, np.ones(S+1))
 	Cpath[:,T:] = np.einsum("i,t->it", Cpath[:,T-1], np.ones(S+1))
+
+        print "This is Cpath",Cpath
+        print "This is rpath",rpath
+        print "This is wpath",wpath
 
 	#Gets the foriegned owned capital
 	kf_params = (I, S, T, alpha, e, A)
@@ -828,11 +839,9 @@ def plotTimepaths(I, S, T, wpath, rpath, cpath, kpath, ypath, CountryNamesON):
     plt.legend(loc="upper right")
     plt.show()
 
-    for i in xrange(I): #Rental Rates
-        label1='Country '+str(i)
-        if CountryNamesON==True:
-            label1=CountryLabel(label1)
-        plt.plot(np.arange(0,T),rpath[i,:T], label=label1)
+    #Rental Rates
+    label1='Global Interest Rate'    
+    plt.plot(np.arange(0,T),rpath[:T], label=label1)
     plt.title("Time path for Rental Rates")
     plt.ylabel("Rental Rates")
     plt.xlabel("Time Period")
