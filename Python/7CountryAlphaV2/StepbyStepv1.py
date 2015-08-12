@@ -308,13 +308,14 @@ def getOtherVariables(params, assets, kf):
 	Y = (k**alpha) * ((A*n)**(1-alpha))
 	r = alpha * Y / k
 	w = (1-alpha) * Y / n
-
+	"""
 	ktest = get_k(assets, kf)
 	ntest = get_n(e)
 	Yparams = (alpha, A)
 	Ytest = get_Y(Yparams, ktest, ntest)
 	rtest = get_r(alpha, Ytest, ktest)
 	wtest = get_w(alpha, Ytest, ntest)
+
 
 	print assets, np.sum(assets, axis=1)-kf
 	print assets[:,1:-1],np.sum(assets[:,1:-1], axis=1)-kf
@@ -325,6 +326,7 @@ def getOtherVariables(params, assets, kf):
 	print "Y", np.argwhere(Y != Ytest)
 	print "r", np.argwhere(r != rtest)
 	print "w", np.argwhere(w != wtest)
+	"""
 
 	c_vec = np.einsum("i, is -> is", w, e[:,:,0]) + np.einsum("i, is -> is",(1 + r - delta) \
 	, assets[:,:-1]) - assets[:,1:]
@@ -482,10 +484,10 @@ def get_prices(params, Kpath, kf_tpath, w_ss, r_ss):
 	n = np.sum(e, axis=1) #Sum of the labor productivities
 
 	#Gets the path for output, Y
-	Ypath = (Kpath**alpha) * (np.einsum("i,is->is", A, n)**(1-alpha))
+	Ypath = (Kdpath**alpha) * (np.einsum("i,is->is", A, n)**(1-alpha))
 
 	#Gets prices
-	rpath = alpha * Ypath / Kpath
+	rpath = alpha * Ypath / Kdpath
 	wpath = (1-alpha) * Ypath / n
 
 	#Tiles the steady-state for each year beyond the steady state
@@ -547,7 +549,7 @@ def get_foreignK_path(params, Kpath, rpath, k_ss, kf_ss):
         kfPath=Kpath-kDPath
 
         #To satisfy 1.18, the first country's assets is the negative of the sum of all the other countries' assets
-        kfPath[0,:]=-np.sum(kfPath,axis=0)
+        kfPath[0,:]= -np.sum(kfPath[1:,:],axis=0)
 
 		#Making every year beyond t equal to the steady-state
         kfPath[:,T:] = np.einsum("i,s->is", kf_ss, np.ones(S+1))
