@@ -2,8 +2,8 @@ import numpy as np
 import StepbyStepv1 as Stepfuncs
 
 #Parameters Zone
-I = 2 #Number of countries
-S = 10 #Upper bound of age for agents
+I = 6 #Number of countries
+S = 80 #Upper bound of age for agents
 T = int(round(2.5*S)) #Number of time periods to convergence, based on Rick Evans' function.
 
 T_1 = S #This is like TransYear in the FORTRAN I think
@@ -23,7 +23,7 @@ delta = 1-(1-delta_ann)**(1/S) #Depreciation Rate
 alpha = .3 #Capital Share of production
 e = np.ones((I, S, T+S+1)) #Labor productivities
 A = np.ones(I) #Techonological Change, used for idential countries
-#A=np.array([1.25,1.35,1,1.65,1.1]) #Techonological Change, used for when countries are different
+#A=np.array([1,4,2,5,6]) #Techonological Change, used for when countries are different
 
 diff=1e-12 #Convergence Tolerance
 distance=10 #Used in taking the norm, arbitrarily set to 10
@@ -36,7 +36,7 @@ PrintSS = False #Prints the result of the Steady State functions
 CalcTPI = True #Activates the calculation of Time Path Iteration
 #NOTE: Graphing only works if CalcTPI is activated.
 Graphs = True #Activates graphing the graphs.
-CountryNamesON = True #Turns on labels for the graphs. Replaces "Country x" with proper names.
+CountryNamesON = False #Turns on labels for the graphs. Replaces "Country x" with proper names.
 
 #MAIN CODE
 
