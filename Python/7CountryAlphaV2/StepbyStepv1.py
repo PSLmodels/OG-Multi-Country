@@ -215,14 +215,58 @@ def hatvariables(Kpathreal, kfpathreal, Nhat_matrix):
 #STEADY STATE FUNCTIONS
 
 def get_kd(assets, kf):
+        """
+        Description: Calculates the amount of domestic capital that remains in the domestic country
+
+        Inputs:
+            -assets[I,S,T+S+1]: Matrix of assets
+            -kf[I,T+S+1]: Domestic capital held by foreigners.
+
+        Objects in Function:
+            NONE
+
+        Outputs:
+            -kd[I,T+S+1]: Capital that is used in the domestic country
+
+        """
 	kd = np.sum(assets[:,1:-1], axis=1) - kf
 	return kd
 
 def get_n(e):
+        """
+        Description: Calculates the total labor productivity for each country
+
+        Inputs:
+            -e[I,S,T]:Matrix of labor productivities
+
+        Objects in Function:
+            -NONE
+
+        Outputs:
+            -n[I,S+T+1]: Total labor productivity
+
+        """
 	n = np.sum(e, axis=1)
 	return n
 
 def get_Y(params, kd, n):
+        """
+        Description:Calculates the output timepath
+
+        Inputs:
+            -params (2) tuple: Contains the necessary parameters used
+            -kd[I,T+S+1]: Domestic held capital stock
+            -n[I,S+T+1]: Summed labor productivity
+
+        Objects in Function:
+            -A[I]: Technology for each country
+            -alpha: Production share of capital
+
+        Outputs:
+            -Y[I,S+T+1]: Timepath of output
+
+
+        """
 	alpha, A = params
 
 	if kd.ndim == 1:
@@ -233,14 +277,62 @@ def get_Y(params, kd, n):
 	return Y
 
 def get_r(alpha, Y, kd):
+        """
+        Description: Calculates the rental rates.
+
+        Inputs:
+            -alpha (scalar): Production share of capital
+            -Y[I,T+S+1]: Timepath of output
+            -kd[I,T+S+1]: Timepath of domestically owned capital
+
+        Objects in Function:
+            -NONE
+
+        Outputs:
+            -r[I,R+S+1]:Timepath of rental rates
+
+        """
 	r = alpha * Y / kd
 	return r
 
 def get_w(alpha, Y, n):
+        """
+        Description: Calculates the wage timepath.
+
+        Inputs:
+            -alpha (scalar): Production share of output
+            -Y[I,T+S+1]: Output timepath
+            -n[I,T+S+1]: Total labor productivity timepath
+
+        Objects in Function:
+            -NONE
+
+        Outputs:
+            -w[I,T+S+1]: Wage timepath
+
+        """
 	w = (1-alpha) * Y / n
 	return w
 
 def get_cvecss(params, w, r, assets):
+        """
+        Description: Calculates the consumption vector
+
+        Inputs:
+            -params (tuple 2): Tuple that containts the necessary parameters
+            -w[I,T+S+1]: Wage timepath
+            -r[I,T+S+1]: Rental Rate timepath
+            -assets[I,S,T+S+1]: Assets timepath
+
+        Objects in Function:
+            -e[I,S,T+S+1]: Matrix of labor productivities
+            -delta (parameter): Depreciation rate
+
+        Outputs:
+            -c_vec[I,T+S+1]:Vector of consumption.
+
+
+        """
 	e, delta = params
 	c_vec = np.einsum("i, is -> is", w, e[:,:,0])\
 		  + np.einsum("i, is -> is",(1 + r - delta) , assets[:,:-1])\
@@ -249,6 +341,24 @@ def get_cvecss(params, w, r, assets):
 	return c_vec
 
 def check_feasible(K, Y, w, r, c):
+        """
+        Description:Checks the feasibility of the inputs.
+
+        Inputs:
+            -K[I,T+S+1]: Capital stock timepath
+            -y[I,T+S+1]: Output timepath
+            -w[I,T+S+1]: Wage timepath
+            -r[I,T+S+1]: Rental rate timepath
+            -c[I,T+S+1]: consumption timepath
+
+        Objects in Function:
+            NONE
+
+        Outputs:
+            -Feasible (Boolean): Whether or not the inputs are feasible.
+
+
+        """
 
 	Feasible = True
 
@@ -280,7 +390,7 @@ def check_feasible(K, Y, w, r, c):
 		Feasible=False
 		print "WARNING! INFEASABLE VALUE ENCOUNTERED IN c_vec!"
 		print "The following coordinates have infeasible values:"
-		print np.argwhere(c_vec<0)
+		print np.argwhere(c<0)
 
 	return Feasible
 
