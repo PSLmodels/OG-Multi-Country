@@ -192,9 +192,9 @@ def hatvariables(Kpathreal, kfpathreal, Nhat_matrix):
 	temp_e = np.ones((I, S+1, T))#THIS SHOULD ONLY BE UNTIL WE GET S GENERATIONS RATHER THAN S-1
 
 	n = np.sum(temp_e[:,:,:T]*Nhat_matrix, axis=1)
-	ypath = (Kpath**alpha) * (np.einsum("i,it->it", A, n)**(1-alpha))
-	rpath = alpha * ypath / Kpath
-	wpath = (1-alpha) * ypath / n
+	Ypath = (Kpath**alpha) * (np.einsum("i,it->it", A, n)**(1-alpha))
+	rpath = alpha * Ypath / Kpath
+	wpath = (1-alpha) * Ypath / n
 	"""
 	#NOTE:This goes in the get_householdchoices_path function
 
@@ -214,82 +214,75 @@ def hatvariables(Kpathreal, kfpathreal, Nhat_matrix):
 
 #STEADY STATE FUNCTIONS
 
-def getOtherVariables(params, assets, kf):
-	"""
-	Description:
-		-Based on the assets and capital held by foreigners, we calculate the other variables.
+def get_kd(assets, kf):
+	kd = np.sum(assets[:,1:-1], axis=1) - kf
+	return kd
 
-	Inputs:
-		-assets [I,S+1]: Matrix of assets
-		-kf[I, ]: Domestic capital held by foreigners
+def get_n(e):
+	n = np.sum(e, axis=1)
+	return n
 
-	Objects in function:
-		-NONE that aren't already listed
+def get_Y(params, kd, n):
+	alpha, A = params
 
-	Output:
-		-k[I,]: Capital (1.10)
-		-n[I,]: Sum of labor productivities (1.11)
-		-y[I,]: Output (1.12)
-		-r[I,]: Rental Rate (1.13)
-		-w[I,]: Wage (1.14)
-		-c_vec[I,S]: Vector of consumptions (1.15)
-	"""
-        Feasible=True
+	if kd.ndim == 1:
+		Y = (kd**alpha) * ((A*n)**(1-alpha))
+	elif kd.ndim == 2:
+		Y = (kd**alpha) * (np.einsum("i,is->is", A, n)**(1-alpha))
 
-	I, delta, alpha, e, A = params
+	return Y
 
-	#You have 0 assets when you're born, and 0 when you die
-	assets = np.column_stack((np.zeros(I), assets, np.zeros(I)))
+def get_r(alpha, Y, kd):
+	r = alpha * Y / kd
+	return r
 
-	k = np.sum(assets[:,1:-1], axis=1) - kf
-	n = np.sum(e[:,:,0], axis=1)
-	y = (k**alpha) * ((A*n)**(1-alpha))
-	r = alpha * y / k
-	w = (1-alpha) * y / n
+def get_w(alpha, Y, n):
+	w = (1-alpha) * Y / n
+	return w
 
-        if np.any(k<0):
-            Feasible=False
-            print "WARNING! INFEASABLE VALUE ENCOUNTERED IN k!"
-            print "The following coordinates have infeasible values:"
-            print np.argwhere(k<0)
+def get_cvecss(params, w, r, assets):
+	e, delta = params
+	c_vec = np.einsum("i, is -> is", w, e[:,:,0])\
+		  + np.einsum("i, is -> is",(1 + r - delta) , assets[:,:-1])\
+		  - assets[:,1:]
 
-        if np.any(n<0):
-            Feasible=False
-            print "WARNING! INFEASABLE VALUE ENCOUNTERED IN n!"
-            print "The following coordinates have infeasible values:"
-            print np.argwhere(n<0)
+	return c_vec
 
-        if np.any(y<0):
-            Feasible=False
-            print "WARNING! INFEASABLE VALUE ENCOUNTERED IN y!"
-            print "The following coordinates have infeasible values:"
-            print np.argwhere(y<0)
+def check_feasible(K, Y, w, r, c):
 
-        if np.any(r<0):
-            Feasible=False
-            print "WARNING! INFEASABLE VALUE ENCOUNTERED IN r!"
-            print "The following coordinates have infeasible values:"
-            print np.argwhere(r<0)
+	Feasible = True
 
-        if np.any(w<0):
-            Feasible=False
-            print "WARNING! INFEASABLE VALUE ENCOUNTERED IN w!"
-            print "The following coordinates have infeasible values:"
-            print np.argwhere(w<0)
+	if np.any(K<0):
+		Feasible=False
+		print "WARNING! INFEASABLE VALUE ENCOUNTERED IN K!"
+		print "The following coordinates have infeasible values:"
+		print np.argwhere(K<0)
 
+	if np.any(Y<0):
+		Feasible=False
+		print "WARNING! INFEASABLE VALUE ENCOUNTERED IN Y!"
+		print "The following coordinates have infeasible values:"
+		print np.argwhere(Y<0)
 
+	if np.any(r<0):
+		Feasible=False
+		print "WARNING! INFEASABLE VALUE ENCOUNTERED IN r!"
+		print "The following coordinates have infeasible values:"
+		print np.argwhere(r<0)
 
-	c_vec = np.einsum("i, is -> is", w, e[:,:,0]) + np.einsum("i, is -> is",(1 + r - delta) \
-	, assets[:,:-1]) - assets[:,1:]
+	if np.any(w<0):
+		Feasible=False
+		print "WARNING! INFEASABLE VALUE ENCOUNTERED IN w!"
+		print "The following coordinates have infeasible values:"
+		print np.argwhere(w<0)
 
-        if np.any(c_vec<0):
-            Feasible=False
-            print "WARNING! INFEASABLE VALUE ENCOUNTERED IN c_vec!"
-            print "The following coordinates have infeasible values:"
-            print np.argwhere(c_vec<0)
+	if np.any(c<0):
+		Feasible=False
+		print "WARNING! INFEASABLE VALUE ENCOUNTERED IN c_vec!"
+		print "The following coordinates have infeasible values:"
+		print np.argwhere(c_vec<0)
 
-
-	return k, n, y, r, w, c_vec
+	return Feasible
 
 def SteadyStateSolution(guess, I, S, beta, sigma, delta, alpha, e, A):
 	"""
@@ -304,7 +297,7 @@ def SteadyStateSolution(guess, I, S, beta, sigma, delta, alpha, e, A):
 		-assets[I,S]: Asset path for each country
 		-k[I,]:Capital for each country
 		-n[I,]:Labor for each country
-		-y[I,]:Output for each country
+		-Y[I,]:Output for each country
 		-r[I,]:Rental Rate for each country
 		-w[I,]:Wage for each country
 		-c_vec[I, S]: Consumption by cohort in each country
@@ -319,29 +312,36 @@ def SteadyStateSolution(guess, I, S, beta, sigma, delta, alpha, e, A):
 	#Takes a 1D guess of length I*S and reshapes it to match what the original input into the fsolve looked like since fsolve flattens numpy arrays
 	guess = np.reshape(guess[:,np.newaxis], (I, S))
 
-	#Sets kf as the last element of the guess vector for each country and assets as everything else
-	assets = guess[:,:-1]
+	#Appends a I-length vector of zeros on ends of assets to represent no assets when born and no assets when dead
+	assets = np.column_stack((np.zeros(I), guess[:,:-1], np.zeros(I)))
+
+	#Sets kf as the last element of the guess vector for each country
 	kf = guess[:,-1]
+	
+	#Getting the other variables
+	kd = get_kd(assets, kf)
+	n = get_n(e[:,:,0])
+	Yparams = (alpha, A)
+	Y = get_Y(Yparams, kd, n)
+	r = get_r(alpha, Y, kd)
+	w = get_w(alpha, Y, n)
+	cparams = (e, delta)
+	c_vec = get_cvecss(cparams, w, r, assets)
+	K = kd+kf
 
-	#Based on the assets and kf, we get the other vectors
-	params = I, delta, alpha, e, A
-	k, n, y, r, w, c_vec = getOtherVariables(params, assets, kf)
+	Feasible = check_feasible(K, Y, w, r, c_vec)
 
-        if np.any(c_vec<0):
-            Euler_c=np.ones((I,S-1))*9999.
-            Euler_r=r[1:]-r[0]
-            Euler_kf=np.sum(kf)
 
-        else:
-	    Euler_c = c_vec[:,:-1] ** (-sigma) - beta * c_vec[:,1:] ** (-sigma) * (1 + r[0] - delta)
-	    Euler_r = r[1:] - r[0]
-	    Euler_kf = np.sum(kf)
+	if np.any(c_vec<0): #Punishes the the poor choice of negative values in the fsolve
+		all_Euler=np.ones((I*S-1))*9999.
+	else:
+		#Gets Euler equations
+		Euler_c = c_vec[:,:-1] ** (-sigma) - beta * c_vec[:,1:] ** (-sigma) * (1 + r[0] - delta)
+		Euler_r = r[1:] - r[0]
+		Euler_kf = np.sum(kf)
 
-        #if np.any(Euler_c<0): #Punishes the the poor choice of negative values in the fsolve
-            #Euler_c=np.ones((I,S-1))*9999.
-
-	#Makes a new 1D vector of length I*S that contains all the Euler equations
-	all_Euler = np.append(np.append(np.ravel(Euler_c), np.ravel(Euler_r)), Euler_kf)
+		#Makes a new 1D vector of length I*S that contains all the Euler equations
+		all_Euler = np.append(np.append(np.ravel(Euler_c), np.ravel(Euler_r)), Euler_kf)
 
 	return all_Euler
 
@@ -367,6 +367,7 @@ def getSteadyState(params, assets_init, kf_init):
 	    -r_ss[I]: calculated steady state rental rate
 	    -w_ss[I]: calculated steady state wage rate
 	    -c_vec_ss[I, S]: Calculated steady state counsumption
+
 	"""
 	I, S, beta, sigma, delta, alpha, e, A = params
 
@@ -377,41 +378,47 @@ def getSteadyState(params, assets_init, kf_init):
 	solver_params = (I, S, beta, sigma, delta, alpha, e, A)
 	ss = opt.fsolve(SteadyStateSolution, guess, args=solver_params)
 
-	print "\nSteady State Found!\n"
-
 	#Reshapes the ss code
 	ss = np.array(np.split(ss, I))
 
     #Breaks down the steady state matrix into the two separate assets and kf matrices.
-	assets_ss = ss[:,:-1]
+	assets_ss = np.column_stack((np.zeros(I), ss[:,:-1], np.zeros(I)))
 	kf_ss = ss[:,-1]
 
 	#Gets the other steady-state values using assets and kf
-	othervariable_params = I, delta, alpha, e, A
-	k_ss, n_ss, y_ss, r_ss, w_ss, c_vec_ss = getOtherVariables(othervariable_params, assets_ss, kf_ss)
+	kd_ss = get_kd(assets_ss, kf_ss)
+	n_ss = get_n(e[:,:,0])
+	Yparams = (alpha, A)
+	Y_ss = get_Y(Yparams, kd_ss, n_ss)
+	r_ss = get_r(alpha, Y_ss, kd_ss)
+	w_ss = get_w(alpha, Y_ss, n_ss)
+	cparams = (e, delta)
+	c_vec_ss = get_cvecss(cparams, w_ss, r_ss, assets_ss)
 
-	return assets_ss, kf_ss, k_ss, n_ss, y_ss, r_ss, w_ss, c_vec_ss
+	print "\nSteady State Found!\n"
+
+	return assets_ss, kf_ss, kd_ss, n_ss, Y_ss, r_ss[0], w_ss, c_vec_ss
 
 #TIMEPATH FUNCTIONS
 
 def get_initialguesses(params, assets_ss, kf_ss, w_ss, r_ss):
-        """
-        Description:
-        With the parameters and steady state values, this function creates
-        initial guesses in a linear path.
+	"""
+	Description:
+		With the parameters and steady state values, this function creates
+		initial guesses in a linear path.
 
-        Inputs:
-        -Params (Tuple): Tuple of parameters from Main.py
-        -Assets_ss[I,S,T+S+1]: Steady state assets value
-        -kf_ss[I,]: Steady State value of foreign owned domestic capital
-        -w_ss[I,]: Steady state value of wages
-        -r_ss[I,]: Steady state value of rental rate
+	Inputs:
+		-Params (Tuple): Tuple of parameters from Main.py
+		-Assets_ss[I,S,T+S+1]: Steady state assets value
+		-kf_ss[I,]: Steady State value of foreign owned domestic capital
+		-w_ss[I,]: Steady state value of wages
+		-r_ss[I,]: Steady state value of rental rate
 
-        Objects in Function:
-        -othervariable_params (Tuple): A tuple specifically made for GetOtherVariables
+	Objects in Function:
+		-othervariable_params (Tuple): A tuple specifically made for GetOtherVariables
 
 
-        Outputs:
+	Outputs:
         -assets_init[I,]: Initial Asset path
         -kf_init[I,]: New initial foreign held capital
         -w_initguess[I,T+S+1]: Initial guess wage timepath
@@ -421,8 +428,7 @@ def get_initialguesses(params, assets_ss, kf_ss, w_ss, r_ss):
         -y_init[I,]: output labor initial guess
         -c_init[I,]: consumption initial guess
 
-
-        """
+	"""
 
 	I, S, T, delta, alpha, e, A = params
 
@@ -432,82 +438,30 @@ def get_initialguesses(params, assets_ss, kf_ss, w_ss, r_ss):
 	w_initguess = np.zeros((I, T+S+1))
 	r_initguess = np.ones((T+S+1))*.5
 
-	#Gets initial k, n, y, r, w, and c
-	othervariable_params = 	I, delta, alpha, e, A
-	k_init, n_init, y_init, r_init, w_init, c_init = getOtherVariables(othervariable_params, assets_init, kf_init)
+	#Gets initial kd, n, y, r, w, and K
+	kd_init = get_kd(assets_init, kf_init)
+	n_init = get_n(e[:,:,0])
+	Yparams = (alpha, A)
+	Y_init = get_Y(Yparams, kd_init, n_init)
+	r_init = get_r(alpha, Y_init, kd_init)
+	w_init = get_w(alpha, Y_init, n_init)
+	cparams = (e, delta)
+	c_init = get_cvecss(cparams, w_init, r_init, assets_init)
 
-        print r_ss.shape
-        print r_init.shape
+	#Gets initial guess for rental rate path. This is set up to be linear.
+	r_initguess[:T+1] = np.linspace(r_init[0], r_ss, T+1)
+	r_initguess[T+1:] = r_initguess[T]
 
-	#Gets initial guess for w and r paths. This is set up to be linear.
+	#Gets initial guess for wage path. This is set up to be linear.
 	for i in range(I):
 		w_initguess[i, :T+1] = np.linspace(w_init[i], w_ss[i], T+1)
-		r_initguess[:T+1] = np.linspace(r_init[0], r_ss[0], T+1)
+
 		w_initguess[i,T+1:] = w_initguess[i,T]
-		r_initguess[T+1:] = r_initguess[T]
-
-	return assets_init, kf_init, w_initguess, r_initguess, k_init, n_init, y_init, c_init
-
-def get_prices(params, Kpath, kf_tpath, w_ss, r_ss):
-	"""
-	Description:
-		Based on the given paths, the paths for wages and rental rates are figured
-		out based on equations 1.4-1.5
-
-	Inputs:
-		-assets_tpath: Asset timepath
-		-kf_tpath: Foreign held capital timepath.
-
-	Objects in Functions:
-		-Kdpath[I, S+T+1]:Path of domestic owned capital stock
-
-	Outputs:
-	-wpath[I, S+T+1]: Wage path
-	-rpath[I, S+T+1]: Rental rate path
-	-ypath[I, S+T+1]: Output path
-
-	"""
-        Feasible=True
-	S, T, alpha, e, A = params
-
-	Kdpath=Kpath-kf_tpath
-
-	#Gets non-price variables needed to caluclate prices
-	n = np.sum(e, axis=1) #Sum of the labor productivities
-
-	#Gets the path for output, y
-	ypath = (Kdpath**alpha) * (np.einsum("i,is->is", A, n)**(1-alpha))
-
-	#Gets prices
-        rpath = alpha * ypath[0,:] / Kdpath[0,:]
-	wpath = (1-alpha) * ypath / n
-
-	#Tiles the steady-state for each year beyond the steady state
-	rpath[T:] = r_ss[0]	
-        wpath[:,T:] = np.einsum("i,s->is", w_ss, np.ones(S+1))
-        if np.any(rpath<0):
-            Feasible=False
-            print "WARNING! INFEASABLE VALUE ENCOUNTERED IN rpath!"
-            print "The following coordinates have infeasible values:"
-            print np.argwhere(rpath<0)
-
-        if np.any(wpath<0):
-            Feasible=False
-            print "WARNING! INFEASABLE VALUE ENCOUNTERED IN wpath!"
-            print "The following coordinates have infeasible values:"
-            print np.argwhere(wpath<0)
-
-        if np.any(ypath<0):
-            Feasible=False
-            print "WARNING! INFEASABLE VALUE ENCOUNTERED IN ypath!"
-            print "The following coordinates have infeasible values:"
-            print np.argwhere(ypath<0)
 
 
-	#Returns only the first country's interest rate, since they should be the same in theory
-	return wpath, rpath, ypath
+	return assets_init, kf_init, w_initguess, r_initguess, kd_init, n_init, Y_init, c_init
 
-def get_foreignK_path(params, Kpath, rpath, k_ss, kf_ss):
+def get_foreignK_path(params, Kpath, rpath, kf_ss):
         """
         Description:
            This calculates the timepath of the foreign capital stock. This is based on equation (1.12 and 1.13).
@@ -516,7 +470,7 @@ def get_foreignK_path(params, Kpath, rpath, k_ss, kf_ss):
             rpath: Rental Rate path, also from our calculation
         
         Objects in Function:
-            kDpath[I,S+T+1]: Path of domestic owned capital
+            kdpath[I,S+T+1]: Path of domestic owned capital
             n[I,S+T+1]: Path of total labor
             kf_ss[I,]: Calculated from the steady state. 
             A[I,]: Parameters from above
@@ -531,23 +485,20 @@ def get_foreignK_path(params, Kpath, rpath, k_ss, kf_ss):
 
         #Declares the array that will later be used.
         kfPath=np.zeros((I,S+T+1))
-        kDPath=np.zeros((I,S+T+1))
+        kdPath=np.zeros((I,S+T+1))
 
         #Gets the domestic-owned capital stock for each country except for the first country
-        kDPath[1:,:]=(rpath[:]/alpha)**(1/(alpha-1))*np.einsum("i,is->is", A[1:], n[1:,:])
+        kdPath[1:,:]=(rpath[:]/alpha)**(1/(alpha-1))*np.einsum("i,is->is", A[1:], n[1:,:])
 
         #This is using equation 1.13 solved for the foreign capital stock to caluclate the foreign capital stock
         #For everyone except the first country
-        kfPath[1:,:]=Kpath[1:,:]-kDPath[1:,:]
+        kfPath[1:,:]=Kpath[1:,:]-kdPath[1:,:]
 
         #To satisfy 1.18, the first country's assets is the negative of the sum of all the other countries' assets
-        kfPath[0,:]=-np.sum(kfPath[1:,:],axis=0)
+        kfPath[0,:]= -np.sum(kfPath[1:,:],axis=0)
 
 		#Making every year beyond t equal to the steady-state
         kfPath[:,T:] = np.einsum("i,s->is", kf_ss, np.ones(S+1))
-
-        print "This is the kfPath",kfPath
-        print "This is Kpath", Kpath
         
         return kfPath
 
@@ -618,7 +569,7 @@ def find_optimal_starting_consumptions(c_1, wpath_chunk, rpath_chunk, epath_chun
 	c_path, assets_path = get_lifetime_decisions(params, c_1, wpath_chunk, rpath_chunk, epath_chunk, starting_assets, current_s)
 
         if np.any(c_path<0):
-            c_path=np.ones(I)*999.
+            c_path=np.ones(I)*9999.
 
 	Euler = np.ravel(assets_path[:,-1])
 
@@ -700,7 +651,7 @@ def get_cons_assets_matrix(params, wpath, rpath, starting_assets):
 
 	return c_timepath, a_timepath
 
-def get_wpathnew_rpathnew(params, wpath, rpath, starting_assets, k_ss, kf_ss, w_ss, r_ss):
+def get_wpathnew_rpathnew(params, wpath, rpath, starting_assets, kd_ss, kf_ss, w_ss, r_ss):
 	"""
 	Description:
 		Takes initial paths of wages and rental rates, gives the consumption path and the the wage and rental paths that are implied by that consumption path.
@@ -727,10 +678,12 @@ def get_wpathnew_rpathnew(params, wpath, rpath, starting_assets, k_ss, kf_ss, w_
 		-r_path1[I,S+T+1]: calculated r path
 		-CPath[I,S+T+1]: Calculated aggregate consumption path for each country
 		-Kpath[I,S+T+1]: Calculated capital stock path.
-		-ypath1[I, S+T+1]: timepath of assets implied from initial guess
+		-Ypath1[I, S+T+1]: timepath of assets implied from initial guess
 
 	"""
+
 	I, S, T, T_1, beta, sigma, delta, alpha, e, A, StartFertilityAge, StartDyingAge, N_matrix, MortalityRates = params
+
 	ca_params = (I, S, T, T_1, beta, sigma, delta, e, StartFertilityAge, StartDyingAge, N_matrix, MortalityRates)
 	c_timepath, a_timepath = get_cons_assets_matrix(ca_params, wpath, rpath, starting_assets)
 
@@ -741,24 +694,27 @@ def get_wpathnew_rpathnew(params, wpath, rpath, starting_assets, k_ss, kf_ss, w_
 	Cpath=np.sum(c_timepath,axis=1)
 
 	#After time period T, the total capital stock and total consumption is forced to be the steady state
-	Kpath[:,T:] = np.einsum("i,t->it", k_ss, np.ones(S+1))
+	Kpath[:,T:] = np.einsum("i,t->it", kd_ss+kf_ss, np.ones(S+1))
 	Cpath[:,T:] = np.einsum("i,t->it", Cpath[:,T-1], np.ones(S+1))
-
-        print "This is Cpath",Cpath
-        print "This is rpath",rpath
-        print "This is wpath",wpath
 
 	#Gets the foriegned owned capital
 	kf_params = (I, S, T, alpha, e, A)
-	kfpath=get_foreignK_path(kf_params, Kpath, rpath, k_ss, kf_ss)
+	kfpath = get_foreignK_path(kf_params, Kpath, rpath, kf_ss)
 
 	#Based on the overall capital path and the foreign owned capital path, we get new w and r paths.
-	prices_params = (S, T, alpha, e, A)
-	wpath_new, rpath_new, Ypath = get_prices(prices_params, Kpath, kfpath, w_ss, r_ss)
+	kdpath = Kpath - kfpath
+	npath = get_n(e)
+	Yparams = (alpha, A)
+	Ypath = get_Y(Yparams, kdpath, npath)
+	rpath_new = get_r(alpha, Ypath[0], kdpath[0])
+	wpath_new = get_w(alpha, Ypath, npath)
+
+	#Checks to see if any of the timepaths have negative values
+	check_feasible(Kpath, Ypath, wpath, rpath, c_timepath)
 
 	return wpath_new, rpath_new, Cpath, Kpath, Ypath
 
-def get_Timepath(params, wstart, rstart, assets_init, k_ss, kf_ss, w_ss, r_ss):
+def get_Timepath(params, wstart, rstart, assets_init, kd_ss, kf_ss, w_ss, r_ss):
 
     I, S, T, T_1, beta, sigma, delta, alpha, e, A, StartFertilityAge, StartDyingAge, N_matrix, MortalityRates, distance, diff, xi, MaxIters = params
 
@@ -767,8 +723,8 @@ def get_Timepath(params, wstart, rstart, assets_init, k_ss, kf_ss, w_ss, r_ss):
 
     while distance>diff and Iter<MaxIters: #The timepath iteration runs until the distance gets below a threshold or the iterations hit the maximum
 
-            wpath_new, rpath_new, cpath_new, kpath_new, ypath_new = \
-            get_wpathnew_rpathnew(wr_params, wstart,rstart, np.column_stack((np.zeros(I), assets_init, np.zeros(I))), k_ss, kf_ss, w_ss, r_ss)
+            wpath_new, rpath_new, Cpath_new, Kpath_new, Ypath_new = \
+            get_wpathnew_rpathnew(wr_params, wstart, rstart, assets_init, kd_ss, kf_ss, w_ss, r_ss)
 
             dist1=sp.linalg.norm(wstart-wpath_new,2) #Norm of the wage path
             dist2=sp.linalg.norm(rstart-rpath_new,2) #Norm of the intrest rate path
@@ -779,9 +735,9 @@ def get_Timepath(params, wstart, rstart, assets_init, k_ss, kf_ss, w_ss, r_ss):
             if distance<diff or Iter==MaxIters: #When the distance gets below the tolerance or the maximum of iterations is hit, then the TPI finishes.
                 wend=wpath_new
                 rend=rpath_new
-                cend=cpath_new
-                kend=kpath_new
-                yend=ypath_new
+                Cend=Cpath_new
+                Kend=Kpath_new
+                Yend=Ypath_new
             if Iter==MaxIters: #In case it never gets below the tolerance, it will throw this warning and give the last timepath.
                 print "Doesn't converge within the maximum number of iterations"
                 print "Providing the last iteration"
@@ -789,7 +745,7 @@ def get_Timepath(params, wstart, rstart, assets_init, k_ss, kf_ss, w_ss, r_ss):
             wstart=wstart*xi+(1-xi)*wpath_new #Convex conjugate of the wage path
             rstart=rstart*xi+(1-xi)*rpath_new #Convex conjugate of the intrest rate path
 
-    return wend, rend, cend, kend, yend
+    return wend, rend, Cend, Kend, Yend
 
 def CountryLabel(Country): #Activated by line 28
     '''
@@ -826,7 +782,7 @@ def CountryLabel(Country): #Activated by line 28
 
     return Name
 
-def plotTimepaths(I, S, T, wpath, rpath, cpath, kpath, ypath, CountryNamesON):
+def plotTimepaths(I, S, T, wpath, rpath, cpath, kpath, Ypath, CountryNamesON):
 
     for i in xrange(I): #Wages
         label1='Country '+str(i)
@@ -874,10 +830,10 @@ def plotTimepaths(I, S, T, wpath, rpath, cpath, kpath, ypath, CountryNamesON):
         label1='Country '+str(i)
         if CountryNamesON==True:
             label1=CountryLabel(label1)
-        plt.plot(np.arange(0,T),ypath[i,:T],label=label1)
+        plt.plot(np.arange(0,T),Ypath[i,:T],label=label1)
     plt.title("Time path for Output")
     plt.ylabel("Output Stock level")
     plt.xlabel("Time Period")
     plt.legend(loc="upper right")
     plt.show()
-	
+
