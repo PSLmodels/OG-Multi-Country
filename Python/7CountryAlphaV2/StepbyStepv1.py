@@ -214,21 +214,26 @@ def hatvariables(Kpathreal, kfpathreal, Nhat_matrix):
 
 #STEADY STATE FUNCTIONS
 
-def get_Kd(assets, kf):
-	Kd = np.sum(assets[:,1:-1], axis=1) - kf
-	return Kd
+def get_kd(assets, kf):
+	kd = np.sum(assets[:,1:-1], axis=1) - kf
+	return kd
 
 def get_n(e):
-	n = np.sum(e[:,:,0], axis=1)
+	n = np.sum(e, axis=1)
 	return n
 
-def get_Y(params, k, n):
+def get_Y(params, kd, n):
 	alpha, A = params
-	Y = (k**alpha) * ((A*n)**(1-alpha))
+
+	if kd.ndim == 1:
+		Y = (kd**alpha) * ((A*n)**(1-alpha))
+	elif kd.ndim == 2:
+		Y = (kd**alpha) * (np.einsum("i,is->is", A, n)**(1-alpha))
+
 	return Y
 
-def get_r(alpha, Y, k):
-	r = alpha * Y / k
+def get_r(alpha, Y, kd):
+	r = alpha * Y / kd
 	return r
 
 def get_w(alpha, Y, n):
@@ -236,24 +241,26 @@ def get_w(alpha, Y, n):
 	return w
 
 def get_cvecss(params, w, r, assets):
+	e, delta = params
 	c_vec = np.einsum("i, is -> is", w, e[:,:,0])\
-			+ np.einsum("i, is -> is",(1 + r - delta) , assets[:,:-1]) - assets[:,1:]
+		  + np.einsum("i, is -> is",(1 + r - delta) , assets[:,:-1])\
+		  - assets[:,1:]
 
 	return c_vec
 
-def check_feasible(k, Y, w, r, c):
+def check_feasible(K, Y, w, r, c):
 
 	Feasible = True
 
-	if np.any(k<0):
+	if np.any(K<0):
 		Feasible=False
-		print "WARNING! INFEASABLE VALUE ENCOUNTERED IN k!"
+		print "WARNING! INFEASABLE VALUE ENCOUNTERED IN K!"
 		print "The following coordinates have infeasible values:"
-		print np.argwhere(k<0)
+		print np.argwhere(K<0)
 
 	if np.any(Y<0):
 		Feasible=False
-		print "WARNING! INFEASABLE VALUE ENCOUNTERED IN y!"
+		print "WARNING! INFEASABLE VALUE ENCOUNTERED IN Y!"
 		print "The following coordinates have infeasible values:"
 		print np.argwhere(Y<0)
 
@@ -276,64 +283,6 @@ def check_feasible(k, Y, w, r, c):
 		print np.argwhere(c_vec<0)
 
 	return Feasible
-
-def getOtherVariables(params, assets, kf):
-	"""
-	Description:
-		-Based on the assets and capital held by foreigners, we calculate the other variables.
-
-	Inputs:
-		-assets [I,S+1]: Matrix of assets
-		-kf[I, ]: Domestic capital held by foreigners
-
-	Objects in function:
-		-NONE that aren't already listed
-
-	Output:
-		-k[I,]: Capital (1.10)
-		-n[I,]: Sum of labor productivities (1.11)
-		-Y[I,]: Output (1.12)
-		-r[I,]: Rental Rate (1.13)
-		-w[I,]: Wage (1.14)
-		-c_vec[I,S]: Vector of consumptions (1.15)
-	"""
-
-	I, delta, alpha, e, A = params
-
-	#You have 0 assets when you're born, and 0 when you die
-	assets = np.column_stack((np.zeros(I), assets, np.zeros(I)))
-
-	k = np.sum(assets[:,1:-1], axis=1) - kf
-	n = np.sum(e[:,:,0], axis=1)
-	Y = (k**alpha) * ((A*n)**(1-alpha))
-	r = alpha * Y / k
-	w = (1-alpha) * Y / n
-
-	ktest = get_Kd(assets, kf)
-	ntest = get_n(e)
-	Yparams = (alpha, A)
-	Ytest = get_Y(Yparams, ktest, ntest)
-	rtest = get_r(alpha, Ytest, ktest)
-	wtest = get_w(alpha, Ytest, ntest)
-
-
-	print assets, np.sum(assets, axis=1)-kf
-	print assets[:,1:-1],np.sum(assets[:,1:-1], axis=1)-kf
-
-	print "k", np.argwhere(k != ktest)
-	print k, ktest, k.shape, ktest.shape
-	print "n", np.argwhere(n != ntest)
-	print "Y", np.argwhere(Y != Ytest)
-	print "r", np.argwhere(r != rtest)
-	print "w", np.argwhere(w != wtest)
-
-
-	c_vec = np.einsum("i, is -> is", w, e[:,:,0]) + np.einsum("i, is -> is",(1 + r - delta) \
-	, assets[:,:-1]) - assets[:,1:]
-
-	Feasible = check_feasible(k, Y, w, r, c_vec)
-
-	return k, n, Y, r, w, c_vec
 
 def SteadyStateSolution(guess, I, S, beta, sigma, delta, alpha, e, A):
 	"""
@@ -363,13 +312,24 @@ def SteadyStateSolution(guess, I, S, beta, sigma, delta, alpha, e, A):
 	#Takes a 1D guess of length I*S and reshapes it to match what the original input into the fsolve looked like since fsolve flattens numpy arrays
 	guess = np.reshape(guess[:,np.newaxis], (I, S))
 
-	#Sets kf as the last element of the guess vector for each country and assets as everything else
-	assets = guess[:,:-1]
-	kf = guess[:,-1]
+	#Appends a I-length vector of zeros on ends of assets to represent no assets when born and no assets when dead
+	assets = np.column_stack((np.zeros(I), guess[:,:-1], np.zeros(I)))
 
-	#Based on the assets and kf, we get the other variables
-	params = (I, delta, alpha, e, A)
-	k, n, y, r, w, c_vec = getOtherVariables(params, assets, kf)
+	#Sets kf as the last element of the guess vector for each country
+	kf = guess[:,-1]
+	
+	#Getting the other variables
+	kd = get_kd(assets, kf)
+	n = get_n(e[:,:,0])
+	Yparams = (alpha, A)
+	Y = get_Y(Yparams, kd, n)
+	r = get_r(alpha, Y, kd)
+	w = get_w(alpha, Y, n)
+	cparams = (e, delta)
+	c_vec = get_cvecss(cparams, w, r, assets)
+	K = kd+kf
+
+	Feasible = check_feasible(K, Y, w, r, c_vec)
 
 
 	if np.any(c_vec<0): #Punishes the the poor choice of negative values in the fsolve
@@ -418,20 +378,26 @@ def getSteadyState(params, assets_init, kf_init):
 	solver_params = (I, S, beta, sigma, delta, alpha, e, A)
 	ss = opt.fsolve(SteadyStateSolution, guess, args=solver_params)
 
-	print "\nSteady State Found!\n"
-
 	#Reshapes the ss code
 	ss = np.array(np.split(ss, I))
 
     #Breaks down the steady state matrix into the two separate assets and kf matrices.
-	assets_ss = ss[:,:-1]
+	assets_ss = np.column_stack((np.zeros(I), ss[:,:-1], np.zeros(I)))
 	kf_ss = ss[:,-1]
 
 	#Gets the other steady-state values using assets and kf
-	othervariable_params = I, delta, alpha, e, A
-	k_ss, n_ss, Y_ss, r_ss, w_ss, c_vec_ss = getOtherVariables(othervariable_params, assets_ss, kf_ss)
+	kd_ss = get_kd(assets_ss, kf_ss)
+	n_ss = get_n(e[:,:,0])
+	Yparams = (alpha, A)
+	Y_ss = get_Y(Yparams, kd_ss, n_ss)
+	r_ss = get_r(alpha, Y_ss, kd_ss)
+	w_ss = get_w(alpha, Y_ss, n_ss)
+	cparams = (e, delta)
+	c_vec_ss = get_cvecss(cparams, w_ss, r_ss, assets_ss)
 
-	return assets_ss, kf_ss, k_ss, n_ss, Y_ss, r_ss, w_ss, c_vec_ss
+	print "\nSteady State Found!\n"
+
+	return assets_ss, kf_ss, kd_ss, n_ss, Y_ss, r_ss[0], w_ss, c_vec_ss
 
 #TIMEPATH FUNCTIONS
 
@@ -472,60 +438,30 @@ def get_initialguesses(params, assets_ss, kf_ss, w_ss, r_ss):
 	w_initguess = np.zeros((I, T+S+1))
 	r_initguess = np.ones((T+S+1))*.5
 
-	#Gets initial k, n, y, r, w, and c
-	othervariable_params = 	I, delta, alpha, e, A
-	k_init, n_init, Y_init, r_init, w_init, c_init = getOtherVariables(othervariable_params, assets_init, kf_init)
+	#Gets initial kd, n, y, r, w, and K
+	kd_init = get_kd(assets_init, kf_init)
+	n_init = get_n(e[:,:,0])
+	Yparams = (alpha, A)
+	Y_init = get_Y(Yparams, kd_init, n_init)
+	r_init = get_r(alpha, Y_init, kd_init)
+	w_init = get_w(alpha, Y_init, n_init)
+	cparams = (e, delta)
+	c_init = get_cvecss(cparams, w_init, r_init, assets_init)
 
-	#Gets initial guess for w and r paths. This is set up to be linear.
+	#Gets initial guess for rental rate path. This is set up to be linear.
+	r_initguess[:T+1] = np.linspace(r_init[0], r_ss, T+1)
+	r_initguess[T+1:] = r_initguess[T]
+
+	#Gets initial guess for wage path. This is set up to be linear.
 	for i in range(I):
 		w_initguess[i, :T+1] = np.linspace(w_init[i], w_ss[i], T+1)
-		r_initguess[:T+1] = np.linspace(r_init[0], r_ss[0], T+1)
+
 		w_initguess[i,T+1:] = w_initguess[i,T]
-		r_initguess[T+1:] = r_initguess[T]
 
-	return assets_init, kf_init, w_initguess, r_initguess, k_init, n_init, Y_init, c_init
 
-def get_prices(params, Kpath, kf_tpath, w_ss, r_ss):
-	"""
-	Description:
-		Based on the given paths, the paths for wages and rental rates are figured
-		out based on equations 1.4-1.5
+	return assets_init, kf_init, w_initguess, r_initguess, kd_init, n_init, Y_init, c_init
 
-	Inputs:
-		-assets_tpath: Asset timepath
-		-kf_tpath: Foreign held capital timepath.
-
-	Objects in Functions:
-		-Kdpath[I, S+T+1]:Path of domestic owned capital stock
-
-	Outputs:
-	-wpath[I, S+T+1]: Wage path
-	-rpath[I, S+T+1]: Rental rate path
-	-Ypath[I, S+T+1]: Output path
-
-	"""
-	S, T, alpha, e, A = params
-
-	Kdpath=Kpath-kf_tpath
-
-	#Gets non-price variables needed to caluclate prices
-	n = np.sum(e, axis=1) #Sum of the labor productivities
-
-	#Gets the path for output, Y
-	Ypath = (Kdpath**alpha) * (np.einsum("i,is->is", A, n)**(1-alpha))
-
-	#Gets prices
-	rpath = alpha * Ypath[0] / Kdpath[0]
-	wpath = (1-alpha) * Ypath / n
-
-	#Tiles the steady-state for each year beyond the steady state
-	rpath[T:] = r_ss[0]
-	wpath[:,T:] = np.einsum("i,s->is", w_ss, np.ones(S+1))
-
-	#Returns only the first country's interest rate, since they should be the same in theory
-	return wpath, rpath, Ypath
-
-def get_foreignK_path(params, Kpath, rpath, k_ss, kf_ss):
+def get_foreignK_path(params, Kpath, rpath, kf_ss):
         """
         Description:
            This calculates the timepath of the foreign capital stock. This is based on equation (1.12 and 1.13).
@@ -534,7 +470,7 @@ def get_foreignK_path(params, Kpath, rpath, k_ss, kf_ss):
             rpath: Rental Rate path, also from our calculation
         
         Objects in Function:
-            kDpath[I,S+T+1]: Path of domestic owned capital
+            kdpath[I,S+T+1]: Path of domestic owned capital
             n[I,S+T+1]: Path of total labor
             kf_ss[I,]: Calculated from the steady state. 
             A[I,]: Parameters from above
@@ -549,14 +485,14 @@ def get_foreignK_path(params, Kpath, rpath, k_ss, kf_ss):
 
         #Declares the array that will later be used.
         kfPath=np.zeros((I,S+T+1))
-        kDPath=np.zeros((I,S+T+1))
+        kdPath=np.zeros((I,S+T+1))
 
         #Gets the domestic-owned capital stock for each country except for the first country
-        kDPath[1:,:]=(rpath[:]/alpha)**(1/(alpha-1))*np.einsum("i,is->is", A[1:], n[1:,:])
+        kdPath[1:,:]=(rpath[:]/alpha)**(1/(alpha-1))*np.einsum("i,is->is", A[1:], n[1:,:])
 
         #This is using equation 1.13 solved for the foreign capital stock to caluclate the foreign capital stock
         #For everyone except the first country
-        kfPath[1:,:]=Kpath[1:,:]-kDPath[1:,:]
+        kfPath[1:,:]=Kpath[1:,:]-kdPath[1:,:]
 
         #To satisfy 1.18, the first country's assets is the negative of the sum of all the other countries' assets
         kfPath[0,:]= -np.sum(kfPath[1:,:],axis=0)
@@ -715,7 +651,7 @@ def get_cons_assets_matrix(params, wpath, rpath, starting_assets):
 
 	return c_timepath, a_timepath
 
-def get_wpathnew_rpathnew(params, wpath, rpath, starting_assets, k_ss, kf_ss, w_ss, r_ss):
+def get_wpathnew_rpathnew(params, wpath, rpath, starting_assets, kd_ss, kf_ss, w_ss, r_ss):
 	"""
 	Description:
 		Takes initial paths of wages and rental rates, gives the consumption path and the the wage and rental paths that are implied by that consumption path.
@@ -747,6 +683,7 @@ def get_wpathnew_rpathnew(params, wpath, rpath, starting_assets, k_ss, kf_ss, w_
 	"""
 
 	I, S, T, T_1, beta, sigma, delta, alpha, e, A, StartFertilityAge, StartDyingAge, N_matrix, MortalityRates = params
+
 	ca_params = (I, S, T, T_1, beta, sigma, delta, e, StartFertilityAge, StartDyingAge, N_matrix, MortalityRates)
 	c_timepath, a_timepath = get_cons_assets_matrix(ca_params, wpath, rpath, starting_assets)
 
@@ -757,23 +694,27 @@ def get_wpathnew_rpathnew(params, wpath, rpath, starting_assets, k_ss, kf_ss, w_
 	Cpath=np.sum(c_timepath,axis=1)
 
 	#After time period T, the total capital stock and total consumption is forced to be the steady state
-	Kpath[:,T:] = np.einsum("i,t->it", k_ss, np.ones(S+1))
+	Kpath[:,T:] = np.einsum("i,t->it", kd_ss+kf_ss, np.ones(S+1))
 	Cpath[:,T:] = np.einsum("i,t->it", Cpath[:,T-1], np.ones(S+1))
 
 	#Gets the foriegned owned capital
 	kf_params = (I, S, T, alpha, e, A)
-	kfpath=get_foreignK_path(kf_params, Kpath, rpath, k_ss, kf_ss)
+	kfpath = get_foreignK_path(kf_params, Kpath, rpath, kf_ss)
 
 	#Based on the overall capital path and the foreign owned capital path, we get new w and r paths.
-	prices_params = (S, T, alpha, e, A)
-	wpath_new, rpath_new, Ypath = get_prices(prices_params, Kpath, kfpath, w_ss, r_ss)
+	kdpath = Kpath - kfpath
+	npath = get_n(e)
+	Yparams = (alpha, A)
+	Ypath = get_Y(Yparams, kdpath, npath)
+	rpath_new = get_r(alpha, Ypath[0], kdpath[0])
+	wpath_new = get_w(alpha, Ypath, npath)
 
 	#Checks to see if any of the timepaths have negative values
 	check_feasible(Kpath, Ypath, wpath, rpath, c_timepath)
 
 	return wpath_new, rpath_new, Cpath, Kpath, Ypath
 
-def get_Timepath(params, wstart, rstart, assets_init, k_ss, kf_ss, w_ss, r_ss):
+def get_Timepath(params, wstart, rstart, assets_init, kd_ss, kf_ss, w_ss, r_ss):
 
     I, S, T, T_1, beta, sigma, delta, alpha, e, A, StartFertilityAge, StartDyingAge, N_matrix, MortalityRates, distance, diff, xi, MaxIters = params
 
@@ -782,8 +723,8 @@ def get_Timepath(params, wstart, rstart, assets_init, k_ss, kf_ss, w_ss, r_ss):
 
     while distance>diff and Iter<MaxIters: #The timepath iteration runs until the distance gets below a threshold or the iterations hit the maximum
 
-            wpath_new, rpath_new, cpath_new, kpath_new, Ypath_new = \
-            get_wpathnew_rpathnew(wr_params, wstart, rstart, np.column_stack((np.zeros(I), assets_init, np.zeros(I))), k_ss, kf_ss, w_ss, r_ss)
+            wpath_new, rpath_new, Cpath_new, Kpath_new, Ypath_new = \
+            get_wpathnew_rpathnew(wr_params, wstart, rstart, assets_init, kd_ss, kf_ss, w_ss, r_ss)
 
             dist1=sp.linalg.norm(wstart-wpath_new,2) #Norm of the wage path
             dist2=sp.linalg.norm(rstart-rpath_new,2) #Norm of the intrest rate path
@@ -794,8 +735,8 @@ def get_Timepath(params, wstart, rstart, assets_init, k_ss, kf_ss, w_ss, r_ss):
             if distance<diff or Iter==MaxIters: #When the distance gets below the tolerance or the maximum of iterations is hit, then the TPI finishes.
                 wend=wpath_new
                 rend=rpath_new
-                cend=cpath_new
-                kend=kpath_new
+                Cend=Cpath_new
+                Kend=Kpath_new
                 Yend=Ypath_new
             if Iter==MaxIters: #In case it never gets below the tolerance, it will throw this warning and give the last timepath.
                 print "Doesn't converge within the maximum number of iterations"
@@ -804,7 +745,7 @@ def get_Timepath(params, wstart, rstart, assets_init, k_ss, kf_ss, w_ss, r_ss):
             wstart=wstart*xi+(1-xi)*wpath_new #Convex conjugate of the wage path
             rstart=rstart*xi+(1-xi)*rpath_new #Convex conjugate of the intrest rate path
 
-    return wend, rend, cend, kend, Yend
+    return wend, rend, Cend, Kend, Yend
 
 def CountryLabel(Country): #Activated by line 28
     '''
