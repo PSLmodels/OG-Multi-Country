@@ -14,10 +14,12 @@ EndFertilityAge = int(S/80.*45)#The age when agents have their last children
 StartDyingAge = int(S/80.*68)#The first age agents can begin to die
 MaxImmigrantAge = int(S/80.*65)#All immigrants are between ages 0 and MaxImmigrantAge
 g_A = 0.001#Technical growth rate
- 
-beta = .99 #Future consumption discount rate
-sigma = 1 #Leave it at 1, fsolve struggles with the first sigma we used (3).
-delta = .03 #Depreciation Rate
+
+beta_ann=.95 #Starting future consumption discount rate
+delta_ann=.08 #Starting depreciation rate
+beta = beta_ann**(1/S) #Future consumption discount rate
+sigma = 1 #Utility curvature parameter
+delta = 1-(1-delta_ann)**(1/S) #Depreciation Rate
 alpha = .3 #Capital Share of production
 e = np.ones((I, S, T+S+1)) #Labor productivities
 A = np.ones(I) #Techonological Change, used for idential countries
