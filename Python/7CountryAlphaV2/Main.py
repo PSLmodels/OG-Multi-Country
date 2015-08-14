@@ -2,7 +2,7 @@ import numpy as np
 import StepbyStepv1 as Stepfuncs
 
 #Parameters Zone
-I = 6 #Number of countries
+I = 7 #Number of countries
 S = 80 #Upper bound of age for agents
 T = int(round(2.5*S)) #Number of time periods to convergence, based on Rick Evans' function.
 
@@ -17,9 +17,9 @@ g_A = 0.001#Technical growth rate
 
 beta_ann=.95 #Starting future consumption discount rate
 delta_ann=.08 #Starting depreciation rate
-beta = beta_ann**(1/S) #Future consumption discount rate
+beta = beta_ann**(70/S) #Future consumption discount rate
 sigma = 1 #Utility curvature parameter
-delta = 1-(1-delta_ann)**(1/S) #Depreciation Rate
+delta = 1-(1-delta_ann)**(70/S) #Depreciation Rate
 alpha = .3 #Capital Share of production
 e = np.ones((I, S, T+S+1)) #Labor productivities
 A = np.ones(I) #Techonological Change, used for idential countries
@@ -33,17 +33,20 @@ MaxIters=300 #Maximum number of iterations on TPI.
 #Program Levers
 PrintAges = False #Prints the different key ages in the demographics
 PrintSS = False #Prints the result of the Steady State functions
-CalcTPI = True #Activates the calculation of Time Path Iteration
+CalcTPI = False #Activates the calculation of Time Path Iteration
 #NOTE: Graphing only works if CalcTPI is activated.
 Graphs = True #Activates graphing the graphs.
 CountryNamesON = False #Turns on labels for the graphs. Replaces "Country x" with proper names.
+DiffDemog = True #Turns on different demographics over countries. 
 
 #MAIN CODE
 
 #Gets demographic data
-demog_params = (I, S, T, T_1, StartFertilityAge, EndFertilityAge, StartDyingAge, MaxImmigrantAge, g_A, PrintAges)
-FertilityRates, MortalityRates, Migrants, N_matrix, Nhat_matrix = Stepfuncs.getDemographics(demog_params)
-#Stepfuncs.plotDemographics((S,T),0,[0,19],"USA", N_matrix)
+demog_params = (I, S, T, T_1, StartFertilityAge, EndFertilityAge, StartDyingAge, MaxImmigrantAge, g_A)
+FertilityRates, MortalityRates, Migrants, N_matrix, Nhat_matrix = Stepfuncs.getDemographics(demog_params, PrintAges, DiffDemog)
+
+for i in range(I):
+	Stepfuncs.plotDemographics((S,T),i,[0,24],str("Country "+str(i)), N_matrix)
 
 #Initalizes initial guesses
 assets_guess = np.ones((I, S-1))*.15
