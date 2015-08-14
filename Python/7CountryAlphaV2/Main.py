@@ -15,15 +15,15 @@ StartDyingAge = int(S/80.*68)#The first age agents can begin to die
 MaxImmigrantAge = int(S/80.*65)#All immigrants are between ages 0 and MaxImmigrantAge
 g_A = 0.001#Technical growth rate
 
-beta_ann = .95
-beta = beta_ann ** (70/S) #Future consumption discount rate
-sigma = 1 #Leave it at 1, fsolve struggles with the first sigma we used (3).
-delta_ann = .08
+beta_ann=.95 #Starting future consumption discount rate
+delta_ann=.08 #Starting depreciation rate
+beta = beta_ann**(70/S) #Future consumption discount rate
+sigma = 1 #Utility curvature parameter
 delta = 1-(1-delta_ann)**(70/S) #Depreciation Rate
 alpha = .3 #Capital Share of production
 e = np.ones((I, S, T+S+1)) #Labor productivities
 A = np.ones(I) #Techonological Change, used for idential countries
-#A = np.array([1.25,1.35,1,1.65,1.1]) #Techonological Change, used for when countries are different
+#A=np.array([1,4,2,5,6]) #Techonological Change, used for when countries are different
 
 diff=1e-12 #Convergence Tolerance
 distance=10 #Used in taking the norm, arbitrarily set to 10
@@ -45,8 +45,8 @@ DiffDemog = True #Turns on different demographics over countries.
 demog_params = (I, S, T, T_1, StartFertilityAge, EndFertilityAge, StartDyingAge, MaxImmigrantAge, g_A)
 FertilityRates, MortalityRates, Migrants, N_matrix, Nhat_matrix = Stepfuncs.getDemographics(demog_params, PrintAges, DiffDemog)
 
-#for i in range(I):
-	#Stepfuncs.plotDemographics((S,T),i,[0,24],str("Country "+str(i)), N_matrix)
+for i in range(I):
+	Stepfuncs.plotDemographics((S,T),i,[0,24],str("Country "+str(i)), N_matrix)
 
 #Initalizes initial guesses
 assets_guess = np.ones((I, S-1))*.15
