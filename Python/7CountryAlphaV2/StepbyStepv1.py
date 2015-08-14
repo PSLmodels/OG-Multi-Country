@@ -1,12 +1,14 @@
 from __future__ import division
+import sys
 import numpy as np
 import scipy as sp
 import scipy.optimize as opt
+import time as time
 from matplotlib import pyplot as plt
 
 #DEMOGRAPHICS FUNCTIONS
 
-def getDemographics(params):
+def getDemographics(params, PrintAges, DiffDemog):
 	"""
 	Description:
 		-Imports data from csv files for initial populations, fertility rates, mortality rates, and net migrants. 
@@ -36,7 +38,17 @@ def getDemographics(params):
 		-Nhat matrix: Numpy array that contains the population percentage for all countries, ages, and years
 	"""
 
-	I, S, T, T_1, StartFertilityAge, EndFertilityAge, StartDyingAge, MaxImmigrantAge, g_A, PrintAges = params
+	I, S, T, T_1, StartFertilityAge, EndFertilityAge, StartDyingAge, MaxImmigrantAge, g_A = params
+
+	#Initializes demographics matrices
+	N_matrix = np.zeros((I, S+1, T+S+1))
+	Nhat_matrix = np.zeros((I, S+1, T+S+1))
+	#N_temp = np.zeros((I, S+1, T+S+1))
+	FertilityRates = np.zeros((I, S+1, T+S+1))
+	MortalityRates = np.zeros((I, S+1, T+S+1))
+	Migrants = np.zeros((I, S+1, T+S+1))
+	g_N = np.zeros(T+S+1)
+
 	if PrintAges:
 		print "T =", T
 		print "T_1", T_1
@@ -45,37 +57,47 @@ def getDemographics(params):
 		print "StartDyingAge", StartDyingAge
 		print "MaxImmigrantAge", MaxImmigrantAge
 
-	#Imports and scales data for the USA. Imports a certain number of generations according to the value of S
-	USAPopdata = np.loadtxt(("Data_Files/population.csv"),delimiter=',',skiprows=1, usecols=[1])[:S+1]*1000
-	USAFertdata = np.loadtxt(("Data_Files/usa_fertility.csv"),delimiter=',',skiprows=1, usecols=range(1,EndFertilityAge+2-StartFertilityAge))[48:48+T_1,:]
-	USAMortdata = np.loadtxt(("Data_Files/usa_mortality.csv"),delimiter=',',skiprows=1, usecols=range(1,S+1-StartDyingAge))[:T_1,:]
-	USAMigdata = np.loadtxt(("Data_Files/net_migration.csv"),delimiter=',',skiprows=1, usecols=[1])[:MaxImmigrantAge]*100
+	if DiffDemog:
+		
+		if I > 7:
+			sys.exit("ERROR!!! We can't have more than 7 Countries without unique data. Change either parameter I so it is less than 8 or change DiffDemog to False")
+		
+		countrynames = ["usa", "eu", "japan", "china", "india", "russia", "korea"]
 
-	#Initializes demographics matrices
-	N_matrix = np.zeros((I, S+1, T))
-	Nhat_matrix = np.zeros((I, S+1, T))
-	FertilityRates = np.zeros((I, S+1, T))
-	MortalityRates = np.zeros((I, S+1, T))
-	Migrants = np.zeros((I, S+1, T))
-	g_N = np.zeros(T)
+		for i in range(I):
+			print "Got demographics for", countrynames[i]
+			N_matrix[i,:,0] = np.loadtxt(("Data_Files/population.csv"),delimiter=',',skiprows=1, usecols=[i+1])[:S+1]*1000
+			FertilityRates[i,StartFertilityAge:EndFertilityAge+1,:T_1] = np.transpose(np.loadtxt(str("Data_Files/" + countrynames[i] + "_fertility.csv"),delimiter=',',skiprows=1, usecols=range(1,EndFertilityAge+2-StartFertilityAge))[48:48+T_1,:])
+			MortalityRates[i,StartDyingAge:-1,:T_1] = np.transpose(np.loadtxt(str("Data_Files/" + countrynames[i] + "_mortality.csv"),delimiter=',',skiprows=1, usecols=range(1,S+1-StartDyingAge))[:T_1,:])
+			Migrants[i,:MaxImmigrantAge,:T_1] = np.einsum("s,t->st",np.loadtxt(("Data_Files/net_migration.csv"),delimiter=',',skiprows=1, usecols=[i+1])[:MaxImmigrantAge]*100, np.ones(T_1))
 
-	#NOTE: For now we set fertility, mortality, number of migrants, and initial population the same for all countries. 
-	
-	#Sets initial total population (N_matrix), percentage of total world population (Nhat_matrix)
-	N_matrix[:,:,0] = np.tile(USAPopdata, (I, 1))
+	else:
+		#Imports and scales data for the USA. Imports a certain number of generations according to the value of S
+		USAPopdata = np.loadtxt(("Data_Files/population.csv"),delimiter=',',skiprows=1, usecols=[1])[:S+1]*1000
+		USAFertdata = np.loadtxt(("Data_Files/usa_fertility.csv"),delimiter=',',skiprows=1, usecols=range(1,EndFertilityAge+2-StartFertilityAge))[48:48+T_1,:]
+		USAMortdata = np.loadtxt(("Data_Files/usa_mortality.csv"),delimiter=',',skiprows=1, usecols=range(1,S+1-StartDyingAge))[:T_1,:]
+		USAMigdata = np.loadtxt(("Data_Files/net_migration.csv"),delimiter=',',skiprows=1, usecols=[1])[:MaxImmigrantAge]*100
+
+		#NOTE: For now we set fertility, mortality, number of migrants, and initial population the same for all countries. 
+
+		#Sets initial total population
+		N_matrix[:,:,0] = np.tile(USAPopdata, (I, 1))
+
+		#Fertility Will be equal to 0 for all ages that don't bear children
+		FertilityRates[:,StartFertilityAge:EndFertilityAge+1,:T_1] = np.einsum("ts,i->ist", USAFertdata, np.ones(I))
+
+		#Mortality be equal to 0 for all young people who aren't old enough to die
+		MortalityRates[:,StartDyingAge:-1,:T_1] = np.einsum("ts,it->ist", USAMortdata, np.ones((I,T_1)))
+
+		#The number of migrants is the same for each year
+		Migrants[:,:MaxImmigrantAge,:T_1] = np.einsum("s,it->ist", USAMigdata, np.ones((I,T_1)))
+
+
 	Nhat_matrix[:,:,0] = N_matrix[:,:,0]/np.sum(N_matrix[:,:,0])
-
-	#Fertility Will be equal to 0 for all ages that don't bear children
-	FertilityRates[:,StartFertilityAge:EndFertilityAge+1,:T_1] = np.einsum("ts,i->ist", USAFertdata, np.ones(I))
-
-	#Mortality be equal to 0 for all young people who aren't old enough to die
-	MortalityRates[:,StartDyingAge:-1,:T_1] = np.einsum("ts,it->ist", USAMortdata, np.ones((I,T_1)))
+	N_temp = np.ones((I, S+1))/(I*S)
 
 	#The last generation dies with probability 1
-	MortalityRates[:,-1,:] = np.ones((I, T))
-
-	#The number of migrants is the same for each year
-	Migrants[:,:MaxImmigrantAge,:T_1] = np.einsum("s,it->ist", USAMigdata, np.ones((I,T_1)))
+	MortalityRates[:,-1,:] = np.ones((I, T+S+1))
 
 	#Gets steady-state values
 	f_bar = FertilityRates[:,:,T_1-1]
@@ -83,34 +105,35 @@ def getDemographics(params):
 	m_bar = Migrants[:,:,T_1-1]
 
 	#Set to the steady state for every year beyond year T_1
-	FertilityRates[:,:,T_1:] = np.tile(np.expand_dims(f_bar, axis=2), (1,1,T-T_1))
-	MortalityRates[:,:,T_1:] = np.tile(np.expand_dims(p_bar, axis=2), (1,1,T-T_1))
-	Migrants[:,:,T_1:] = np.tile(np.expand_dims(m_bar, axis=2), (1,1,T-T_1))
+	FertilityRates[:,:,T_1:] = np.tile(np.expand_dims(f_bar, axis=2), (1,1,T-T_1+S+1))
+	MortalityRates[:,:,T_1:] = np.tile(np.expand_dims(p_bar, axis=2), (1,1,T-T_1+S+1))
+	Migrants[:,:,T_1:] = np.tile(np.expand_dims(m_bar, axis=2), (1,1,T-T_1+S+1))
 
 	#Gets the initial immigration rate
 	ImmigrationRate = Migrants[:,:,0]/N_matrix[:,:,0]
 
 	#Gets initial world population growth rate
-	g_N[0] = np.sum(Nhat_matrix[:,:,0]*(FertilityRates[:,:,0] + ImmigrationRate - MortalityRates[:,:,0]))
+	g_N[0] = 0.
 
 	#Calculates population numbers for each country
-	for t in range(1,T):
+	for t in range(1,T+S+1):
 		#Gets the total number of children and and percentage of children and stores them in generation 0 of their respective matrices
 		#See equations 2.1 and 2.10
 		N_matrix[:,0,t] = np.sum((N_matrix[:,:,t-1]*FertilityRates[:,:,t-1]),axis=1)
-		Nhat_matrix[:,0,t] = np.exp(-g_N[t-1])*np.sum((Nhat_matrix[:,:,t-1]*FertilityRates[:,:,t-1]),axis=1)
+		N_temp[:,0] = np.sum((Nhat_matrix[:,:,t-1]*FertilityRates[:,:,t-1]),axis=1)
 
 		#Finds the immigration rate for each year
 		ImmigrationRate = Migrants[:,:,t-1]/N_matrix[:,:,t-1]
 
-		#Gets the population and percentage of population for the next year, taking into account immigration and mortality
+		#Gets the population distribution and percentage of population distribution for the next year, taking into account immigration and mortality
 		#See equations 2.2 and 2.11
 		N_matrix[:,1:,t] = N_matrix[:,:-1,t-1]*(1+ImmigrationRate[:,:-1]-MortalityRates[:,:-1,t-1])
-		Nhat_matrix[:,1:,t] = np.exp(-g_N[t-1])*Nhat_matrix[:,:-1,t-1]*(1+ImmigrationRate[:,:-1]-MortalityRates[:,:-1,t-1])
-		
+		Nhat_matrix[:,:,t] = N_matrix[:,:,t]/np.sum(N_matrix[:,:,t])
+		N_temp[:,1:] = Nhat_matrix[:,:-1,t-1]*(1+ImmigrationRate[:,:-1]-MortalityRates[:,:-1,t-1])
+
+
 		#Gets the growth rate for the next year
-		g_N[t] = np.sum(Nhat_matrix[:,:,t]*(FertilityRates[:,:,t] + ImmigrationRate - MortalityRates[:,:,t]), axis=(0, 1))
-		#print np.sum(Nhat_matrix[:,:,t])#This should be equal to 1.0
+		g_N[t] = np.sum(N_temp[:,:])-1
 
 	#Gets labor endowment per household. For now it grows at a constant rate g_A
 	l_endowment = np.cumsum(np.ones(T)*g_A)
@@ -215,14 +238,58 @@ def hatvariables(Kpathreal, kfpathreal, Nhat_matrix):
 #STEADY STATE FUNCTIONS
 
 def get_kd(assets, kf):
+        """
+        Description: Calculates the amount of domestic capital that remains in the domestic country
+
+        Inputs:
+            -assets[I,S,T+S+1]: Matrix of assets
+            -kf[I,T+S+1]: Domestic capital held by foreigners.
+
+        Objects in Function:
+            NONE
+
+        Outputs:
+            -kd[I,T+S+1]: Capital that is used in the domestic country
+
+        """
 	kd = np.sum(assets[:,1:-1], axis=1) - kf
 	return kd
 
 def get_n(e):
+        """
+        Description: Calculates the total labor productivity for each country
+
+        Inputs:
+            -e[I,S,T]:Matrix of labor productivities
+
+        Objects in Function:
+            -NONE
+
+        Outputs:
+            -n[I,S+T+1]: Total labor productivity
+
+        """
 	n = np.sum(e, axis=1)
 	return n
 
 def get_Y(params, kd, n):
+        """
+        Description:Calculates the output timepath
+
+        Inputs:
+            -params (2) tuple: Contains the necessary parameters used
+            -kd[I,T+S+1]: Domestic held capital stock
+            -n[I,S+T+1]: Summed labor productivity
+
+        Objects in Function:
+            -A[I]: Technology for each country
+            -alpha: Production share of capital
+
+        Outputs:
+            -Y[I,S+T+1]: Timepath of output
+
+
+        """
 	alpha, A = params
 
 	if kd.ndim == 1:
@@ -233,14 +300,62 @@ def get_Y(params, kd, n):
 	return Y
 
 def get_r(alpha, Y, kd):
+        """
+        Description: Calculates the rental rates.
+
+        Inputs:
+            -alpha (scalar): Production share of capital
+            -Y[I,T+S+1]: Timepath of output
+            -kd[I,T+S+1]: Timepath of domestically owned capital
+
+        Objects in Function:
+            -NONE
+
+        Outputs:
+            -r[I,R+S+1]:Timepath of rental rates
+
+        """
 	r = alpha * Y / kd
 	return r
 
 def get_w(alpha, Y, n):
+        """
+        Description: Calculates the wage timepath.
+
+        Inputs:
+            -alpha (scalar): Production share of output
+            -Y[I,T+S+1]: Output timepath
+            -n[I,T+S+1]: Total labor productivity timepath
+
+        Objects in Function:
+            -NONE
+
+        Outputs:
+            -w[I,T+S+1]: Wage timepath
+
+        """
 	w = (1-alpha) * Y / n
 	return w
 
 def get_cvecss(params, w, r, assets):
+        """
+        Description: Calculates the consumption vector
+
+        Inputs:
+            -params (tuple 2): Tuple that containts the necessary parameters
+            -w[I,T+S+1]: Wage timepath
+            -r[I,T+S+1]: Rental Rate timepath
+            -assets[I,S,T+S+1]: Assets timepath
+
+        Objects in Function:
+            -e[I,S,T+S+1]: Matrix of labor productivities
+            -delta (parameter): Depreciation rate
+
+        Outputs:
+            -c_vec[I,T+S+1]:Vector of consumption.
+
+
+        """
 	e, delta = params
 	c_vec = np.einsum("i, is -> is", w, e[:,:,0])\
 		  + np.einsum("i, is -> is",(1 + r - delta) , assets[:,:-1])\
@@ -249,6 +364,24 @@ def get_cvecss(params, w, r, assets):
 	return c_vec
 
 def check_feasible(K, Y, w, r, c):
+        """
+        Description:Checks the feasibility of the inputs.
+
+        Inputs:
+            -K[I,T+S+1]: Capital stock timepath
+            -y[I,T+S+1]: Output timepath
+            -w[I,T+S+1]: Wage timepath
+            -r[I,T+S+1]: Rental rate timepath
+            -c[I,T+S+1]: consumption timepath
+
+        Objects in Function:
+            NONE
+
+        Outputs:
+            -Feasible (Boolean): Whether or not the inputs are feasible.
+
+
+        """
 
 	Feasible = True
 
@@ -280,7 +413,7 @@ def check_feasible(K, Y, w, r, c):
 		Feasible=False
 		print "WARNING! INFEASABLE VALUE ENCOUNTERED IN c_vec!"
 		print "The following coordinates have infeasible values:"
-		print np.argwhere(c_vec<0)
+		print np.argwhere(c<0)
 
 	return Feasible
 
@@ -768,15 +901,15 @@ def CountryLabel(Country): #Activated by line 28
     if Country=="Country 1":
         Name="Europe"
     if Country=="Country 2":
-        Name="China"
-    if Country=="Country 3":
         Name="Japan"
+    if Country=="Country 3":
+        Name="China"
     if Country=="Country 4":
-        Name="Korea"
+        Name="India"
     if Country=="Country 5":
         Name="Russia"
     if Country=="Country 6":
-        Name="India"
+        Name="Korea"
 
     #Add More Country labels here
 
