@@ -161,7 +161,9 @@
 
 	We also allow for technical progress by having the endowment of labor per household rise by a constant amount each period.  We denote this endowment as $\bar \ell_t$ and denote its growth rate as $g^A$.
 
-	This means aggregate variables will grow at the rate $g^A+g^N_t$ and per capita variables will grow at rate $g^A$.  The stationarized versions of our behavioral equations are given below, where a carat denotes the stationarized variable.  Note that $N_{ist}$ is interpretable as the fraction of the world population in country $i$ of age $s$ at time $t$ so that $\sum_{i=1}^I \sum_{s=1}^S \hat N_{ist} = 1$.
+	The aggregate labor for a country is now given by $n_{it} = \sum_{s=1}^S N_{ist} e_{is} \bar \ell_t$.  Output, $y_t$, is defined as before. 
+
+	Aggregate variables will grow at the rate $g^A+g^N_t$ and per capita variables will grow at rate $g^A$.  The stationarized versions of our behavioral equations are given below, where a carat denotes the stationarized variable.  Note that $\hat N_{ist}$ is interpretable as the fraction of the world population in country $i$ of age $s$ at time $t$ so that $\sum_{i=1}^I \sum_{s=1}^S \hat N_{ist} = 1$.  Note that both $k_{it}$ and $n_{it}$ are growing at rate $g^A+g^N_t$, so $r_{it}$ and $w_{it}$ are stationary.
 
 	\begin{align}
 		g^N_t & = \sum_{i=1}^I \sum_{s=1}^S \hat N_{ist} (f_{ist}+m_{ist}-\rho_{ist}) ; \forall i\\
@@ -171,10 +173,10 @@
 		\hat n_{it} & = \sum_{s=1}^S e_{is} \hat N_{ist}; \forall i \\
 		\hat y_{it} & = \hat k_{it}^\alpha \left( A_{i} \hat n_{it} \right)^{1-\alpha} ; \forall i \\
 		r_{it} & = \alpha \frac{\hat y_{it}}{\hat k_{it}}; \forall i \\
-		\hat w_{it} & = (1-\alpha) \frac{\hat y_{it}}{\hat n_{it}}; \forall i \\
+		w_{it} & = (1-\alpha) \frac{\hat y_{it}}{\hat n_{it}}; \forall i \\
 		\hat BQ_{it} & = \sum_{s=67}^S \hat a_{ist} \rho_{ist} \hat N_{ist} ; \forall i \\
 		\hat BQ_{it} & = \sum_{s=23}^{67} \hat bq_{ist} (1-\rho_{ist}) \hat N_{ist}	; \forall i \\
-    	\hat c_{ist} & = \hat w_{it} e_{st} + (1+r_{1t}-\delta)\hat a_{ist} + \hat{bq}_{ist} - \hat a_{i,s+1,t+1}e^{g^A} ; \forall i,s \\
+    	\hat c_{ist} & = w_{it} e_{st} + (1+r_{1t}-\delta)\hat a_{ist} + \hat{bq}_{ist} - \hat a_{i,s+1,t+1}e^{g^A} ; \forall i,s \\
 		& \hat c_{ist}^{-\sigma} - \beta \left(\hat c_{i,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,s \\ 
 		& r_{it} - r_{1t} = 0; \forall i>1 \\
 		& \sum_{i=1}^I \hat k^f_{it} \left( \sum_{s=1}^S \hat N_{ist} \right) = 0
@@ -185,6 +187,114 @@
 	Once we have these we can find the steady state values for the rest of the system as we did above.
 
 	Also note that for the transition path we can find the time paths for the $\hat N$ varaibles indepentdent of the time-path iteration used to find the other variables.
+
+
+\section{Add Children and Leisure Decision}
+	Denote the number of children of age $r$ in houshold of age $s$ in country $i$ in period $t$ as $KID_{irst}$.  Wer assume that mortality hazard rates are zero up until age 68 and that fertility rates are non zero only for ages 23 through 45.  This means that we avoid the situation where a child lives, but the parents die, and vice versa.
+
+	The evolution of theses numbers is given by:
+	\begin{align}
+		KID_{i,r+1,s+1,t+1} = \left\{ \begin{matrix} f_{ist} & r=1 \\
+		KID_{irst} & 1<r<21\end{matrix} \right. \nonumber
+	\end{align}
+
+	Iterative substitution gives $KID_{i,r+1,s+1,t+1} = f_{i,s-r,t-r}$.  If we then define the number of children of all ages to a household of age $s$ as $KID_{ist}$ we have the following formula.
+
+	\begin{align}
+		KID_{i,s+1,t+1} = \sum_{r=1}^{20} f_{i,s-r,t-r}
+	\end{align}
+
+	Since this is a per household number of children it is already stationary and does not need to be turned into a ``hat'' variable.
+
+	The household's problem is now given by:
+	\begin{equation}
+		\begin{split}
+		& \max_{\{c_{i,s+j,t+j},\ell_{i,s+j,t+j},c^K{i,s+j,t+j},a_{i,s+j,t+j}\}_{j=0}^{S-s}} U_{ist} = \\
+		& \sum_{j=0}^{S-s} \beta^j \frac{1}{1-\sigma} \left[ \left( {c_{i,s+j,t+j}}^{1-1/\rho} + \chi {\ell_{i,s+j,t+j}}^{1-1/\rho}\right)^{\tfrac{{1-\sigma}}{1-1/\rho}} + KID_{i,s+j,t+j}{c^K_{i,s+j,t+j}}^{1-\sigma}\right] \nonumber
+		\end{split}
+	\end{equation}
+	subject to the following budget constraint each period.
+	\begin{equation} \label{eq_3bc}
+		c_{ist} + KID_{ist}c^K_{ist} = w_{it} e_{st} (\bar \ell_t -\ell_{ist}) + (1+r_{it}-\delta)a_{ist} - a_{i,s+1,t+1}
+	\end{equation}
+	with $a_{i1t} = a_{i,S+1,t} = 0$.  $\ell$ denotes leisure consumption and $c^K$ denotes consumption by children.
+
+	The first-order conditions are:
+	\begin{align}
+		& \beta^j \left( {c_{i,s+j,t+j}}^{1-1/\rho} + \chi {\ell_{i,s+j,t+j}}^{1-1/\rho}\right)^{\tfrac{{1-\sigma}}{1-1/\rho}-1} \left(1-\tfrac{1}{\rho}\right)^{-1} {c_{i,s+j,t+j}}^{-1/\rho}  \nonumber \\ = &  - \lambda_{i,s+j,t+j}  \label{eq_3foc1} \\
+		& \beta^j \left( {c_{i,s+j,t+j}}^{1-1/\rho} + \chi {\ell_{i,s+j,t+j}}^{1-1/\rho}\right)^{\tfrac{{1-\sigma}}{1-1/\rho}-1} \left(1-\tfrac{1}{\rho}\right)^{-1} \chi {\ell_{i,s+j,t+j}}^{-1/\rho} \nonumber \\ = & - \lambda_{i,s+j,t+j} w_{i,t+j} e_{s+j,t+j} \label{eq_3foc2} \\
+		& \beta^j KID_{i,s+j,t+j}{c^K_{i,s+j,t+j}}^{-\sigma} = - \lambda_{i,s+j,t+j} KID_{i,s+j,t+j} \label{eq_3foc3} \\
+               & (1+r_{i,t+j}-\delta) \lambda_{i,s+j,t+j} = \lambda_{i,s+j-1,t+j-1} \label{eq_3foc4}
+	\end{align}	
+	along with \eqref{eq_3bc}.
+
+	Solve the \eqref{eq_3foc3} for the LaGrange multiplier.
+	\begin{equation}\label{eq_lamdef}
+	       \lambda_{i,s+j,t+j} = -\beta^j {c^K_{i,s+j,t+j}}^{-\sigma}
+	\end{equation}
+
+	Then substitute this into \eqref{eq_3foc4} to get an intertemporal Euler equation.
+	\begin{equation}
+	       {c^K_{i,s+j-1,t+j-1}}^{-\sigma} = \beta (1+r_{i,t+j}-\delta) {c^K_{i,s+j,t+j}}^{-\sigma}
+	\end{equation}
+
+	Next, take the ratio of \eqref{eq_3foc1} and \eqref{eq_3foc2} and substitute in \eqref{eq_lamdef}.
+
+	\begin{align}
+		& \frac{{c_{i,s+j,t+j}}^{1-1/\rho}} {\chi {\ell_{i,s+j,t+j}}^{1-1/\rho}} = \frac{1}{w_{i,t+j} e_{s+j,t+j}} \nonumber \\
+		& \ell_{i,s+j,t+j} = c_{i,s+j,t+j} \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^\rho \label{eq_3elldef}
+ 	\end{align}
+
+	Substitute \eqref{eq_lamdef} and \eqref{eq_3elldef} into \eqref{eq_3foc1}.
+	\begin{align}
+		& \beta^j \left\{ {c_{i,s+j,t+j}}^{1-1/\rho} + \chi \left[c_{i,s+j,t+j} \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^\rho\right]^{1-1/\rho}\right\}^{\tfrac{{1-\sigma}}{1-1/\rho}-1} \left(1-\tfrac{1}{\rho}\right)^{-1} {c_{i,s+j,t+j}}^{-1/\rho}  \nonumber \\ = &  \beta^j {c^K_{i,s+j,t+j}}^{-\sigma} \nonumber \\
+		& \left\{ {c_{i,s+j,t+j}}^{1-1/\rho} \left[1 + \chi \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^\rho\right]^{1-1/\rho}\right\}^{\tfrac{1-\rho \sigma}{\rho-1}}  {c_{i,s+j,t+j}}^{-1/\rho}  \nonumber \\ = &  \left(1-\tfrac{1}{\rho}\right) {c^K_{i,s+j,t+j}}^{-\sigma} \nonumber \\
+		& \left[1 + \chi \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^\rho\right]^{\left[(1-1/\rho)
+		\tfrac{1-\rho \sigma}{\rho-1}\right]}  {c_{i,s+j,t+j}}^{\left[(1-1/\rho) \tfrac{1-\rho\sigma}{\rho-1}-1/\rho\right]}  \nonumber \\ = &  \left(1-\tfrac{1}{\rho}\right) {c^K_{i,s+j,t+j}}^{-\sigma} \nonumber \\
+		& \left[1 + \chi \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^\rho\right]^{\tfrac{1-\rho \sigma}{\rho}}  {c_{i,s+j,t+j}}^{-\sigma} = \left(1-\tfrac{1}{\rho}\right) {c^K_{i,s+j,t+j}}^{-\sigma} \nonumber \\
+		& c^K_{i,s+j,t+j} = c_{i,s+j,t+j} \left\{ \left[1 + \chi \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^\rho\right]^{\tfrac{1-\rho \sigma}{\rho}} \frac{\rho}{\rho-1} \right\}^{-\tfrac{1}{\sigma}} \nonumber
+	\end{align}
+
+	We rewrite this, more conveniently, as:
+	\begin{align}
+       & c^K_{i,s+j,t+j} = c_{i,s+j,t+j} \Gamma_{i,t+j} \label{eq_3cKdef} \\
+       & \Gamma_{i,t+j} \equiv \left\{ \left[1 + \chi \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^\rho\right]^{\tfrac{1-\rho \sigma}{\rho}} \frac{\rho}{\rho-1} \right\}^{-\tfrac{1}{\sigma}} \label{eq_3Gamdef}
+	\end{align}
+
+	Substituting \eqref{eq_3elldef}, \eqref{eq_3cKdef} and \eqref{eq_3Gamdef}, into the budget constraint, \eqref{eq_3bc},  gives:
+
+	\begin{align}
+		\begin{split}
+		c_{ist} + KID_{ist}\Gamma_{it} c_{ist} + \left(\frac{\chi}{w_{it}e_{st}}\right)^\rho c_{ist} & = w_{it} e_{st} \bar \ell_t + (1+r_{it}-\delta)a_{ist} - a_{i,s+1,t+1} \\
+		c_{ist} \left[ 1 + KID_{ist}\Gamma_{it} + \left(\frac{\chi}{w_{it}e_{st}}\right)^\rho \right] & = w_{it} e_{st} \bar \ell_t + (1+r_{it}-\delta)a_{ist} - a_{i,s+1,t+1} \\
+		c_{ist} & = \frac{w_{it} e_{st} \bar \ell_t + (1+r_{it}-\delta)a_{ist} - a_{i,s+1,t+1}} {1 + KID_{ist}\Gamma_{it} + \left(\tfrac{\chi}{w_{it}e_{st}}\right)^\rho} \label{eq_3cdef}
+        \end{split}
+	\end{align}
+
+	If we stationarize \eqref{eq_3elldef}, \eqref{eq_3cKdef}, \eqref{eq_3Gamdef} and \eqref{eq_3cdef}, we can add them to the list of other behavioral equations from previous sections above to get the following.
+
+	\begin{align}
+		g^N_t & = \sum_{i=1}^I \sum_{s=1}^S \hat N_{ist} (f_{ist}+m_{ist}-\rho_{ist}) ; \forall i\\
+		\hat N_{i,1,t+1} & = e^{-g^N_t}\sum_{s=23}^{45} \hat N_{ist} f_{ist} ; \forall i\\
+		\hat N_{i,s+1,t+1} & = e^{-g^N_t}\hat N_{ist} (1+m_{ist}-\rho_{ist}); \forall i, 1<s\le S \\
+		KID_{i,s+1,t+1} & = \sum_{r=1}^{20} f_{i,s-r,t-r}; \forall i, 1<s\le S \\
+		\hat k_{it} & = \sum_{s=1}^S \hat a_{ist} \hat N_{ist} - \hat k_{it}^f; \forall i \\
+		\hat n_{it} & = \sum_{s=1}^S e_{is} \hat N_{ist}; \forall i \\
+		\hat y_{it} & = \hat k_{it}^\alpha \left( A_{i} \hat n_{it} \right)^{1-\alpha} ; \forall i 
+	\end{align}
+	\begin{align}
+		r_{it} & = \alpha \frac{\hat y_{it}}{\hat k_{it}}; \forall i \\
+		w_{it} & = (1-\alpha) \frac{\hat y_{it}}{\hat n_{it}}; \forall i \\
+		\hat BQ_{it} & = \sum_{s=67}^S \hat a_{ist} \rho_{ist} \hat N_{ist} ; \forall i \\
+		\hat BQ_{it} & = \sum_{s=23}^{67} \hat bq_{ist} (1-\rho_{ist}) \hat N_{ist}	; \forall i \\
+		\Gamma_{it} & = \left\{ \left[1 + \chi \left(\frac{\chi}{w_{it} e_{st}}\right)^\rho\right]^{\tfrac{1-\rho \sigma}{\rho}} \frac{\rho}{\rho-1} \right\}^{-\tfrac{1}{\sigma}}; \forall i \\
+    	\hat c_{ist} & = \frac{w_{it} e_{st} \bar \ell_t + (1+r_{it}-\delta)\hat a_{ist} - \hat a_{i,s+1,t+1} e^{g^A}} {1 + KID_{ist}\Gamma_{it} + \left(\tfrac{\chi}{w_{it}e_{st}}\right)^\rho}; \forall i,s \\
+		\hat \ell_{ist} & = \hat c_{ist} \left(\frac{\chi}{w_{it}e_{st}}\right)^\rho ; \forall i,s \\
+		\hat c^K_{ist} & = \hat c_{ist} \left\{ \left[ 1 + \chi \left( \frac{\chi}{w_{it}e_{st}} \right)^{\rho-1} \right]^{\tfrac{1-\rho\sigma}{\rho-1}} (1-\rho) \right\}^{\tfrac{1}{\sigma}} \\
+		& \left({\hat c^K_{ist}}\right)^{-\sigma} - \beta \left(\hat c^K_{i,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,s \\
+		& r_{it} - r_{1t} = 0; \forall i>1 \\
+		& \sum_{i=1}^I \hat k^f_{it} \left( \sum_{s=1}^S \hat N_{ist} \right) = 0
+	\end{align}
 	
 
 \end{spacing}
