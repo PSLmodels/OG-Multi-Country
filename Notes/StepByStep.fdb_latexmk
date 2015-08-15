@@ -1,5 +1,5 @@
 # Fdb version 3
-["pdflatex"] 1439667370 "StepByStep.tex" "StepByStep.pdf" "StepByStep" 1439667371
+["pdflatex"] 1439669455 "StepByStep.tex" "StepByStep.pdf" "StepByStep" 1439669456
   "/usr/local/texlive/2014/texmf-dist/tex/context/base/supp-pdf.mkii" 1337017135 71627 94eb9990bed73c364d7f53f960cc8c5b ""
   "/usr/local/texlive/2014/texmf-dist/tex/generic/ifxetex/ifxetex.sty" 1284331290 1458 43ab4710dc82f3edeabecd0d099626b2 ""
   "/usr/local/texlive/2014/texmf-dist/tex/generic/oberdiek/gettitlestring.sty" 1303254447 8237 52810bdb4db2270e717422560a104aea ""
@@ -49,11 +49,11 @@
   "/usr/local/texlive/2014/texmf-dist/tex/latex/tools/delarray.sty" 1399675188 1944 4939113dc0732a33b3aa5272cacee843 ""
   "/usr/local/texlive/2014/texmf-dist/tex/latex/tools/enumerate.sty" 1399675188 3255 42d834dc82171769c16badd22df87021 ""
   "/usr/local/texlive/2014/texmf-dist/tex/latex/url/url.sty" 1388531844 12796 8edb7d69a20b857904dd0ea757c14ec9 ""
-  "StepByStep.aux" 1439667371 1749 7404261761295bfe71bd3748e3578249 ""
-  "StepByStep.out" 1439667371 200 64d2806e7a7c20957fde6f8daf145b99 ""
-  "StepByStep.tex" 1439667370 16764 efc8283dfadc444b73f35e038d6fda17 ""
+  "StepByStep.aux" 1439669456 2574 55f15005663644be0e9b0e1aa4f39b83 ""
+  "StepByStep.out" 1439669456 200 64d2806e7a7c20957fde6f8daf145b99 ""
+  "StepByStep.tex" 1439669455 18761 c753394118c8648b88d20f4f28682fcf ""
   (generated)
-  "StepByStep.out"
-  "StepByStep.pdf"
   "StepByStep.log"
+  "StepByStep.pdf"
   "StepByStep.aux"
+  "StepByStep.out"
