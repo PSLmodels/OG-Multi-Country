@@ -114,7 +114,7 @@
     	c_{ist} & = w_{it} e_{st} + (1+r_{1t}-\delta)a_{ist} - a_{i,s+1,t+1} ; \forall i,s \label{Eq_cdef}
 	\end{align}
 
-	The $IS$ values of $X_t$ in every period must satisfy the following equtions $IS$.
+	The $IS$ values of $X_t$ in every period must satisfy the following equations $IS$.
 	\begin{align}
 		& c_{ist}^{-\sigma} - \beta c_{i,s+1,t+1}^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,s \label{Eq_Euler2}\\ 
 		& r_{it} - r_{1t} = 0; \forall i>1 \\
@@ -130,6 +130,8 @@
 		w^{j+1}_t & = \chi w^{j}_t + (1-\chi) w^{new}_t; \forall t \le T 
 	\end{align}
 
+
+\newpage
 \section{Add Demographics and Growth}
 	Denote the population of age $s$ people in country $i$ in period $t$ as $N_{ist}$.  Denote the fraction of children born to people of age $s$ in country $i$ in period $t$ as $f_{ist}$ and the immigration rate as $m_{ist}$.  The mortality hazard is denoted $\rho_{ist}$.  We assume that $\rho_{ist}=0$ if $s<68$ and $\rho_{iSt}=1$.  We also assume that $f_{ist} = 0$ for $s<23$ and $s>45$.
 
@@ -151,10 +153,15 @@
 		\rho_{ist} & = \bar \rho_s; t \ge T_1
 	\end{align}
 
-	Inheiritances are partially intended bequests and are the assets of agents that die at the end of period $t$ to the survivors in that period.  Let $BQ_{it}$ denote total bequests in period $t$ for country $i$ and $bq_{ist}$ denote the bequest received by a person $s$ years old in that same country and time period.
+	Inheritances are partially intended bequests and are the assets of agents that die at the end of period $t$ to the survivors in that period.  Let $BQ_{it}$ denote total bequests in period $t$ for country $i$ and $bq_{ist}$ denote the bequest received by a person $s$ years old in that same country and time period.
 	\begin{align}
 		BQ_{it} & = \sum_{s=67}^S a_{ist} \rho_{ist} N_{ist} \\
 		& = \sum_{s=23}^{67} bq_{ist} (1-\rho_{ist}) N_{ist}
+	\end{align}
+
+	We specify a bequest distribution rule that tells what proportion of available bequest funds goes to each household within a country.  One possible simple rule would be to divide the funds up equally over all survivors.  This rule would be:
+	\begin{align}
+		bq_{ist} = \frac{BQ_{it}}{\sum_{s=23}^{67} (1-\rho_{ist}) N_{ist}} \nonumber
 	\end{align}
 
 	While relative populations stabilize in the steady state, the overall population may be growing or shrinking.  Hence, all aggregate variables will need to be stationarized by dividing by the total population of a country.  To help with this, we define the growth rate of the world population as $g^N_t = \tfrac{N_{it}}{N_{t-1}}-1$.
@@ -176,7 +183,9 @@
 		w_{it} & = (1-\alpha) \frac{\hat y_{it}}{\hat n_{it}}; \forall i \\
 		\hat BQ_{it} & = \sum_{s=67}^S \hat a_{ist} \rho_{ist} \hat N_{ist} ; \forall i \\
 		\hat BQ_{it} & = \sum_{s=23}^{67} \hat bq_{ist} (1-\rho_{ist}) \hat N_{ist}	; \forall i \\
-    	\hat c_{ist} & = w_{it} e_{st} + (1+r_{1t}-\delta)\hat a_{ist} + \hat{bq}_{ist} - \hat a_{i,s+1,t+1}e^{g^A} ; \forall i,s \\
+		\hat c_{ist} & = w_{it} e_{st} + (1+r_{1t}-\delta)\hat a_{ist} + \hat{bq}_{ist} - \hat a_{i,s+1,t+1}e^{g^A} ; \forall i,s 
+	\end{align}
+	\begin{align}
 		& \hat c_{ist}^{-\sigma} - \beta \left(\hat c_{i,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,s \\ 
 		& r_{it} - r_{1t} = 0; \forall i>1 \\
 		& \sum_{i=1}^I \hat k^f_{it} \left( \sum_{s=1}^S \hat N_{ist} \right) = 0
@@ -186,11 +195,12 @@
 
 	Once we have these we can find the steady state values for the rest of the system as we did above.
 
-	Also note that for the transition path we can find the time paths for the $\hat N$ varaibles indepentdent of the time-path iteration used to find the other variables.
+	Also note that for the transition path we can find the time paths for the $\hat N$ variables independent of the time-path iteration used to find the other variables.
 
 
+\newpage
 \section{Add Children and Leisure Decision}
-	Denote the number of children of age $r$ in houshold of age $s$ in country $i$ in period $t$ as $KID_{irst}$.  Wer assume that mortality hazard rates are zero up until age 68 and that fertility rates are non zero only for ages 23 through 45.  This means that we avoid the situation where a child lives, but the parents die, and vice versa.
+	Denote the number of children of age $r$ in household of age $s$ in country $i$ in period $t$ as $KID_{irst}$.  We assume that mortality hazard rates are zero up until age 68 and that fertility rates are non zero only for ages 23 through 45.  This means that we avoid the situation where a child lives, but the parents die, and vice versa.
 
 	The evolution of theses numbers is given by:
 	\begin{align}
@@ -276,80 +286,132 @@
 	\begin{align}
 		g^N_t & = \sum_{i=1}^I \sum_{s=1}^S \hat N_{ist} (f_{ist}+m_{ist}-\rho_{ist}) ; \forall i\\
 		\hat N_{i,1,t+1} & = e^{-g^N_t}\sum_{s=23}^{45} \hat N_{ist} f_{ist} ; \forall i\\
-		\hat N_{i,s+1,t+1} & = e^{-g^N_t}\hat N_{ist} (1+m_{ist}-\rho_{ist}); \forall i, 1<s\le S \\
-		KID_{i,s+1,t+1} & = \sum_{r=1}^{20} f_{i,s-r,t-r}; \forall i, 1<s\le S \\
-		\hat k_{it} & = \sum_{s=1}^S \hat a_{ist} \hat N_{ist} - \hat k_{it}^f; \forall i \\
-		\hat n_{it} & = \sum_{s=1}^S e_{is} \hat N_{ist}; \forall i \\
-		\hat y_{it} & = \hat k_{it}^\alpha \left( A_{i} \hat n_{it} \right)^{1-\alpha} ; \forall i 
+		\hat N_{i,s+1,t+1} & = e^{-g^N_t}\hat N_{ist} (1+m_{ist}-\rho_{ist}); \forall i, 1<s\le S 
 	\end{align}
 	\begin{align}
+		KID_{i,s+1,t+1} & = \sum_{r=1}^{20} f_{i,s-r,t-r}; \forall i, 1<s\le S  \\
+		\hat k_{it} & = \sum_{s=1}^S \hat a_{ist} \hat N_{ist} - \hat k_{it}^f; \forall i \\
+		\hat n_{it} & = \sum_{s=1}^S e_{is} \hat N_{ist}; \forall i \\
+		\hat y_{it} & = \hat k_{it}^\alpha \left( A_{i} \hat n_{it} \right)^{1-\alpha} ; \forall i \\
 		r_{it} & = \alpha \frac{\hat y_{it}}{\hat k_{it}}; \forall i \\
 		w_{it} & = (1-\alpha) \frac{\hat y_{it}}{\hat n_{it}}; \forall i \\
 		\hat BQ_{it} & = \sum_{s=67}^S \hat a_{ist} \rho_{ist} \hat N_{ist} ; \forall i \\
 		\hat BQ_{it} & = \sum_{s=23}^{67} \hat bq_{ist} (1-\rho_{ist}) \hat N_{ist}	; \forall i \\
-		\Gamma_{it} & = \left\{ \left[1 + \chi \left(\frac{\chi}{w_{it} e_{st}}\right)^\rho\right]^{\tfrac{1-\rho \sigma}{\rho}} \frac{\rho}{\rho-1} \right\}^{-\tfrac{1}{\sigma}}; \forall i \\
+		\Gamma_{it} & = \left\{ \left[1 + \chi \left(\frac{\chi}{w_{it} e_{st}}\right)^\rho\right]^{\tfrac{1-\rho \sigma}{\rho}} \frac{\rho}{\rho-1} \right\}^{-\tfrac{1}{\sigma}}; \forall i,s \\
     	\hat c_{ist} & = \frac{w_{it} e_{st} \bar \ell_t + (1+r_{it}-\delta)\hat a_{ist} - \hat a_{i,s+1,t+1} e^{g^A}} {1 + KID_{ist}\Gamma_{it} + \left(\tfrac{\chi}{w_{it}e_{st}}\right)^\rho}; \forall i,s \\
 		\hat \ell_{ist} & = \hat c_{ist} \left(\frac{\chi}{w_{it}e_{st}}\right)^\rho ; \forall i,s \\
-		\hat c^K_{ist} & = \hat c_{ist} \Gamma_{it}; \forall i \\
+		\hat c^K_{ist} & = \hat c_{ist} \Gamma_{it}; \forall i,s \\
 		& \left({\hat c^K_{ist}}\right)^{-\sigma} - \beta \left(\hat c^K_{i,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,s \\
 		& r_{it} - r_{1t} = 0; \forall i>1 \\
 		& \sum_{i=1}^I \hat k^f_{it} \left( \sum_{s=1}^S \hat N_{ist} \right) = 0
 	\end{align}
 
+
+\newpage
+\section{Adding Different Types of Labor}
+	Let us allow for workers to be divided into $J$ types in each country.  We mostly use $J=2$, but we will keep the notation more general than this.  We will index these types by $j$ so that $c_{ijst}$ denotes consumption by a type $j$ household in country $i$ that is $s$ periods old in period $t$.
+
+	We will need to specify fertility, immigration and mortality rates over the $J$ types in each country.  However, one simplifying assumption we can use is that these are the same across all types, so that, for example, $f_{ijst} = f_{ist} \forall j$.
+
+	We also need to specify an ability matrix that varies by type as well as age and country now; i.e. use $e_{ijs}$.
+
+	Bequests can be distributed by type as well, so we need to specify a distribution rule that allows this.  In the Kotlikoff papers the rule used specifies that all funds are distributed within types, but may vary by age.
+	\begin{align}
+		BQ_{ijt} & = \sum_{s=67}^S a_{ijst} \rho_{ijst} N_{ijst} \\
+		& = \sum_{s=23}^{67} bq_{ijst} (1-\rho_{ijst}) N_{ijst}
+	\end{align}
+
+	Child types do not matter for household consumption.  Since types index earnings abilities, children's consumption is determined by their parent's type, not their own.  This also simplifies the model.
+
+	In effect, all we need to do to add labor types is add an extra dimension to household heterogeneity, allows for $J$ different wages in each country, and respecify the production function and first-order conditions as below.
+	\begin{align}
+		y_{it} & = k_{it}^\alpha \prod_{j=1}^J \left( A_{i} n_{ijt} \right)^{\alpha_j}; \alpha + \sum_{j=1}^J \alpha_j = 1 \\
+		r_{it} & = \alpha \frac{y_{it}}{k_{it}} \\
+		w_{ijt} & = (1-\alpha_j) \frac{y_{it}}{n_{ijt}}
+	\end{align}
+
+	Our behavioral equations become:
+	\begin{align}
+		g^N_t & = \sum_{i=1}^I \sum_{j=1}^J \sum_{s=1}^S \hat N_{ijst} (f_{ijst}+m_{ijst}-\rho_{ijst}) ; \forall i\\
+		\hat N_{i,j,1,t+1} & = e^{-g^N_t}\sum_{s=23}^{45} \hat N_{ijst} f_{ijst} ; \forall i,j\\
+		\hat N_{i,j,s+1,t+1} & = e^{-g^N_t}\hat N_{ijst} (1+m_{ijst}-\rho_{ijst}); \forall i, 1<s\le S \\
+		KID_{i,j,s+1,t+1} & = \sum_{r=1}^{20} f_{i,j,s-r,t-r}; \forall i, 1<s\le S \\
+		\hat k_{it} & = \sum_{s=1}^S \hat a_{ist} \hat N_{ist} - \hat k_{it}^f; \forall i \\
+		\hat n_{ijt} & = \sum_{s=1}^S e_{ijs} \hat N_{ijst}; \forall i,j \\
+		\hat y_{it} & = \hat k_{it}^\alpha \prod_{j=1}^J \left( A_{i} \hat n_{ijt} \right)^{\alpha_j}; \alpha + \sum_{j=1}^J \alpha_j = 1 ; \forall i \\
+		r_{it} & = \alpha \frac{\hat y_{it}}{\hat k_{it}}; \forall i \\
+		w_{ijt} & = (1-\alpha_j) \frac{\hat y_{it}}{\hat n_{ijt}}; \forall i.j
+	\end{align}
+	\begin{align}
+		\hat BQ_{ijt} & = \sum_{s=67}^S \hat a_{ijst} \rho_{ijst} \hat N_{ijst} ; \forall i,j \\
+		\hat BQ_{ijt} & = \sum_{s=23}^{67} \hat bq_{ijst} (1-\rho_{ijst}) \hat N_{ijst}	; \forall i \\
+		\Gamma_{ijt} & = \left\{ \left[1 + \chi \left(\frac{\chi}{w_{ijt} e_{jst}}\right)^\rho\right]^{\tfrac{1-\rho \sigma}{\rho}} \frac{\rho}{\rho-1} \right\}^{-\tfrac{1}{\sigma}}; \forall i,j,s \\
+    	\hat c_{ijst} & = \frac{w_{ijt} e_{jst} \bar \ell_t + (1+r_{it}-\delta)\hat a_{ijst} - \hat a_{i,j,s+1,t+1} e^{g^A}} {1 + KID_{ist}\Gamma_{ijt} + \left(\tfrac{\chi}{w_{ijt}e_{jst}}\right)^\rho}; \forall i,j,s \\
+		\hat \ell_{ijst} & = \hat c_{ijst} \left(\frac{\chi}{w_{ijt}e_{jst}}\right)^\rho ; \forall i,j,s \\
+		\hat c^K_{ijst} & = \hat c_{ijst} \Gamma_{ijt}; \forall i,j,s \\
+		& \left({\hat c^K_{ijst}}\right)^{-\sigma} - \beta \left(\hat c^K_{i,j,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,j,s \\
+		& r_{it} - r_{1t} = 0; \forall i>1 \\
+		& \sum_{i=1}^I \hat k^f_{it} \left( \sum_{j=1}^J \sum_{s=1}^S \hat N_{ijst} \right) = 0
+	\end{align}
+
+
+\newpage
 \section{Adding Corporate Taxes}
-	Corporate taxes $T^K_t$ equal the corporate tax rate $\tau^K+_t$ times output net of labor costs and depreciation.
+	Corporate taxes $T^K_{it}$ equal the corporate tax rate $\tau^K_{it}$ times output net of labor costs and depreciation.
 	\begin{equation}
-		T^K_t = \tau^K_t \left[ k_{it}^\alpha \left( A_{i} n_{it} \right)^{1-\alpha} - w_{it}n_{it} - \delta k_{it} \right]
+		T^K_{it} = \tau^K_{it} \left[ k_{it}^\alpha \left( A_{i} n_{it} \right)^{1-\alpha} - w_{it}n_{it} - \delta k_{it} \right]
 	\end{equation}
 
 	Hence, the firm's problem each period becomes:
 	\begin{align}
-		\max_{n_{it},k_{it}} \Pi_{it} & = k_{it}^\alpha \left( A_{i} n_{it} \right)^{1-\alpha} - w_{it}n_{it} - r_{it}k_{it} - T^K_t \nonumber \\
-		& = (1-\tau^K_t)\left[k_{it}^\alpha \left( A_{i} n_{it} \right)^{1-\alpha} - w_{it}n_{it}\right] + (\tau^K_t \delta - r_{it})k_{it} \nonumber
+		\max_{n_{it},k_{it}} \Pi_{it} & = k_{it}^\alpha \left( A_{i} n_{it} \right)^{1-\alpha} - w_{it}n_{it} - r_{it}k_{it} - T^K_{it} \nonumber \\
+		& = (1-\tau^K_{it})\left[k_{it}^\alpha \left( A_{i} n_{it} \right)^{1-\alpha} - w_{it}n_{it}\right] + (\tau^K_{it} \delta - r_{it})k_{it} \nonumber
 	\end{align}	
 
 	And the first-order conditions now yield:
 	\begin{align}
 		y_{it} & = k_{it}^\alpha \left( A_{i} n_{it} \right)^{1-\alpha} \nonumber \\
-		r_{it} & = (1-\tau^K_t)\alpha \frac{y_{it}}{k_{it}} + \delta \tau^K_t \label{eq_4rdef} \\
+		r_{it} & = (1-\tau^K_{it})\alpha \frac{y_{it}}{k_{it}} + \delta \tau^K_{it} \label{eq_5rdef} \\
 		w_{it} & = (1-\alpha) \frac{y_{it}}{n_{it}} \nonumber
 	\end{align}
-	Only \eqref{eq_4rdef} is different than what we have in previous sections.
+	Only \eqref{eq_5rdef} is different than what we have in previous sections.
 
-	We assume the government spends all of its tax revenues on lump-sum transfers to households, which we will denote $T^L_t$.  Since these are non-distortionary, they do note affect the household's Euler equations, but they do alter the budget constraint.
+	We assume the government spends all of its tax revenues on lump-sum transfers to households, which we will denote $T^L_{it}$.  Since these are non-distortionary, they do note affect the household's Euler equations, but they do alter the budget constraint.
 	\begin{equation} \nonumber
-		c_{ist} + KID_{ist}c^K_{ist} = w_{it} e_{st} (\bar \ell_t -\ell_{ist}) + (1+r_{it}-\delta)a_{ist} - a_{i,s+1,t+1} + T^L_t
+		c_{ijst} + KID_{ist}c^K_{ijst} = w_{ijt} e_{jst} (\bar \ell_t -\ell_{ijst}) + (1+r_{it}-\delta)a_{ijst} - a_{i,j,s+1,t+1} + T^L_{it}
 	\end{equation}
 
 	Finally we get a balanced budget constraint for the government of:
 	budget constraint.
 	\begin{equation} \nonumber
-		T^L_t = \tau^K_t (y_{it} - w_{it}n_{it} - \delta k_{it})
+		T^L_{it} = \tau^K_{it} (y_{it} - w_{it}n_{it} - \delta k_{it})
 	\end{equation}
 
 	The new set of behavioral equations is given below.
 	\begin{align}
-		g^N_t & = \sum_{i=1}^I \sum_{s=1}^S \hat N_{ist} (f_{ist}+m_{ist}-\rho_{ist}) ; \forall i\\
-		\hat N_{i,1,t+1} & = e^{-g^N_t}\sum_{s=23}^{45} \hat N_{ist} f_{ist} ; \forall i\\
-		\hat N_{i,s+1,t+1} & = e^{-g^N_t}\hat N_{ist} (1+m_{ist}-\rho_{ist}); \forall i, 1<s\le S \\
-		KID_{i,s+1,t+1} & = \sum_{r=1}^{20} f_{i,s-r,t-r}; \forall i, 1<s\le S \\
-		\hat k_{it} & = \sum_{s=1}^S \hat a_{ist} \hat N_{ist} - \hat k_{it}^f; \forall i \\
-		\hat n_{it} & = \sum_{s=1}^S e_{is} \hat N_{ist}; \forall i \\
-		\hat y_{it} & = \hat k_{it}^\alpha \left( A_{i} \hat n_{it} \right)^{1-\alpha} ; \forall i 
+		g^N_t & = \sum_{i=1}^I \sum_{j=1}^J \sum_{s=1}^S \hat N_{ijst} (f_{ijst}+m_{ijst}-\rho_{ijst}) ; \forall i\\
+		\hat N_{i,j,1,t+1} & = e^{-g^N_t}\sum_{s=23}^{45} \hat N_{ijst} f_{ijst} ; \forall i,j\\
+		\hat N_{i,j,s+1,t+1} & = e^{-g^N_t}\hat N_{ijst} (1+m_{ijst}-\rho_{ijst}); \forall i, 1<s\le S \\
+		KID_{i,j,s+1,t+1} & = \sum_{r=1}^{20} f_{i,j,s-r,t-r}; \forall i, 1<s\le S \\
+	    \hat k_{it} & = \sum_{s=1}^S \hat a_{ist} \hat N_{ist} - \hat k_{it}^f; \forall i \\
+		\hat n_{ijt} & = \sum_{s=1}^S e_{ijs} \hat N_{ijst}; \forall i,j \\
+		\hat y_{it} & = \hat k_{it}^\alpha \prod_{j=1}^J \left( A_{i} \hat n_{ijt} \right)^{\alpha_j}; \alpha + \sum_{j=1}^J \alpha_j = 1 ; \forall i \\
+		r_{it} & = (1-\tau^K_{it})\alpha \frac{\hat y_{it}}{\hat k_{it}} + \delta \tau^K_{it}; \forall i \\
+		w_{ijt} & = (1-\alpha_j) \frac{\hat y_{it}}{\hat n_{ijt}}; \forall i.j \\
+		\hat BQ_{ijt} & = \sum_{s=67}^S \hat a_{ijst} \rho_{ijst} \hat N_{ijst} ; \forall i,j \\
+		\hat BQ_{ijt} & = \sum_{s=23}^{67} \hat bq_{ijst} (1-\rho_{ijst}) \hat N_{ijst}	; \forall i \\
 	\end{align}
 	\begin{align}
-		r_{it} & = (1-\tau^K_t)\alpha \frac{\hat y_{it}}{\hat k_{it}} + \delta \tau^K_t; \forall i \\
-		w_{it} & = (1-\alpha) \frac{\hat y_{it}}{\hat n_{it}}; \forall i \\
-		\hat BQ_{it} & = \sum_{s=67}^S \hat a_{ist} \rho_{ist} \hat N_{ist} ; \forall i \\
-		\hat BQ_{it} & = \sum_{s=23}^{67} \hat bq_{ist} (1-\rho_{ist}) \hat N_{ist}	; \forall i \\
-		\Gamma_{it} & = \left\{ \left[1 + \chi \left(\frac{\chi}{w_{it} e_{st}}\right)^\rho\right]^{\tfrac{1-\rho \sigma}{\rho}} \frac{\rho}{\rho-1} \right\}^{-\tfrac{1}{\sigma}}; \forall i \\
-		\hat T^L_t & = \tau^K_t (\hat y_{it} - w_{it}\hat n_{it} - \delta \hat k_{it}); \forall i \\
-    	\hat c_{ist} & = \frac{w_{it} e_{st} \bar \ell_t + (1+r_{it}-\delta)\hat a_{ist} - \hat a_{i,s+1,t+1} e^{g^A} + \hat T^L_t} {1 + KID_{ist}\Gamma_{it} + \left(\tfrac{\chi}{w_{it}e_{st}}\right)^\rho}; \forall i,s \\
-		\hat \ell_{ist} & = \hat c_{ist} \left(\frac{\chi}{w_{it}e_{st}}\right)^\rho ; \forall i,s \\
-		\hat c^K_{ist} & = \hat c_{ist} \Gamma_{it}; \forall i \\
-		& \left({\hat c^K_{ist}}\right)^{-\sigma} - \beta \left(\hat c^K_{i,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,s \\
+		\Gamma_{ijt} & = \left\{ \left[1 + \chi \left(\frac{\chi}{w_{ijt} e_{jst}}\right)^\rho\right]^{\tfrac{1-\rho \sigma}{\rho}} \frac{\rho}{\rho-1} \right\}^{-\tfrac{1}{\sigma}}; \forall i,j,s \\
+		\hat T^L_{it} & = \tau^K_{it} (\hat y_{it} - w_{it}\hat n_{it} - \delta \hat k_{it}); \forall i \\
+    	\hat c_{ijst} & = \frac{w_{ijt} e_{jst} \bar \ell_t + (1+r_{it}-\delta)\hat a_{ijst} - \hat a_{i,j,s+1,t+1} e^{g^A} + \hat T^L_{it}} {1 + KID_{ist}\Gamma_{ijt} + \left(\tfrac{\chi}{w_{ijt}e_{jst}}\right)^\rho}; \forall i,s \\
+		\hat \ell_{ijst} & = \hat c_{ijst} \left(\frac{\chi}{w_{ijt}e_{jst}}\right)^\rho ; \forall i,j,s \\
+		\hat c^K_{ijst} & = \hat c_{ijst} \Gamma_{ijt}; \forall i,j,s
+	\end{align}
+	\begin{align}
+		& \left({\hat c^K_{ijst}}\right)^{-\sigma} - \beta \left(\hat c^K_{i,j,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,j,s \\
 		& r_{it} - r_{1t} = 0; \forall i>1 \\
-		& \sum_{i=1}^I \hat k^f_{it} \left( \sum_{s=1}^S \hat N_{ist} \right) = 0
+		& \sum_{i=1}^I \hat k^f_{it} \left( \sum_{j=1}^J \sum_{s=1}^S \hat N_{ijst} \right) = 0
 	\end{align}
 
 \end{spacing}
