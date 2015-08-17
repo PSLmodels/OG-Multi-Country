@@ -22,7 +22,7 @@ Contributors
 
 - Laurence J. Kotlikoff
 
-- James Olmstesd
+- James Olmstead
 
 - Kerk Phillips
 
