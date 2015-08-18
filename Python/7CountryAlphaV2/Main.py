@@ -2,7 +2,7 @@ import numpy as np
 import StepbyStepv1 as Stepfuncs
 
 #Parameters Zone
-I = 4 #Number of countries
+I = 3 #Number of countries
 S = 80 #Upper bound of age for agents
 T = int(round(2.5*S)) #Number of time periods to convergence, based on Rick Evans' function.
 
@@ -25,13 +25,14 @@ e = np.ones((I, S+1, T+S+1)) #Labor productivities
 A = np.ones(I) #Techonological Change, used for idential countries
 
 diff = 1e-8 #Convergence Tolerance
+demog_ss_tol = 1e-8 #Used in getting ss for population share
 distance = 10 #Used in taking the norm, arbitrarily set to 10
-xi = .8 #Parameter used to take the convex conjugate of paths
+xi = .7 #Parameter used to take the convex conjugate of paths
 MaxIters = 500 #Maximum number of iterations on TPI.
 
 #Program Levers
 PrintAges = True #Prints the different key ages in the demographics
-PrintLoc = True #THIS DOES NOTHING YET
+PrintLoc = False #Displays the current locations of the program inside key TPI functions
 PrintSS = False #Prints the result of the Steady State functions
 CalcTPI = True #Activates the calculation of Time Path Iteration
 #NOTE: Graphing only works if CalcTPI is activated.
@@ -45,20 +46,10 @@ if DiffDemog == True:
 #MAIN CODE
 
 #Gets demographic data
-demog_params = (I, S, T, T_1, StartFertilityAge, EndFertilityAge, StartDyingAge, MaxImmigrantAge, g_A)
+demog_params = (I, S, T, T_1, StartFertilityAge, EndFertilityAge, StartDyingAge, MaxImmigrantAge, g_A, demog_ss_tol)
 FertilityRates, MortalityRates, Migrants, N_matrix, Nhat_matrix, Nhat_ss = Stepfuncs.getDemographics(demog_params, PrintAges, DiffDemog)
 
-#print "Initial"
-#print Nhat_matrix[:,:,0]
-#print "Steady State"
-#print Nhat_ss
-
-#for i in range(I):
-#	print i
-#	Stepfuncs.plotDemographics((S,T), [i], [0], str("Initial"), Nhat_matrix)
-
 #Stepfuncs.plotDemographics((S,T),[0,1,2,3,4,5,6],[0],str("Initial"), Nhat_matrix)
-#Stepfuncs.plotDemographics((S,T),[0,1],[],str("SS"), Nhat_ss)
 
 #Initalizes initial guesses
 assets_guess = np.ones((I, S-1))*.15
@@ -85,7 +76,7 @@ if CalcTPI==True: #Time Path Iteration, activated by line 24
 		Stepfuncs.get_initialguesses(initialguess_params, assets_ss, kf_ss, w_ss, r_ss)
 
 	tp_params = (I, S, T, T_1, beta, sigma, delta, alpha, e, A, StartFertilityAge, StartDyingAge, Nhat_matrix, MortalityRates, g_A, distance, diff, xi, MaxIters)
-	wpath, rpath, cpath, Kpath, ypath = Stepfuncs.get_Timepath(tp_params, w_initguess, r_initguess, assets_init, kd_ss, kf_ss, w_ss, r_ss)
+	wpath, rpath, cpath, Kpath, ypath = Stepfuncs.get_Timepath(tp_params, w_initguess, r_initguess, assets_init, kd_ss, kf_ss, w_ss, r_ss, PrintLoc)
 	
 	if Graphs==True:
 		Stepfuncs.plotTimepaths(I, S, T, wpath, rpath, cpath, Kpath, ypath, CountryNamesON)
