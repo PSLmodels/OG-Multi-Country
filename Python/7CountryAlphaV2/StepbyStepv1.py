@@ -92,7 +92,6 @@ def getDemographics(params, PrintAges, DiffDemog):
 		#The number of migrants is the same for each year
 		Migrants[:,:MaxImmigrantAge,:T_1] = np.einsum("s,it->ist", USAMigdata, np.ones((I,T_1)))
 
-
 	Nhat_matrix[:,:,0] = N_matrix[:,:,0]/np.sum(N_matrix[:,:,0])
 	N_temp = np.ones((I, S+1))/(I*S)
 
@@ -100,9 +99,9 @@ def getDemographics(params, PrintAges, DiffDemog):
 	MortalityRates[:,-1,:] = np.ones((I, T+S+1))
 
 	#Gets steady-state values
-	f_bar = FertilityRates[:,:,T_1-1]
-	rho_bar = MortalityRates[:,:,T_1-1]
-	m_bar = Migrants[:,:,T_1-1]
+	f_bar = np.mean(FertilityRates[:,:,T_1-1], axis=0)
+	rho_bar = np.mean(MortalityRates[:,:,T_1-1], axis=0)
+	m_bar = np.mean(Migrants[:,:,T_1-1], axis=0)
 
 	#Set to the steady state for every year beyond year T_1
 	FertilityRates[:,:,T_1:] = np.tile(np.expand_dims(f_bar, axis=2), (1,1,T-T_1+S+1))
@@ -131,7 +130,6 @@ def getDemographics(params, PrintAges, DiffDemog):
 		Nhat_matrix[:,:,t] = N_matrix[:,:,t]/np.sum(N_matrix[:,:,t])
 		N_temp[:,1:] = Nhat_matrix[:,:-1,t-1]*(1+ImmigrationRate[:,:-1]-MortalityRates[:,:-1,t-1])
 
-
 		#Gets the growth rate for the next year
 		g_N[t] = np.sum(N_temp[:,:])-1
 
@@ -140,12 +138,17 @@ def getDemographics(params, PrintAges, DiffDemog):
 	pop_old = N_matrix[:,:,-1]
 	pop_new = N_matrix[:,:,-1]
 
-	while np.max(np.abs(Nhatss_old - Nhatss_new)) > 0.000000000001:
+	i = 0
+
+	while np.max(np.abs(Nhatss_old - Nhatss_new)) > 0.000001:
+		#print i, np.max(np.abs(Nhatss_old - Nhatss_new))
 		Nhatss_old = Nhatss_new
 		pop_new[:,0] = np.sum((pop_old[:,:]*FertilityRates[:,:,-1]),axis=1)
 		pop_new[:,1:] = pop_old[:,:-1]*(1+ImmigrationRate[:,:-1]-MortalityRates[:,:-1,-1])
 		Nhatss_new = pop_new/np.sum(pop_new)
+		i+=1
 
+	
 	#Gets labor endowment per household. For now it grows at a constant rate g_A
 	l_endowment = np.cumsum(np.ones(T)*g_A)
 
@@ -238,7 +241,7 @@ def get_kd(assets, kf, Nhat):
 	-kd[I,T+S+1]: Capital that is used in the domestic country
 
 	"""
-	kd = np.sum(assets*Nhat, axis=1) - kf
+	kd = np.sum(assets[:,1:-1]*Nhat[:,1:-1], axis=1) - kf
 	return kd
 
 def get_n(params):
@@ -466,13 +469,6 @@ def SteadyStateSolution(guess, I, S, beta, sigma, delta, alpha, e, A, StartFerti
 	cparams = (e, delta, bq, g_A)
 	c_vec = get_cvecss(cparams, w, r, assets)
 	K = kd+kf
-	"""
-	print "assets",assets
-	print "kf", kf
-	print "kd", kd
-	print "n", n
-	print "Y", Y
-	"""
 
 	Feasible = check_feasible(K, Y, w, r, c_vec)
 
@@ -485,9 +481,9 @@ def SteadyStateSolution(guess, I, S, beta, sigma, delta, alpha, e, A, StartFerti
 		Euler_r = r[1:] - r[0]
 		Euler_kf = np.sum(kf*np.sum(Nhat_ss, axis=1))
 
-		#Makes a new 1D vector of length I*S that contains all the Euler equations
-		all_Euler = np.append(np.append(np.ravel(Euler_c), np.ravel(Euler_r)), Euler_kf)
+ 		all_Euler = np.append(np.append(np.ravel(Euler_c), np.ravel(Euler_r)), Euler_kf)
 
+		#Makes a new 1D vector of length I*S that contains all the Euler equations
 		print "Feasible Guess", np.max(np.absolute(all_Euler))
 
 	return all_Euler
@@ -729,6 +725,7 @@ def find_optimal_starting_consumptions(c_1, wpath_chunk, rpath_chunk, epath_chun
             c_path=np.ones(I)*9999.
 
 	Euler = np.ravel(assets_path[:,-1])
+	#print np.max(np.absolute(Euler))
 
 	return Euler
 
@@ -753,6 +750,7 @@ def get_cons_assets_matrix(params, wpath, rpath, starting_assets):
 	#print np.round(np.transpose(bq_timepath[0,:,:2]), decimals=3)
 
 	#Fills the upper triangle (including the main diagonal) by iterating by number of periods until death
+	print "Entering upper triangle loop"
 	for p in range(1,S):
 
 		#We are only doing this for all generations alive in time t=0
@@ -797,7 +795,7 @@ def get_cons_assets_matrix(params, wpath, rpath, starting_assets):
 		#print np.round(np.diagonal(bq_timepath[:,current_age:,:], axis1=1, axis2=2), decimals=3).shape
 		#print np.round(np.diagonal(bq_timepath[:,current_age:,:], axis1=1, axis2=2), decimals=3)
 
-
+	print "Entering non-upper triangle loop"
 	#Fills everything except for the upper triangle (excluding the main diagonal)
 	for t in xrange(1,T):
 		current_age = 0
@@ -900,10 +898,9 @@ def get_wpathnew_rpathnew(params, wpath, rpath, starting_assets, kd_ss, kf_ss, w
 	rpath_new = get_r(alpha, Ypath[0], kdpath[0])
 	wpath_new = get_w(alpha, Ypath, npath)
 
-	#print "Kpath",Kpath
-	#print "kfpath,", kfpath
+
 	#Checks to see if any of the timepaths have negative values or nans
-	check_feasible(Kpath, Ypath, wpath, rpath, c_timepath)
+	Feasible = check_feasible(Kpath, Ypath, wpath, rpath, c_timepath)
 
 	print "Leaving get_wpathnew_rpathnew"
 	return wpath_new, rpath_new, Cpath, Kpath, Ypath
@@ -1029,4 +1026,3 @@ def plotTimepaths(I, S, T, wpath, rpath, cpath, kpath, Ypath, CountryNamesON):
     plt.xlabel("Time Period")
     plt.legend(loc="upper right")
     plt.show()
-
