@@ -16,11 +16,11 @@ def getDemographics(params, PrintAges, DiffDemog):
 		-NOTE: FOR NOW THIS FUNCTION ONLY USES DATA FOR THE USA. NEEDS TO EVENTUALLY ADD MORE COUNTRIES
 
 	Inputs:
-		-None, but uses the global variables T, T_1, StartFertilityAge, EndFertilityAge, StartDyingAge, and MaxImmigrantAge
+		-None, but uses the global variables T, T_1, FirstFertilityAge, LastFertilityAge, StartDyingAge, and MaxImmigrantAge
 
 	Objects in Function:
 		-USAPopdata: (S+1) vector that has the initial population of the U.S straight from the csv
-		-USAFertdata: (T_1,EndFertilityAge+2-StartFertilityAge) vector that has U.S. fertility straight from the csv
+		-USAFertdata: (T_1,LastFertilityAge+2-FirstFertilityAge) vector that has U.S. fertility straight from the csv
 		-USAMortdata: (T_1,S+1-StartDyingAge) vector that has U.S. mortality straight from the csv
 		-USAMigdata: (MaxImmigrantAge) vector that contains the number of net U.S. migrants straight from the csv
 		-g_N: (T) vector that contains the exogenous population growth rates
@@ -38,12 +38,13 @@ def getDemographics(params, PrintAges, DiffDemog):
 		-Nhat matrix: Numpy array that contains the population percentage for all countries, ages, and years
 	"""
 
-	I, S, T, T_1, StartFertilityAge, EndFertilityAge, StartDyingAge, MaxImmigrantAge, g_A, diff = params
+	I, S, T, T_1, FirstFertilityAge, LastFertilityAge, StartDyingAge, MaxImmigrantAge, LeaveHouseAge, g_A, diff = params
 
 	#Initializes demographics matrices
 	N_matrix = np.zeros((I, S+1, T+S+1))
 	Nhat_matrix = np.zeros((I, S+1, T+S+1))
-	#N_temp = np.zeros((I, S+1, T+S+1))
+	KIDs = np.zeros((I, S+1, T+S+1))
+	all_FertilityRates = np.zeros((I, S+1, LastFertilityAge+1-FirstFertilityAge+T+S+1))
 	FertilityRates = np.zeros((I, S+1, T+S+1))
 	MortalityRates = np.zeros((I, S+1, T+S+1))
 	ImmigrationRates = np.zeros((I, S+1, T+S+1))
@@ -53,8 +54,9 @@ def getDemographics(params, PrintAges, DiffDemog):
 	if PrintAges:
 		print "T =", T
 		print "T_1", T_1
-		print "StartFertilityAge", StartFertilityAge
-		print "EndFertilityAge", EndFertilityAge
+		print "LeaveHouseAge", LeaveHouseAge
+		print "FirstFertilityAge", FirstFertilityAge
+		print "LastFertilityAge", LastFertilityAge
 		print "StartDyingAge", StartDyingAge
 		print "MaxImmigrantAge", MaxImmigrantAge
 
@@ -66,18 +68,24 @@ def getDemographics(params, PrintAges, DiffDemog):
 		countrynames = ["usa", "eu", "japan", "china", "india", "russia", "korea"]
 
 		for i in range(I):
-			print "Got demographics for", countrynames[i]
 			N_matrix[i,:,0] = np.loadtxt(("Data_Files/population.csv"),delimiter=',',skiprows=1, usecols=[i+1])[:S+1]*1000
-			FertilityRates[i,StartFertilityAge:EndFertilityAge+1,:T_1] = np.transpose(np.loadtxt(str("Data_Files/" + countrynames[i] + "_fertility.csv"),delimiter=',',skiprows=1, usecols=range(1,EndFertilityAge+2-StartFertilityAge))[48:48+T_1,:])
+			all_FertilityRates[i,FirstFertilityAge:LastFertilityAge+1,:LastFertilityAge+1-FirstFertilityAge+T_1] = np.transpose(np.loadtxt(str("Data_Files/" + countrynames[i] + "_fertility.csv"),delimiter=',',skiprows=1, usecols=range(1,LastFertilityAge+2-FirstFertilityAge))[48-(LastFertilityAge+1-FirstFertilityAge):48+T_1,:])
 			MortalityRates[i,StartDyingAge:-1,:T_1] = np.transpose(np.loadtxt(str("Data_Files/" + countrynames[i] + "_mortality.csv"),delimiter=',',skiprows=1, usecols=range(1,S+1-StartDyingAge))[:T_1,:])
 			Migrants[i,:MaxImmigrantAge,:T_1] = np.einsum("s,t->st",np.loadtxt(("Data_Files/net_migration.csv"),delimiter=',',skiprows=1, usecols=[i+1])[:MaxImmigrantAge]*100, np.ones(T_1))
+			print "Got demographics for", countrynames[i]
 
+		#print all_FertilityRates.shape, all_FertilityRates[:,FirstFertilityAge:LastFertilityAge+1,LastFertilityAge+1-FirstFertilityAge:].shape, FertilityRates[:,FirstFertilityAge:LastFertilityAge+1,:T_1].shape
+		#Splits all_FertilityRates into its negative and positive parts
+		FertilityRates[:,FirstFertilityAge:LastFertilityAge+1,:T_1] = all_FertilityRates[:,FirstFertilityAge:LastFertilityAge+1,LastFertilityAge+1-FirstFertilityAge:T_1+LastFertilityAge+1-FirstFertilityAge]
+		#neg_FertilityRates[:,FirstFertilityAge:LastFertilityAge+1,:] = all_FertilityRates[:,FirstFertilityAge:LastFertilityAge+1,48-(LastFertilityAge+1-FirstFertilityAge):48]
+	
 	else:
 		#Imports and scales data for the USA. Imports a certain number of generations according to the value of S
 		USAPopdata = np.loadtxt(("Data_Files/population.csv"),delimiter=',',skiprows=1, usecols=[1])[:S+1]*1000
-		USAFertdata = np.loadtxt(("Data_Files/usa_fertility.csv"),delimiter=',',skiprows=1, usecols=range(1,EndFertilityAge+2-StartFertilityAge))[48:48+T_1,:]
+		USAFertdata = np.loadtxt(("Data_Files/usa_fertility.csv"),delimiter=',',skiprows=1, usecols=range(1,LastFertilityAge+2-FirstFertilityAge))[48:48+T_1,:]
 		USAMortdata = np.loadtxt(("Data_Files/usa_mortality.csv"),delimiter=',',skiprows=1, usecols=range(1,S+1-StartDyingAge))[:T_1,:]
 		USAMigdata = np.loadtxt(("Data_Files/net_migration.csv"),delimiter=',',skiprows=1, usecols=[1])[:MaxImmigrantAge]*100
+		USAneg_Fertdata = np.loadtxt(("Data_Files/net_migration.csv"),delimiter=',',skiprows=1, usecols=range(1,LastFertilityAge+2-FirstFertilityAge))[48-(LastFertilityAge+1-FirstFertilityAge):48,:]
 
 		#NOTE: For now we set fertility, mortality, number of migrants, and initial population the same for all countries. 
 
@@ -85,7 +93,9 @@ def getDemographics(params, PrintAges, DiffDemog):
 		N_matrix[:,:,0] = np.tile(USAPopdata, (I, 1))
 
 		#Fertility Will be equal to 0 for all ages that don't bear children
-		FertilityRates[:,StartFertilityAge:EndFertilityAge+1,:T_1] = np.einsum("ts,i->ist", USAFertdata, np.ones(I))
+		FertilityRates[:,FirstFertilityAge:LastFertilityAge+1,:T_1] = np.einsum("ts,i->ist", USAFertdata, np.ones(I))
+
+		neg_FertilityRates[:,FirstFertilityAge:LastFertilityAge+1,:T_1] = np.einsum("ts,i->ist", USAneg_Fertdata, np.ones(I))
 
 		#Mortality be equal to 0 for all young people who aren't old enough to die
 		MortalityRates[:,StartDyingAge:-1,:T_1] = np.einsum("ts,it->ist", USAMortdata, np.ones((I,T_1)))
@@ -105,17 +115,21 @@ def getDemographics(params, PrintAges, DiffDemog):
 
 	#Set to the steady state for every year beyond year T_1
 	FertilityRates[:,:,T_1:] = np.tile(np.expand_dims(f_bar, axis=2), (I,1,T-T_1+S+1))
+	all_FertilityRates[:,:,LastFertilityAge+1-FirstFertilityAge+T_1:] = np.tile(np.expand_dims(f_bar, axis=2), (I,1,T-T_1+S+1))
 	MortalityRates[:,:,T_1:] = np.tile(np.expand_dims(rho_bar, axis=2), (I,1,T-T_1+S+1))
 
 	#Gets initial world population growth rate
 	g_N[0] = 0.
 
+	f_range = LastFertilityAge+1-FirstFertilityAge
+	YA_range = FirstFertilityAge-LeaveHouseAge
+
 	#Calculates population numbers for each country
 	for t in range(1,T+S+1):
 		#Gets the total number of children and and percentage of children and stores them in generation 0 of their respective matrices
 		#See equations 2.1 and 2.10
-		N_matrix[:,0,t] = np.sum((N_matrix[:,:,t-1]*FertilityRates[:,:,t-1]),axis=1)
-		N_temp[:,0] = np.sum((Nhat_matrix[:,:,t-1]*FertilityRates[:,:,t-1]),axis=1)
+		N_matrix[:,0,t] = np.sum((N_matrix[:,:,t-1]*FertilityRates[:,:,t-1]), axis=1)
+		N_temp[:,0] = np.sum((Nhat_matrix[:,:,t-1]*FertilityRates[:,:,t-1]), axis=1)
 
 		#Finds the immigration rate for each year
 		if t <= T_1:
@@ -125,15 +139,30 @@ def getDemographics(params, PrintAges, DiffDemog):
 			ImmigrationRates[:,:,t-1] = np.mean(ImmigrationRates[:,:,T_1-1], axis=0)
 			#print "t-1 > T_1",t-1, ImmigrationRates[:,20,t-1], Migrants[:,20,t-1],FertilityRates[:,30,t-1], MortalityRates[:,70,t-1]
 
-
 		#Gets the population distribution and percentage of population distribution for the next year, taking into account immigration and mortality
 		#See equations 2.2 and 2.11
 		N_matrix[:,1:,t] = N_matrix[:,:-1,t-1]*(1+ImmigrationRates[:,:-1,t-1]-MortalityRates[:,:-1,t-1])
 		Nhat_matrix[:,:,t] = N_matrix[:,:,t]/np.sum(N_matrix[:,:,t])
 		N_temp[:,1:] = Nhat_matrix[:,:-1,t-1]*(1+ImmigrationRates[:,:-1,t-1]-MortalityRates[:,:-1,t-1])
 
+
+		for f in range(FirstFertilityAge+1, LastFertilityAge+1+LeaveHouseAge):
+			agent_kids = np.diagonal(all_FertilityRates[:,f-LeaveHouseAge:f,t:], axis1=1, axis2=2)
+			KIDs[:,f,t-1] = np.sum(agent_kids, axis=1)
+			"""
+			print t, f
+			print np.round(np.transpose(all_FertilityRates[0,:,0:f_range]), decimals=4)
+			print "BREAK", str(str(f_range) + "+" + str(f) + "-" + str(FirstFertilityAge) + "-" + str(LeaveHouseAge))
+			print np.round(np.transpose(all_FertilityRates[0,:,f_range:f_range+t+2]), decimals=4)
+			print "BREAK"
+			print np.round(np.transpose(KIDs[0,:,t-1]), decimals=4)
+			print range(f-LeaveHouseAge, f), np.round(np.transpose(agent_kids[0,:]), decimals=4), np.sum(np.round(np.transpose(agent_kids[0,:]), decimals=4))
+			"""
 		#Gets the growth rate for the next year
 		g_N[t] = np.sum(N_temp[:,:])-1
+
+	KIDs[:,:,-1] = KIDs[:,:,-2]
+	KIDs_ss = KIDs[:,:,-1]
 
 	Nhatss_old = Nhat_matrix[:,:,-2]
 	Nhatss_new = Nhat_matrix[:,:,-1]
@@ -149,6 +178,7 @@ def getDemographics(params, PrintAges, DiffDemog):
 		Nhatss_new = pop_new/np.sum(pop_new)
 		Nhat_matrix = np.dstack((Nhat_matrix, Nhatss_new))
 		iter+=1
+
 	print "The SS Population Share converged in", iter, "years beyond T"
 
 	"""
@@ -182,7 +212,7 @@ def getDemographics(params, PrintAges, DiffDemog):
 	#Gets labor endowment per household. For now it grows at a constant rate g_A
 	l_endowment = np.cumsum(np.ones(T)*g_A)
 
-	return FertilityRates, MortalityRates, Migrants, N_matrix, Nhat_matrix[:,:,:T+S+1], Nhatss_new
+	return FertilityRates, MortalityRates, Migrants, N_matrix, Nhat_matrix[:,:,:T+S+1], KIDs, Nhatss_new, KIDs_ss
 
 def plotDemographics(params, indexes, years, name, N_matrix):
 	"""
@@ -238,7 +268,7 @@ def getBequests(params, assets):
 
 	"""
 
-	I, S, StartFertilityAge, StartDyingAge, Nhat_current, Mortality_current = params
+	I, S, FirstFertilityAge, StartDyingAge, Nhat_current, Mortality_current = params
 
 	#Initializes bequests
 	bq = np.zeros((I, S))
@@ -248,9 +278,9 @@ def getBequests(params, assets):
 
 	#Distributes the total assets equally among the eligible population for each country
 	#NOTE: This will likely change as we get a more complex function for distributing the bequests
-	num_bequest_receivers = np.sum(Nhat_current[:,StartFertilityAge:StartDyingAge], axis=1)
+	num_bequest_receivers = np.sum(Nhat_current[:,FirstFertilityAge:StartDyingAge], axis=1)
 	bq_Distribution = BQ/num_bequest_receivers
-	bq[:,StartFertilityAge:StartDyingAge] = np.einsum("i,s->is", bq_Distribution, np.ones(StartDyingAge-StartFertilityAge))
+	bq[:,FirstFertilityAge:StartDyingAge] = np.einsum("i,s->is", bq_Distribution, np.ones(StartDyingAge-FirstFertilityAge))
 
 	return bq
 
@@ -452,7 +482,7 @@ def check_feasible(K, Y, w, r, c):
 
 	return Feasible
 
-def SteadyStateSolution(guess, I, S, beta, sigma, delta, alpha, e, A, StartFertilityAge, StartDyingAge, Nhat_ss, Mortality_ss, g_A):
+def SteadyStateSolution(guess, I, S, beta, sigma, delta, alpha, e, A, FirstFertilityAge, StartDyingAge, Nhat_ss, Mortality_ss, g_A):
 	"""
 	Description: 
 		-This is the function that will be optimized by fsolve.
@@ -494,7 +524,7 @@ def SteadyStateSolution(guess, I, S, beta, sigma, delta, alpha, e, A, StartFerti
 	Y = get_Y(Yparams, kd, n)
 	r = get_r(alpha, Y, kd)
 	w = get_w(alpha, Y, n)
-	bqparams = (I, S, StartFertilityAge, StartDyingAge, Nhat_ss, Mortality_ss)
+	bqparams = (I, S, FirstFertilityAge, StartDyingAge, Nhat_ss, Mortality_ss)
 	bq = getBequests(bqparams, assets)
 	cparams = (e, delta, bq, g_A)
 	c_vec = get_cvecss(cparams, w, r, assets)
@@ -511,10 +541,10 @@ def SteadyStateSolution(guess, I, S, beta, sigma, delta, alpha, e, A, StartFerti
 		Euler_r = r[1:] - r[0]
 		Euler_kf = np.sum(kf*np.sum(Nhat_ss, axis=1))
 
+		#Makes a new 1D vector of length I*S that contains all the Euler equations
  		all_Euler = np.append(np.append(np.ravel(Euler_c), np.ravel(Euler_r)), Euler_kf)
 
-		#Makes a new 1D vector of length I*S that contains all the Euler equations
-		print "SS Max Euler Error", np.max(np.absolute(all_Euler))
+		#print "SS Max Euler Error", np.max(np.absolute(all_Euler))
 
 	return all_Euler
 
@@ -542,7 +572,7 @@ def getSteadyState(params, assets_init, kf_init):
 	    -c_vec_ss[I, S]: Calculated steady state counsumption
 
 	"""
-	I, S, beta, sigma, delta, alpha, e, A, StartFertilityAge, StartDyingAge, Nhat_ss, Mortality_ss, g_A = params
+	I, S, beta, sigma, delta, alpha, e, A, FirstFertilityAge, StartDyingAge, Nhat_ss, Mortality_ss, g_A = params
 
 	#Merges the assets and kf together into one matrix that can be inputted into the fsolve function
 	guess = np.column_stack((assets_init, kf_init))
@@ -565,7 +595,7 @@ def getSteadyState(params, assets_init, kf_init):
 	Y_ss = get_Y(Yparams, kd_ss, n_ss)
 	r_ss = get_r(alpha, Y_ss, kd_ss)
 	w_ss = get_w(alpha, Y_ss, n_ss)
-	bqparams = (I, S, StartFertilityAge, StartDyingAge, Nhat_ss, Mortality_ss)
+	bqparams = (I, S, FirstFertilityAge, StartDyingAge, Nhat_ss, Mortality_ss)
 	bq_ss = getBequests(bqparams, assets_ss)
 	cparams = (e, delta, bq_ss, g_A)
 	c_vec_ss = get_cvecss(cparams, w_ss, r_ss, assets_ss)
@@ -605,7 +635,7 @@ def get_initialguesses(params, assets_ss, kf_ss, w_ss, r_ss):
 
 	"""
 
-	I, S, T, delta, alpha, e, A, StartFertilityAge, StartDyingAge, Nhat_init, Mortality_init, g_A = params
+	I, S, T, delta, alpha, e, A, FirstFertilityAge, StartDyingAge, Nhat_init, Mortality_init, g_A = params
 
 	#Sets initial assets and kf, start with something close to the steady state
 	assets_init = assets_ss*.9
@@ -621,7 +651,7 @@ def get_initialguesses(params, assets_ss, kf_ss, w_ss, r_ss):
 	Y_init = get_Y(Yparams, kd_init, n_init)
 	r_init = get_r(alpha, Y_init, kd_init)
 	w_init = get_w(alpha, Y_init, n_init)
-	bqparams = (I, S, StartFertilityAge, StartDyingAge, Nhat_init, Mortality_init)
+	bqparams = (I, S, FirstFertilityAge, StartDyingAge, Nhat_init, Mortality_init)
 	bq_init = getBequests(bqparams, assets_init)
 	cparams = (e, delta, bq_init, g_A)
 	c_init = get_cvecss(cparams, w_init, r_init, assets_init)
@@ -761,7 +791,7 @@ def find_optimal_starting_consumptions(c_1, wpath_chunk, rpath_chunk, epath_chun
 
 def get_cons_assets_matrix(params, wpath, rpath, starting_assets, PrintLoc):
 	if PrintLoc: print "Entering get_cons_assets_matrix"
-	I, S, T, T_1, beta, sigma, delta, e, StartFertilityAge, StartDyingAge, Nhat, MortalityRates, g_A = params
+	I, S, T, T_1, beta, sigma, delta, e, FirstFertilityAge, StartDyingAge, Nhat, MortalityRates, g_A = params
 
 	#Initializes timepath variables
 	c_timepath = np.zeros((I,S,S+T+1))
@@ -811,7 +841,7 @@ def get_cons_assets_matrix(params, wpath, rpath, starting_assets, PrintLoc):
 			np.fill_diagonal(c_timepath[i,current_age:,:], cpath_indiv[i,:])
 			np.fill_diagonal(a_timepath[i,current_age:,:], apath_indiv[i,:])
 
-		bq_params = (I, S, StartFertilityAge, StartDyingAge, Nhat[:,:,p-1], MortalityRates[:,:,p-1])
+		bq_params = (I, S, FirstFertilityAge, StartDyingAge, Nhat[:,:,p-1], MortalityRates[:,:,p-1])
 		bq_timepath[:,:,p-1] = getBequests(bq_params, a_timepath[:,:,p-1])
 
 		#print "p =", p, "current_age =", current_age
@@ -854,7 +884,7 @@ def get_cons_assets_matrix(params, wpath, rpath, starting_assets, PrintLoc):
 		else:
 			temp_t = t
 
-		bq_params = (I, S, StartFertilityAge, StartDyingAge, Nhat[:,:,temp_t+S-2], MortalityRates[:,:,temp_t+S-2])
+		bq_params = (I, S, FirstFertilityAge, StartDyingAge, Nhat[:,:,temp_t+S-2], MortalityRates[:,:,temp_t+S-2])
 		bq_timepath[:,:,t+S-2] = getBequests(bq_params, a_timepath[:,:,temp_t+S-2])
 
 		#print "t = ", t, "current_age =", current_age
@@ -900,9 +930,9 @@ def get_wpathnew_rpathnew(params, wpath, rpath, starting_assets, kd_ss, kf_ss, w
 
 	"""
 	if PrintLoc: print "Entering get_wpathnew_rpathnew"
-	I, S, T, T_1, beta, sigma, delta, alpha, e, A, StartFertilityAge, StartDyingAge, Nhat, MortalityRates, g_A = params
+	I, S, T, T_1, beta, sigma, delta, alpha, e, A, FirstFertilityAge, StartDyingAge, Nhat, MortalityRates, g_A = params
 
-	ca_params = (I, S, T, T_1, beta, sigma, delta, e, StartFertilityAge, StartDyingAge, Nhat, MortalityRates, g_A)
+	ca_params = (I, S, T, T_1, beta, sigma, delta, e, FirstFertilityAge, StartDyingAge, Nhat, MortalityRates, g_A)
 	c_timepath, a_timepath = get_cons_assets_matrix(ca_params, wpath, rpath, starting_assets, PrintLoc)
 
 	#Calculates the total amount of capital in each country
@@ -937,10 +967,10 @@ def get_wpathnew_rpathnew(params, wpath, rpath, starting_assets, kd_ss, kf_ss, w
 
 def get_Timepath(params, wstart, rstart, assets_init, kd_ss, kf_ss, w_ss, r_ss, PrintLoc):
 
-    I, S, T, T_1, beta, sigma, delta, alpha, e, A, StartFertilityAge, StartDyingAge, Nhat, MortalityRates, g_A, distance, diff, xi, MaxIters = params
+    I, S, T, T_1, beta, sigma, delta, alpha, e, A, FirstFertilityAge, StartDyingAge, Nhat, MortalityRates, g_A, distance, diff, xi, MaxIters = params
 
     Iter=1 #Serves as the iteration counter
-    wr_params = (I, S, T, T_1, beta, sigma, delta, alpha, e, A, StartFertilityAge, StartDyingAge, Nhat, MortalityRates, g_A)
+    wr_params = (I, S, T, T_1, beta, sigma, delta, alpha, e, A, FirstFertilityAge, StartDyingAge, Nhat, MortalityRates, g_A)
 
     while distance>diff and Iter<MaxIters: #The timepath iteration runs until the distance gets below a threshold or the iterations hit the maximum
             wpath_new, rpath_new, Cpath_new, Kpath_new, Ypath_new = \
