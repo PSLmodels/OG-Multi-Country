@@ -1,6 +1,8 @@
 import numpy as np
 import StepbyStepv1 as Stepfuncs
 
+np.set_printoptions(linewidth=150)
+
 #Parameters Zone
 I = 3 #Number of countries
 S = 80 #Upper bound of age for agents
@@ -9,10 +11,12 @@ T = int(round(2.5*S)) #Number of time periods to convergence, based on Rick Evan
 T_1 = S #This is like TransYear in the FORTRAN I think
 if S > 50:
 	T_1 = 50
-StartFertilityAge = int(S/80.*23)#The age when agents have their first children
-EndFertilityAge = int(S/80.*45)#The age when agents have their last children
-StartDyingAge = int(S/80.*68)#The first age agents can begin to die
-MaxImmigrantAge = int(S/80.*65)#All immigrants are between ages 0 and MaxImmigrantAge
+FirstFertilityAge = int(np.round(S/80.*23))#The age when agents have their first children
+LastFertilityAge = int(np.round(S/80.*45))#The age when agents have their last children
+StartDyingAge = int(np.round(S/80.*68))#The first age agents can begin to die
+MaxImmigrantAge = int(np.round(S/80.*65))#All immigrants are between ages 0 and MaxImmigrantAge
+LeaveHouseAge = int(np.round(S/80.*21))
+
 g_A = 0.015 #Technical growth rate
 
 beta_ann=.95 #Starting future consumption discount rate
@@ -46,8 +50,8 @@ if DiffDemog == True:
 #MAIN CODE
 
 #Gets demographic data
-demog_params = (I, S, T, T_1, StartFertilityAge, EndFertilityAge, StartDyingAge, MaxImmigrantAge, g_A, demog_ss_tol)
-FertilityRates, MortalityRates, Migrants, N_matrix, Nhat_matrix, Nhat_ss = Stepfuncs.getDemographics(demog_params, PrintAges, DiffDemog)
+demog_params = (I, S, T, T_1, FirstFertilityAge, LastFertilityAge, StartDyingAge, MaxImmigrantAge, LeaveHouseAge, g_A, demog_ss_tol)
+FertilityRates, MortalityRates, Migrants, N_matrix, Nhat_matrix, KIDs, Nhat_ss, KIDs_ss = Stepfuncs.getDemographics(demog_params, PrintAges, DiffDemog)
 
 #Stepfuncs.plotDemographics((S,T),[0,1,2,3,4,5,6],[0],str("Initial"), Nhat_matrix)
 
@@ -56,7 +60,7 @@ assets_guess = np.ones((I, S-1))*.15
 kf_guess = np.zeros((I))
 
 #Gets the steady state variables
-params_ss = (I, S, beta, sigma, delta, alpha, e, A, StartFertilityAge, StartDyingAge, Nhat_ss, MortalityRates[:,:,-1], g_A)
+params_ss = (I, S, beta, sigma, delta, alpha, e, A, FirstFertilityAge, StartDyingAge, Nhat_ss, MortalityRates[:,:,-1], g_A)
 assets_ss, kf_ss, kd_ss, n_ss, y_ss, r_ss, w_ss, c_vec_ss = Stepfuncs.getSteadyState(params_ss, assets_guess, kf_guess)
 
 if PrintSS==True: #Prints the results of the steady state, line 23 activates this
@@ -71,11 +75,11 @@ if PrintSS==True: #Prints the results of the steady state, line 23 activates thi
 
 if CalcTPI==True: #Time Path Iteration, activated by line 24
 	print "Beginning TPI"
-	initialguess_params = (I, S, T, delta, alpha, e, A, StartFertilityAge, StartDyingAge, Nhat_matrix[:,:,0], MortalityRates[:,:,0], g_A)
+	initialguess_params = (I, S, T, delta, alpha, e, A, FirstFertilityAge, StartDyingAge, Nhat_matrix[:,:,0], MortalityRates[:,:,0], g_A)
 	assets_init, kf_init, w_initguess, r_initguess, kd_init, n_init, y_init, c_init = \
 		Stepfuncs.get_initialguesses(initialguess_params, assets_ss, kf_ss, w_ss, r_ss)
 
-	tp_params = (I, S, T, T_1, beta, sigma, delta, alpha, e, A, StartFertilityAge, StartDyingAge, Nhat_matrix, MortalityRates, g_A, distance, diff, xi, MaxIters)
+	tp_params = (I, S, T, T_1, beta, sigma, delta, alpha, e, A, FirstFertilityAge, StartDyingAge, Nhat_matrix, MortalityRates, g_A, distance, diff, xi, MaxIters)
 	wpath, rpath, cpath, Kpath, ypath = Stepfuncs.get_Timepath(tp_params, w_initguess, r_initguess, assets_init, kd_ss, kf_ss, w_ss, r_ss, PrintLoc)
 	
 	if Graphs==True:
