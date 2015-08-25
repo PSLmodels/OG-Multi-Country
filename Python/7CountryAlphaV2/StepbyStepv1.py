@@ -408,8 +408,18 @@ def get_gamma(params, w, e):
         """
 
         rho, sigma, chi = params
-        denom=np.einsum("i,is->is",w,e[:,:-1,0])
+        
+        #print "w",w.shape
+        #print "e",e.shape
+        
+        if w.ndim==1:
+            denom=np.einsum("i,is->is",w,e[:,:-1,0])
+
+        if w.ndim==2:
+            denom=np.einsum("it,is -> is", w, e[:,:-1,0])
+
         gamma=((1+chi*(chi/(denom)))**rho**((1-rho*sigma)/rho)*(rho/(rho-1)))**(-1/sigma)
+
 
         return gamma
 
@@ -428,8 +438,10 @@ def get_ck(c,gamma):
             -ckhat[I,S,T+S+1]: Array of children's consumption
 
         """
-        
+        #print "c shape", c.shape
+        #print "gamma shape",gamma.shape
         ckhat=c*gamma
+
 
         return ckhat
 
@@ -482,12 +494,24 @@ def get_chat(params,w,e,r,assets,KIDs,gamma):
 
         """
         delta, chi, rho, gA = params
+        
+        if KIDs.ndim==2:
+            #print r.shape
+            denom=np.einsum("i,is->is",w,e[:,:-1,0])
+            part2=KIDs[:,:-1]*gamma
+            part3=np.einsum("i,is->is",(1+r-delta),assets[:,:-1])
+            part4=assets[:,1:]
 
-        denom=np.einsum("i,is->is",w,e[:,:-1,0])
-
-        part2=KIDs[:,:-1]*gamma
-        part3=np.einsum("i,is->is",(1+r-delta),assets[:,:-1])
-        part4=assets[:,1:]
+        if KIDs.ndim==3:
+            #print w.shape
+            denom=np.einsum("i,is -> is", w, e[:,:-1,0])
+            part2=np.einsum("ist,is->is",KIDs[:,:-1,:],gamma)
+            part3=np.einsum("i,is->is",(1+r-delta),assets[:,:-1])
+            part4=assets[:,1:]
+            #print denom.shape
+            #print part2.shape
+            #print part3.shape
+            #print part4.shape
 
         chat=(denom+part3-part4*np.exp(gA))/(1+part2+(denom)**rho)
 
@@ -628,7 +652,7 @@ def SteadyStateSolution(guess,T, I, S, beta, sigma, delta, alpha, e, A, FirstFer
 	
 	#Getting the other variables
 	kd = get_kd(assets, kf, Nhat_ss)
-	nparams = (e[:,:,0], Nhat_ss)
+	nparams = (e[:,:,-1], Nhat_ss)
 	n = get_n(nparams)
 	Yparams = (alpha, A)
 	Y = get_Y(Yparams, kd, n)
@@ -709,7 +733,7 @@ def getSteadyState(params, assets_init, kf_init):
 
 	#Gets the other steady-state values using assets and kf
 	kd_ss = get_kd(assets_ss, kf_ss, Nhat_ss)
-	nparams = (e[:,:,0], Nhat_ss)
+	nparams = (e[:,:,-1], Nhat_ss)
 	n_ss = get_n(nparams)
 	Yparams = (alpha, A)
 	Y_ss = get_Y(Yparams, kd_ss, n_ss)
@@ -759,12 +783,13 @@ def get_initialguesses(params, assets_ss, kf_ss, w_ss, r_ss):
 
 	"""
 
-	I, S, T, delta, alpha, e, A, FirstFertilityAge, StartDyingAge, Nhat_init, Mortality_init, g_A = params
+	I, S, T, delta, alpha, e, A, FirstFertilityAge, StartDyingAge, Nhat_init, Mortality_init, g_A, chi, rho, sigma, KIDs_ss,\
+                 KIDs = params
 
 	#Sets initial assets and kf, start with something close to the steady state
 	assets_init = assets_ss*.9
 	kf_init = kf_ss*0
-	w_initguess = np.zeros((I, T+S+1))
+	w_initguess = np.ones((I, T+S+1))*.25
 	r_initguess = np.ones((T+S+1))*.5
 
 	#Gets initial kd, n, y, r, w, and K
@@ -777,8 +802,18 @@ def get_initialguesses(params, assets_ss, kf_ss, w_ss, r_ss):
 	w_init = get_w(alpha, Y_init, n_init)
 	bqparams = (I, S, FirstFertilityAge, StartDyingAge, Nhat_init, Mortality_init)
 	bq_init = getBequests(bqparams, assets_init)
-        cparams = (e, delta, bq_init, g_A)
-	c_init = get_cvecss(cparams, w_init, r_init, assets_init)
+        gamparams = (rho, sigma, chi)
+        gamma_init = get_gamma(gamparams, w_initguess, e)
+
+        chatparams = (delta, chi, rho, g_A)
+        chat_init = get_chat(chatparams, w_init, e, r_init, assets_init, KIDs, gamma_init)
+
+        lhatparams = (rho, chi)
+        lhat_init = get_lhat(lhatparams,chat_init,w_init,e)
+
+        ck_init = get_ck(chat_init, gamma_init)
+        #cparams = (e, delta, bq_init, g_A)
+	#c_init = get_cvecss(cparams, w_init, r_init, assets_init)
 
 	#Gets initial guess for rental rate path. This is set up to be linear.
 	r_initguess[:T+1] = np.linspace(r_init[0], r_ss, T+1)
@@ -791,7 +826,7 @@ def get_initialguesses(params, assets_ss, kf_ss, w_ss, r_ss):
 		w_initguess[i,T+1:] = w_initguess[i,T]
 
 
-	return assets_init, kf_init, w_initguess, r_initguess, kd_init, n_init, Y_init, c_init
+	return assets_init, kf_init, w_initguess, r_initguess, kd_init, n_init, Y_init, ck_init, lhat_init
 
 def get_foreignK_path(params, Kpath, rpath, kf_ss, PrintLoc):
         """
@@ -862,21 +897,21 @@ def get_lifetime_decisions(params, c_1, wpath_chunk, rpath_chunk, e_chunk, start
 	num_decisions = S-current_age-1# -1 Because we already have (or have guessed) our starting consumption
 
 	#Initializes the cpath and asset path vectors
-	c_path = np.zeros((I, num_decisions+1))
+	ck_path = np.zeros((I, num_decisions+1))
 	asset_path = np.zeros((I, num_decisions+2))
 
 	#For each country, the cpath and asset path vectors' are the initial values provided.
-	c_path[:,0] = c_1
+	ck_path[:,0] = c_1
 	asset_path[:,0] = starting_assets
 
 	#Based on the individual chunks, these are the households choices
 	for p in range(1,num_decisions+1):
-		c_path[:,p] = ((beta * (1 + rpath_chunk[p] - delta))**(1/sigma) * c_path[:,p-1])*np.exp(-g_A)
-		asset_path[:,p] = (wpath_chunk[:,p-1]*e_chunk[:,p-1] + (1 + rpath_chunk[p-1] - delta)*asset_path[:,p-1] + bq[:,p-1] - c_path[:,p-1])*np.exp(-g_A)
+		ck_path[:,p] = ((beta * (1 + rpath_chunk[p] - delta))**(1/sigma) * ck_path[:,p-1])*np.exp(-g_A)
+		asset_path[:,p] = (wpath_chunk[:,p-1]*e_chunk[:,p-1] + (1 + rpath_chunk[p-1] - delta)*asset_path[:,p-1] + bq[:,p-1] - ck_path[:,p-1])*np.exp(-g_A)
 	
-	asset_path[:,p+1] = (wpath_chunk[:,p]*e_chunk[:,p] + (1 + rpath_chunk[p] - delta)*asset_path[:,p] - c_path[:,p])*np.exp(-g_A)
+	asset_path[:,p+1] = (wpath_chunk[:,p]*e_chunk[:,p] + (1 + rpath_chunk[p] - delta)*asset_path[:,p] - ck_path[:,p])*np.exp(-g_A)
 
-	return c_path, asset_path
+	return ck_path, asset_path
 
 def find_optimal_starting_consumptions(c_1, wpath_chunk, rpath_chunk, epath_chunk, starting_assets, bq, current_age, params):
 	"""
@@ -902,9 +937,9 @@ def find_optimal_starting_consumptions(c_1, wpath_chunk, rpath_chunk, epath_chun
 
 	"""
 	#Executes the get_household_choices_path function. Sees above.
-	c_path, assets_path = get_lifetime_decisions(params, c_1, wpath_chunk, rpath_chunk, epath_chunk, starting_assets, bq, current_age)
+	ck_path, assets_path = get_lifetime_decisions(params, c_1, wpath_chunk, rpath_chunk, epath_chunk, starting_assets, bq, current_age)
 
-        if np.any(c_path<0):
+        if np.any(ck_path<0):
             print "WARNING! The fsolve for initial optimal consumption guessed a negative number"
             c_path=np.ones(I)*9999.
 
@@ -915,7 +950,7 @@ def find_optimal_starting_consumptions(c_1, wpath_chunk, rpath_chunk, epath_chun
 
 def get_cons_assets_matrix(params, wpath, rpath, starting_assets, PrintLoc):
 	if PrintLoc: print "Entering get_cons_assets_matrix"
-	I, S, T, T_1, beta, sigma, delta, e, FirstFertilityAge, StartDyingAge, Nhat, MortalityRates, g_A = params
+	I, S, T, T_1, beta, sigma, delta, e, FirstFertilityAge, StartDyingAge, Nhat, MortalityRates, g_A, rho, chi = params
 
 	#Initializes timepath variables
 	c_timepath = np.zeros((I,S,S+T+1))
@@ -924,6 +959,11 @@ def get_cons_assets_matrix(params, wpath, rpath, starting_assets, PrintLoc):
 	bq_timepath = np.zeros((I, S, S+T+1))
 
 	c_timepath[:,S-1,0] = wpath[:,0]*e[:,S-1,0] + (1 + rpath[0] - delta)*a_timepath[:,S-1,0]
+        gammaparams=(rho, sigma, chi)
+        gammtemp=get_gamma(gammaparams,wpath,e)
+        #ck_timepath[:,S-1,0] = wpath[:,0]*e[:,S-1,0] + (1 + rpath[0] - delta)*a_timepath[:,S-1,0] - a_timepath[:,S,1]/\
+                #(1 + KIDs[:,S-1,0]*gammatemp
+
 
 	#print "Initial matrices"
 	#print "Consumption"
@@ -949,17 +989,19 @@ def get_cons_assets_matrix(params, wpath, rpath, starting_assets, PrintLoc):
 		c_guess = (c_timepath[:,current_age+1,t]/((beta*(1+rpath[t]-delta))**(1/sigma)))/np.exp(g_A)
 
 		#Gets the bequests this agent will recieve in his remaining lifetime
-		agent_bq = np.diagonal(bq_timepath[:,current_age:,:], axis1=1, axis2=2)
+		agent_bq = np.diagonal(bq_timepath[:,current_age:,t:], axis1=1, axis2=2)
+
+		agent_e = np.diagonal(e[:,current_age:,t:], axis1=1, axis2=2)
 
 		#Gets optimal initial consumption beginning in the current age of the agent using chunks of w and r that span the lifetime of the given generation
 		household_params = (I, S, beta, sigma, delta, g_A)
 
 		opt_consump = opt.fsolve(find_optimal_starting_consumptions, c_guess, args = \
-			(wpath[:,t:t+p+1], rpath[t:t+p+2], e[:,0,t:t+p+1], agent_assets, agent_bq, current_age, household_params))
+			(wpath[:,t:t+p+1], rpath[t:t+p+2], agent_e, agent_assets, agent_bq, current_age, household_params))
 
 		#Gets optimal timepaths beginning initial consumption and starting assets
 		cpath_indiv, apath_indiv = get_lifetime_decisions\
-			(household_params, opt_consump, wpath[:,t:t+p+1], rpath[t:t+p+2], e[:,0,t:t+p+1], agent_assets, agent_bq, current_age)
+			(household_params, opt_consump, wpath[:,t:t+p+1], rpath[t:t+p+2], agent_e, agent_assets, agent_bq, current_age)
 
 		for i in xrange(I):
 			np.fill_diagonal(c_timepath[i,current_age:,:], cpath_indiv[i,:])
@@ -993,11 +1035,13 @@ def get_cons_assets_matrix(params, wpath, rpath, starting_assets, PrintLoc):
 		#Gets the bequests this agent will recieve in his remaining lifetime
 		agent_bq = np.diagonal(bq_timepath[:,current_age:,:], axis1=1, axis2=2)
 
+                agent_e = np.diagonal(e[:,current_age:,t:], axis1=1, axis2=2)
+
 		opt_consump = opt.fsolve(find_optimal_starting_consumptions, c_guess, args = \
-			(wpath[:,t:t+p+1], rpath[t:t+p+2], e[:,0,t:t+p+1], agent_assets, agent_bq, current_age, household_params))
+			(wpath[:,t:t+p+1], rpath[t:t+p+2], agent_e, agent_assets, agent_bq, current_age, household_params))
 
 		cpath_indiv, assetpath_indiv = get_lifetime_decisions\
-			(household_params, opt_consump, wpath[:,t:t+p+1], rpath[t:t+p+2], e[:,0,t:t+p+1], agent_assets, agent_bq, current_age)
+			(household_params, opt_consump, wpath[:,t:t+p+1], rpath[t:t+p+2], agent_e, agent_assets, agent_bq, current_age)
 
 		for i in range(I):
 			np.fill_diagonal(c_timepath[i,:,t:], cpath_indiv[i,:])
@@ -1054,9 +1098,9 @@ def get_wpathnew_rpathnew(params, wpath, rpath, starting_assets, kd_ss, kf_ss, w
 
 	"""
 	if PrintLoc: print "Entering get_wpathnew_rpathnew"
-	I, S, T, T_1, beta, sigma, delta, alpha, e, A, FirstFertilityAge, StartDyingAge, Nhat, MortalityRates, g_A = params
+	I, S, T, T_1, beta, sigma, delta, alpha, e, A, FirstFertilityAge, StartDyingAge, Nhat, MortalityRates, g_A, rho ,chi = params
 
-	ca_params = (I, S, T, T_1, beta, sigma, delta, e, FirstFertilityAge, StartDyingAge, Nhat, MortalityRates, g_A)
+	ca_params = (I, S, T, T_1, beta, sigma, delta, e, FirstFertilityAge, StartDyingAge, Nhat, MortalityRates, g_A, rho, chi)
 	c_timepath, a_timepath = get_cons_assets_matrix(ca_params, wpath, rpath, starting_assets, PrintLoc)
 
 	#Calculates the total amount of capital in each country
@@ -1091,10 +1135,10 @@ def get_wpathnew_rpathnew(params, wpath, rpath, starting_assets, kd_ss, kf_ss, w
 
 def get_Timepath(params, wstart, rstart, assets_init, kd_ss, kf_ss, w_ss, r_ss, PrintLoc):
 
-    I, S, T, T_1, beta, sigma, delta, alpha, e, A, FirstFertilityAge, StartDyingAge, Nhat, MortalityRates, g_A, distance, diff, xi, MaxIters = params
+    I, S, T, T_1, beta, sigma, delta, alpha, e, A, FirstFertilityAge, StartDyingAge, Nhat, MortalityRates, g_A, distance, diff, xi, MaxIters, rho, chi = params
 
     Iter=1 #Serves as the iteration counter
-    wr_params = (I, S, T, T_1, beta, sigma, delta, alpha, e, A, FirstFertilityAge, StartDyingAge, Nhat, MortalityRates, g_A)
+    wr_params = (I, S, T, T_1, beta, sigma, delta, alpha, e, A, FirstFertilityAge, StartDyingAge, Nhat, MortalityRates, g_A, rho, chi)
 
     while distance>diff and Iter<MaxIters: #The timepath iteration runs until the distance gets below a threshold or the iterations hit the maximum
             wpath_new, rpath_new, Cpath_new, Kpath_new, Ypath_new = \
