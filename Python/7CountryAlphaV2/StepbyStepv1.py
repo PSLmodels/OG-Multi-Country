@@ -212,7 +212,7 @@ def getDemographics(params, PrintAges, DiffDemog):
 	#Gets labor endowment per household. For now it grows at a constant rate g_A
 	l_endowment = np.cumsum(np.ones(T)*g_A)
 
-	return FertilityRates, MortalityRates, Migrants, N_matrix, Nhat_matrix[:,:,:T+S+1], KIDs, Nhatss_new, KIDs_ss, l_endowment
+	return FertilityRates, MortalityRates, Migrants, N_matrix, Nhat_matrix[:,:,:T+S+1], KIDs, Nhatss_new, KIDs_ss
 
 def plotDemographics(params, indexes, years, name, N_matrix):
 	"""
@@ -386,116 +386,6 @@ def get_w(alpha, Y, n):
 	w = (1-alpha) * Y / n
 	return w
 
-def get_gamma(params, w, e):
-        """
-        Description: Calculates the gamma used for calculating consumption and other variables.
-
-        Inputs:
-            -params: tuple of the needed parameters
-            -w[I,T+S+1]:Path of wages
-            -e[I,S,T+S+1]: Marginal labor productivities
-
-        Objects in Function:
-            -rho: parameter
-            -sigma: parameter
-            -chi: parameter
-            -denom: denominator for equation 3.24
-
-        Outputs:
-            -Gamma[I,T+S+1]:
-
-
-        """
-
-        rho, sigma, chi = params
-        denom=np.einsum("i,is->is",w,e[:,:-1,0])
-        gamma=((1+chi*(chi/(denom)))**rho**((1-rho*sigma)/rho)*(rho/(rho-1)))**(-1/sigma)
-
-        return gamma
-
-def get_ck(c,gamma):
-        """
-        Description: Calculates the children's consumption based on parent's consumption
-
-        Inputs:
-            -c[I,S,T+S+1]: Array of consumption (adults)
-            -gamma[I,T+S+1]: Vector of gamma
-
-        Objects in Function:
-            NONE
-
-        Outputs:
-            -ckhat[I,S,T+S+1]: Array of children's consumption
-
-        """
-        
-        ckhat=c*gamma
-
-        return ckhat
-
-def get_lhat(params,chat,w,e):
-        """
-        Description: Calculates the lesiure based on wages, consumption and productivity
-
-        Inputs:
-            -params: tuple of the necessary parameter
-            -chat: Consumption of adults
-            -w: wage timepath
-            -e: labor productvities
-
-        Objects in Function:
-            -chi: parameter
-            -rho: parameter
-            -denom: Calculated denominator for 3.26
-
-        Outputs:
-            -lhat: timepath of leisure decisions
-
-        """
-        rho, chi = params
-        denom=np.einsum("i,is->is",w,e[:,:-1,0])        
-        lhat=chat*(chi/denom)**rho
-
-        return lhat
-
-def get_chat(params,w,e,r,assets,KIDs,gamma):
-        """
-        Description:
-
-        Inputs:
-            -w:
-            -e:
-            -lbar:
-            -params:
-            -assets:
-            -gA:
-            -KID:
-            -gamma:
-
-        Objects in Function:
-            -denom:
-            -delta:
-            -chi:
-
-        Outputs:
-            -chat:
-
-        """
-        delta, chi, rho, gA = params
-
-        denom=np.einsum("i,is->is",w,e[:,:-1,0])
-
-        part2=KIDs[:,:-1]*gamma
-        part3=np.einsum("i,is->is",(1+r-delta),assets[:,:-1])
-        part4=assets[:,1:]
-
-        chat=(denom+part3-part4*np.exp(gA))/(1+part2+(denom)**rho)
-
-
-        return chat
-
-
-
 def get_cvecss(params, w, r, assets):
 	"""
 	Description: Calculates the consumption vector
@@ -592,7 +482,7 @@ def check_feasible(K, Y, w, r, c):
 
 	return Feasible
 
-def SteadyStateSolution(guess,T, I, S, beta, sigma, delta, alpha, e, A, FirstFertilityAge, StartDyingAge, Nhat_ss, Mortality_ss, g_A, chi, rho, KIDs):
+def SteadyStateSolution(guess, I, S, beta, sigma, delta, alpha, e, A, FirstFertilityAge, StartDyingAge, Nhat_ss, Mortality_ss, g_A):
 	"""
 	Description: 
 		-This is the function that will be optimized by fsolve.
@@ -636,33 +526,23 @@ def SteadyStateSolution(guess,T, I, S, beta, sigma, delta, alpha, e, A, FirstFer
 	w = get_w(alpha, Y, n)
 	bqparams = (I, S, FirstFertilityAge, StartDyingAge, Nhat_ss, Mortality_ss)
 	bq = getBequests(bqparams, assets)
-
-        gamparams = (rho, sigma, chi)
-        gamma = get_gamma(gamparams,w,e)
-
-        chatparams = (delta, chi, rho, g_A)
-        chat_vec=get_chat(chatparams, w, e, r, assets, KIDs, gamma)
-
-        lhatparams = (rho, chi)
-        lhat=get_lhat(lhatparams, chat_vec, w, e)
-
-        ck_vec=get_ck(chat_vec,gamma)
-
+	cparams = (e, delta, bq, g_A)
+	c_vec = get_cvecss(cparams, w, r, assets)
 	K = kd+kf
 
-	Feasible = check_feasible(K, Y, w, r, chat_vec)
+	Feasible = check_feasible(K, Y, w, r, c_vec)
 
 	if Feasible == False: #Punishes the the poor choice of negative values in the fsolve
 		all_Euler=np.ones((I*S))*999.
 		print "Punishing fsolve"
 	else:
 		#Gets Euler equations
-                Euler_ck = ck_vec[:,:-1]** (-sigma) - beta * (ck_vec[:,1:]*np.exp(g_A)) ** (-sigma) * (1 + r[0] - delta)
+		Euler_c = c_vec[:,:-1] ** (-sigma) - beta * (c_vec[:,1:]*np.exp(g_A)) ** (-sigma) * (1 + r[0] - delta)
 		Euler_r = r[1:] - r[0]
 		Euler_kf = np.sum(kf*np.sum(Nhat_ss, axis=1))
 
 		#Makes a new 1D vector of length I*S that contains all the Euler equations
- 		all_Euler = np.append(np.append(np.ravel(Euler_ck), np.ravel(Euler_r)), Euler_kf)
+ 		all_Euler = np.append(np.append(np.ravel(Euler_c), np.ravel(Euler_r)), Euler_kf)
 
 		#print "SS Max Euler Error", np.max(np.absolute(all_Euler))
 
@@ -692,7 +572,7 @@ def getSteadyState(params, assets_init, kf_init):
 	    -c_vec_ss[I, S]: Calculated steady state counsumption
 
 	"""
-	T, I, S, beta, sigma, delta, alpha, e, A, FirstFertilityAge, StartDyingAge, Nhat_ss, Mortality_ss, g_A , chi, rho, KIDs= params
+	I, S, beta, sigma, delta, alpha, e, A, FirstFertilityAge, StartDyingAge, Nhat_ss, Mortality_ss, g_A = params
 
 	#Merges the assets and kf together into one matrix that can be inputted into the fsolve function
 	guess = np.column_stack((assets_init, kf_init))
@@ -717,16 +597,12 @@ def getSteadyState(params, assets_init, kf_init):
 	w_ss = get_w(alpha, Y_ss, n_ss)
 	bqparams = (I, S, FirstFertilityAge, StartDyingAge, Nhat_ss, Mortality_ss)
 	bq_ss = getBequests(bqparams, assets_ss)
-        gammaparams = (rho, sigma, chi)
-        gamma_ss= get_gamma(gammaparams, w_ss, e)
-        chatparams = (delta, chi, rho, g_A)
-        chat_vec_ss = get_chat(chatparams, w_ss, e , r_ss, assets_ss, KIDs, gamma_ss)
-
-        ck_vec_ss = get_ck(chat_vec_ss, gamma_ss)
+	cparams = (e, delta, bq_ss, g_A)
+	c_vec_ss = get_cvecss(cparams, w_ss, r_ss, assets_ss)
 
 	print "\nSteady State Found!\n"
 
-	return assets_ss, kf_ss, kd_ss, n_ss, Y_ss, r_ss[0], w_ss, chat_vec_ss, ck_vec_ss
+	return assets_ss, kf_ss, kd_ss, n_ss, Y_ss, r_ss[0], w_ss, c_vec_ss
 
 #TIMEPATH FUNCTIONS
 
@@ -777,7 +653,7 @@ def get_initialguesses(params, assets_ss, kf_ss, w_ss, r_ss):
 	w_init = get_w(alpha, Y_init, n_init)
 	bqparams = (I, S, FirstFertilityAge, StartDyingAge, Nhat_init, Mortality_init)
 	bq_init = getBequests(bqparams, assets_init)
-        cparams = (e, delta, bq_init, g_A)
+	cparams = (e, delta, bq_init, g_A)
 	c_init = get_cvecss(cparams, w_init, r_init, assets_init)
 
 	#Gets initial guess for rental rate path. This is set up to be linear.

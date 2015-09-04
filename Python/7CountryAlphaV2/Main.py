@@ -27,8 +27,6 @@ delta = 1-(1-delta_ann)**(70/S) #Depreciation Rate
 alpha = .3 #Capital Share of production
 e = np.ones((I, S+1, T+S+1)) #Labor productivities
 A = np.ones(I) #Techonological Change, used for idential countries
-chi = 1.
-rho = 1.5 #This can't be one or else you'll get a divide by zero.
 
 diff = 1e-8 #Convergence Tolerance
 demog_ss_tol = 1e-8 #Used in getting ss for population share
@@ -37,12 +35,12 @@ xi = .7 #Parameter used to take the convex conjugate of paths
 MaxIters = 500 #Maximum number of iterations on TPI.
 
 #Program Levers
-PrintAges = False #Prints the different key ages in the demographics
+PrintAges = True #Prints the different key ages in the demographics
 PrintLoc = False #Displays the current locations of the program inside key TPI functions
-PrintSS = True #Prints the result of the Steady State functions
-CalcTPI = False #Activates the calculation of Time Path Iteration
+PrintSS = False #Prints the result of the Steady State functions
+CalcTPI = True #Activates the calculation of Time Path Iteration
 #NOTE: Graphing only works if CalcTPI is activated.
-Graphs = False #Activates graphing the graphs.
+Graphs = True #Activates graphing the graphs.
 CountryNamesON = False #Turns on labels for the graphs. Replaces "Country x" with proper names.
 DiffDemog = True #Turns on different demographics over countries.
 
@@ -62,8 +60,8 @@ assets_guess = np.ones((I, S-1))*.15
 kf_guess = np.zeros((I))
 
 #Gets the steady state variables
-params_ss = (T, I, S, beta, sigma, delta, alpha, e, A, FirstFertilityAge, StartDyingAge, Nhat_ss, MortalityRates[:,:,-1], g_A, chi, rho,KIDs_ss)
-assets_ss, kf_ss, kd_ss, n_ss, y_ss, r_ss, w_ss, c_vec_ss, ck_vec_ss = Stepfuncs.getSteadyState(params_ss, assets_guess, kf_guess)
+params_ss = (I, S, beta, sigma, delta, alpha, e, A, FirstFertilityAge, StartDyingAge, Nhat_ss, MortalityRates[:,:,-1], g_A)
+assets_ss, kf_ss, kd_ss, n_ss, y_ss, r_ss, w_ss, c_vec_ss = Stepfuncs.getSteadyState(params_ss, assets_guess, kf_guess)
 
 if PrintSS==True: #Prints the results of the steady state, line 23 activates this
 	print "assets steady state", assets_ss
@@ -74,7 +72,6 @@ if PrintSS==True: #Prints the results of the steady state, line 23 activates thi
 	print "r steady state",r_ss
 	print "w steady state", w_ss
 	print "c_vec_ss steady state",c_vec_ss
-        print "ck_vec_ss steady state", ck_vec_ss
 
 if CalcTPI==True: #Time Path Iteration, activated by line 24
 	print "Beginning TPI"
