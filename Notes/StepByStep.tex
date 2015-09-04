@@ -137,8 +137,8 @@
 
 	The population dynamics are given by:
 	\begin{align}
-		N_{i,1,t+1} & = \sum_{s=1}^S N_{ist} f_{ist} \label{eq_2pop1}\\
-		N_{i,s+1,t+1} & = N_{ist} (1+m_{ist}-\rho_{ist}); 1<s\le S \label{eq_2pop2}
+		N_{i,1,t+1} & = \sum_{s=1}^S N_{ist} f_{ist} \\
+		N_{i,s+1,t+1} & = N_{ist} (1+m_{ist}-\rho_{ist}); 1<s\le S
 	\end{align}
 
 	We define the total world population as:
@@ -231,8 +231,8 @@
 
 	The first-order conditions are:
 	\begin{align}
-		& \beta^j \left( {c_{i,s+j,t+j}}^{1-1/\rho} + \chi {\ell_{i,s+j,t+j}}^{1-1/\rho}\right)^{\tfrac{{1-\sigma}}{1-1/\rho}-1} {c_{i,s+j,t+j}}^{-1/\rho}  \nonumber \\ = &  - \lambda_{i,s+j,t+j}  \label{eq_3foc1} \\
-		& \beta^j \left( {c_{i,s+j,t+j}}^{1-1/\rho} + \chi {\ell_{i,s+j,t+j}}^{1-1/\rho}\right)^{\tfrac{{1-\sigma}}{1-1/\rho}-1} \chi {\ell_{i,s+j,t+j}}^{-1/\rho} \nonumber \\ = & - \lambda_{i,s+j,t+j} w_{i,t+j} e_{s+j,t+j} \label{eq_3foc2} \\
+		& \beta^j \left( {c_{i,s+j,t+j}}^{1-1/\rho} + \chi {\ell_{i,s+j,t+j}}^{1-1/\rho}\right)^{\tfrac{{1-\sigma}}{1-1/\rho}-1} \left(1-\tfrac{1}{\rho}\right)^{-1} {c_{i,s+j,t+j}}^{-1/\rho}  \nonumber \\ = &  - \lambda_{i,s+j,t+j}  \label{eq_3foc1} \\
+		& \beta^j \left( {c_{i,s+j,t+j}}^{1-1/\rho} + \chi {\ell_{i,s+j,t+j}}^{1-1/\rho}\right)^{\tfrac{{1-\sigma}}{1-1/\rho}-1} \left(1-\tfrac{1}{\rho}\right)^{-1} \chi {\ell_{i,s+j,t+j}}^{-1/\rho} \nonumber \\ = & - \lambda_{i,s+j,t+j} w_{i,t+j} e_{s+j,t+j} \label{eq_3foc2} \\
 		& \beta^j KID_{i,s+j,t+j}{c^K_{i,s+j,t+j}}^{-\sigma} = - \lambda_{i,s+j,t+j} KID_{i,s+j,t+j} \label{eq_3foc3} \\
                & (1+r_{i,t+j}-\delta) \lambda_{i,s+j,t+j} = \lambda_{i,s+j-1,t+j-1} \label{eq_3foc4}
 	\end{align}	
@@ -257,10 +257,10 @@
 
 	Substitute \eqref{eq_lamdef} and \eqref{eq_3elldef} into \eqref{eq_3foc1}.
 	\begin{align}
-		& \beta^j \left\{ {c_{i,s+j,t+j}}^{1-1/\rho} + \chi \left[c_{i,s+j,t+j} \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^\rho\right]^{1-1/\rho}\right\}^{\tfrac{{1-\sigma}}{1-1/\rho}-1} {c_{i,s+j,t+j}}^{-1/\rho}  \nonumber \\ = &  \beta^j {c^K_{i,s+j,t+j}}^{-\sigma} \nonumber \\
-		& \left\{ {c_{i,s+j,t+j}}^{1-1/\rho} \left[1 + \chi \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^\rho\right]^{1-1/\rho}\right\}^{\tfrac{1-\rho \sigma}{\rho-1}}  {c_{i,s+j,t+j}}^{-1/\rho}  \nonumber \\ = &  {c^K_{i,s+j,t+j}}^{-\sigma} \nonumber \\
+		& \beta^j \left\{ {c_{i,s+j,t+j}}^{1-1/\rho} + \chi \left[c_{i,s+j,t+j} \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^\rho\right]^{1-1/\rho}\right\}^{\tfrac{{1-\sigma}}{1-1/\rho}-1} \left(1-\tfrac{1}{\rho}\right)^{-1} {c_{i,s+j,t+j}}^{-1/\rho}  \nonumber \\ = &  \beta^j {c^K_{i,s+j,t+j}}^{-\sigma} \nonumber \\
+		& \left\{ {c_{i,s+j,t+j}}^{1-1/\rho} \left[1 + \chi \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^\rho\right]^{1-1/\rho}\right\}^{\tfrac{1-\rho \sigma}{\rho-1}}  {c_{i,s+j,t+j}}^{-1/\rho}  \nonumber \\ = &  \left(1-\tfrac{1}{\rho}\right) {c^K_{i,s+j,t+j}}^{-\sigma} \nonumber \\
 		& \left[1 + \chi \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^\rho\right]^{\left[(1-1/\rho)
-		\tfrac{1-\rho \sigma}{\rho-1}\right]}  {c_{i,s+j,t+j}}^{\left[(1-1/\rho) \tfrac{1-\rho\sigma}{\rho-1}-1/\rho\right]}  \nonumber \\ = & {c^K_{i,s+j,t+j}}^{-\sigma} \nonumber \\
+		\tfrac{1-\rho \sigma}{\rho-1}\right]}  {c_{i,s+j,t+j}}^{\left[(1-1/\rho) \tfrac{1-\rho\sigma}{\rho-1}-1/\rho\right]}  \nonumber \\ = &  \left(1-\tfrac{1}{\rho}\right) {c^K_{i,s+j,t+j}}^{-\sigma} \nonumber \\
 		& \left[1 + \chi \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^\rho\right]^{\tfrac{1-\rho \sigma}{\rho}}  {c_{i,s+j,t+j}}^{-\sigma} = \left(1-\tfrac{1}{\rho}\right) {c^K_{i,s+j,t+j}}^{-\sigma} \nonumber \\
 		& c^K_{i,s+j,t+j} = c_{i,s+j,t+j} \left\{ \left[1 + \chi \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^\rho\right]^{\tfrac{1-\rho \sigma}{\rho}} \frac{\rho}{\rho-1} \right\}^{-\tfrac{1}{\sigma}} \nonumber
 	\end{align}
@@ -268,7 +268,7 @@
 	We rewrite this, more conveniently, as:
 	\begin{align}
        & c^K_{i,s+j,t+j} = c_{i,s+j,t+j} \Gamma_{i,t+j} \label{eq_3cKdef} \\
-       & \Gamma_{i,t+j} \equiv \left\{ \left[1 + \chi \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^\rho\right]^{\tfrac{1-\rho \sigma}{\rho}} \right\}^{-\tfrac{1}{\sigma}} \label{eq_3Gamdef}
+       & \Gamma_{i,t+j} \equiv \left\{ \left[1 + \chi \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^\rho\right]^{\tfrac{1-\rho \sigma}{\rho}} \frac{\rho}{\rho-1} \right\}^{-\tfrac{1}{\sigma}} \label{eq_3Gamdef}
 	\end{align}
 
 	Substituting \eqref{eq_3elldef}, \eqref{eq_3cKdef} and \eqref{eq_3Gamdef}, into the budget constraint, \eqref{eq_3bc},  gives:
@@ -284,9 +284,9 @@
 	If we stationarize \eqref{eq_3elldef}, \eqref{eq_3cKdef}, \eqref{eq_3Gamdef} and \eqref{eq_3cdef}, we can add them to the list of other behavioral equations from previous sections above to get the following.
 
 	\begin{align}
-		g^N_t & = \sum_{i=1}^I \sum_{s=1}^S \hat N_{ist} (f_{ist}+m_{ist}-\rho_{ist}) ; \forall i \label{eq_3gNdef}\\
+		g^N_t & = \sum_{i=1}^I \sum_{s=1}^S \hat N_{ist} (f_{ist}+m_{ist}-\rho_{ist}) ; \forall i\\
 		\hat N_{i,1,t+1} & = e^{-g^N_t}\sum_{s=23}^{45} \hat N_{ist} f_{ist} ; \forall i\\
-		\hat N_{i,s+1,t+1} & = e^{-g^N_t}\hat N_{ist} (1+m_{ist}-\rho_{ist}); \forall i, 1<s\le S \label{eq_3pop2}
+		\hat N_{i,s+1,t+1} & = e^{-g^N_t}\hat N_{ist} (1+m_{ist}-\rho_{ist}); \forall i, 1<s\le S 
 	\end{align}
 	\begin{align}
 		KID_{i,s+1,t+1} & = \sum_{r=1}^{20} f_{i,s-r,t-r}; \forall i, 1<s\le S  \\
@@ -297,7 +297,7 @@
 		w_{it} & = (1-\alpha) \frac{\hat y_{it}}{\hat n_{it}}; \forall i \\
 		\hat BQ_{it} & = \sum_{s=67}^S \hat a_{ist} \rho_{ist} \hat N_{ist} ; \forall i \\
 		\hat BQ_{it} & = \sum_{s=23}^{67} \hat bq_{ist} (1-\rho_{ist}) \hat N_{ist}	; \forall i \\
-		\Gamma_{it} & = \left\{ \left[1 + \chi \left(\frac{\chi}{w_{it} e_{st}}\right)^\rho\right]^{\tfrac{1-\rho \sigma}{\rho}} \right\}^{-\tfrac{1}{\sigma}}; \forall i,s \\
+		\Gamma_{it} & = \left\{ \left[1 + \chi \left(\frac{\chi}{w_{it} e_{st}}\right)^\rho\right]^{\tfrac{1-\rho \sigma}{\rho}} \frac{\rho}{\rho-1} \right\}^{-\tfrac{1}{\sigma}}; \forall i,s \\
     	\hat c_{ist} & = \frac{w_{it} e_{st} \bar \ell_t + (1+r_{it}-\delta)\hat a_{ist} - \hat a_{i,s+1,t+1} e^{g^A}} {1 + KID_{ist}\Gamma_{it} + \left(\tfrac{\chi}{w_{it}e_{st}}\right)^\rho}; \forall i,s \\
 		\hat \ell_{ist} & = \hat c_{ist} \left(\frac{\chi}{w_{it}e_{st}}\right)^\rho ; \forall i,s \\
 		\hat c^K_{ist} & = \hat c_{ist} \Gamma_{it}; \forall i,s \\
@@ -305,14 +305,6 @@
 		& r_{it} - r_{1t} = 0; \forall i>1 \\
 		& \sum_{i=1}^I \hat k^f_{it} \left( \sum_{s=1}^S \hat N_{ist} \right) = 0
 	\end{align}
-
-	Note that in the code we use the following methodology to implement equations \eqref{eq_3gNdef} - \eqref{eq_3pop2}.
-
-	First, use the current distribution the population, $\{\hat N_{ist}\} \forall i, s$ and caluculate tomorrow's population using the non-stationary equations \eqref{eq_2pop1} and \eqref{eq_2pop2} to generate next period's population, $\{N_{i,s,t+1}\} \forall i, s$.  Note that the current values will sum to one, but next period's will not.
-
-	Calculate the growth of the population using $g^N_t = \sum_s \sum_i N_{i,s,t+1} - 1$.
-
-	Then let $\hat N_{i,s,t+1} = N_{i,s,t+1} e^{-g^N_t}$.
 
 
 \newpage
@@ -353,7 +345,7 @@
 	\begin{align}
 		\hat BQ_{ijt} & = \sum_{s=67}^S \hat a_{ijst} \rho_{ijst} \hat N_{ijst} ; \forall i,j \\
 		\hat BQ_{ijt} & = \sum_{s=23}^{67} \hat bq_{ijst} (1-\rho_{ijst}) \hat N_{ijst}	; \forall i \\
-		\Gamma_{ijt} & = \left\{ \left[1 + \chi \left(\frac{\chi}{w_{ijt} e_{jst}}\right)^\rho\right]^{\tfrac{1-\rho \sigma}{\rho}} \right\}^{-\tfrac{1}{\sigma}}; \forall i,j,s \\
+		\Gamma_{ijt} & = \left\{ \left[1 + \chi \left(\frac{\chi}{w_{ijt} e_{jst}}\right)^\rho\right]^{\tfrac{1-\rho \sigma}{\rho}} \frac{\rho}{\rho-1} \right\}^{-\tfrac{1}{\sigma}}; \forall i,j,s \\
     	\hat c_{ijst} & = \frac{w_{ijt} e_{jst} \bar \ell_t + (1+r_{it}-\delta)\hat a_{ijst} - \hat a_{i,j,s+1,t+1} e^{g^A}} {1 + KID_{ist}\Gamma_{ijt} + \left(\tfrac{\chi}{w_{ijt}e_{jst}}\right)^\rho}; \forall i,j,s \\
 		\hat \ell_{ijst} & = \hat c_{ijst} \left(\frac{\chi}{w_{ijt}e_{jst}}\right)^\rho ; \forall i,j,s \\
 		\hat c^K_{ijst} & = \hat c_{ijst} \Gamma_{ijt}; \forall i,j,s \\
@@ -410,7 +402,7 @@
 		\hat BQ_{ijt} & = \sum_{s=23}^{67} \hat bq_{ijst} (1-\rho_{ijst}) \hat N_{ijst}	; \forall i \\
 	\end{align}
 	\begin{align}
-		\Gamma_{ijt} & = \left\{ \left[1 + \chi \left(\frac{\chi}{w_{ijt} e_{jst}}\right)^\rho\right]^{\tfrac{1-\rho \sigma}{\rho}} \right\}^{-\tfrac{1}{\sigma}}; \forall i,j,s \\
+		\Gamma_{ijt} & = \left\{ \left[1 + \chi \left(\frac{\chi}{w_{ijt} e_{jst}}\right)^\rho\right]^{\tfrac{1-\rho \sigma}{\rho}} \frac{\rho}{\rho-1} \right\}^{-\tfrac{1}{\sigma}}; \forall i,j,s \\
 		\hat T^L_{it} & = \tau^K_{it} (\hat y_{it} - w_{it}\hat n_{it} - \delta \hat k_{it}); \forall i \\
     	\hat c_{ijst} & = \frac{w_{ijt} e_{jst} \bar \ell_t + (1+r_{it}-\delta)\hat a_{ijst} - \hat a_{i,j,s+1,t+1} e^{g^A} + \hat T^L_{it}} {1 + KID_{ist}\Gamma_{ijt} + \left(\tfrac{\chi}{w_{ijt}e_{jst}}\right)^\rho}; \forall i,s \\
 		\hat \ell_{ijst} & = \hat c_{ijst} \left(\frac{\chi}{w_{ijt}e_{jst}}\right)^\rho ; \forall i,j,s \\
