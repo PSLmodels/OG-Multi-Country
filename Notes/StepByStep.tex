@@ -172,26 +172,6 @@
 
 	Aggregate variables will grow at the rate $g^A+g^N_t$ and per capita variables will grow at rate $g^A$.  The stationarized versions of our behavioral equations are given below, where a carat denotes the stationarized variable.  Note that $\hat N_{ist}$ is interpretable as the fraction of the world population in country $i$ of age $s$ at time $t$ so that $\sum_{i=1}^I \sum_{s=1}^S \hat N_{ist} = 1$.  Note that both $k_{it}$ and $n_{it}$ are growing at rate $g^A+g^N_t$, so $r_{it}$ and $w_{it}$ are stationary.
 
-	Finally we need to recognize that with mortality, agents will discount future utility not only because of time (via the parameter $\beta$), but also in proportion to the probability of survival.  This is shown below.
-
-    \begin{equation}
-		\max_{\{c_{i,s+j,t+j}\}_{j=0}^{S-s}} U_{ist} = \sum_{j=0}^{S-s} \beta^j \rho^c_{ist} \frac{1}{1-\sigma} c_{i,s+j,t+j}^{1-\sigma} \nonumber
-	\end{equation}
-	where $\rho^c_{ist}$ is the cumulative probability of surviving to age $s$ in country $i$ in period $t$.
-
-	This cummulative probability is given by the following equation.
-	\begin{equation}
-		\rho^c_{i,s+J,t+J} = \prod_{j=1}^J(1-\rho_{i,s+j,t+j})
-	\end{equation}
-
-	When we solve the household's problem we will end up now with a term involving the ratio of $\rho^c_{i,s+J+1,t+J+1}$ to $\rho^c_{i,s+J,t+J}$, which by the equation above will be equal to $1-\rho_{i,s+J+1,t+J+1}$.  Hence in our intertemporal Euler equation we will replace $\beta$ with $\beta (1-\rho_{i,s+1,t+1})$, as shown below.
-
-	\begin{equation}
-		c_{ist}^{-\sigma} = \beta (1-\rho_{i,s+1,t+1}) c_{i,s+1,t+1}^{-\sigma}(1+r_{i,t+1}-\delta)
-	\end{equation}
-
-	The dynamic system of equations is:
-
 	\begin{align}
 		g^N_t & = \sum_{i=1}^I \sum_{s=1}^S \hat N_{ist} (f_{ist}+m_{ist}-\rho_{ist}) ; \forall i\\
 		\hat N_{i,1,t+1} & = e^{-g^N_t}\sum_{s=23}^{45} \hat N_{ist} f_{ist} ; \forall i\\
@@ -203,8 +183,10 @@
 		w_{it} & = (1-\alpha) \frac{\hat y_{it}}{\hat n_{it}}; \forall i \\
 		\hat BQ_{it} & = \sum_{s=67}^S \hat a_{ist} \rho_{ist} \hat N_{ist} ; \forall i \\
 		\hat BQ_{it} & = \sum_{s=23}^{67} \hat bq_{ist} (1-\rho_{ist}) \hat N_{ist}	; \forall i \\
-		\hat c_{ist} & = w_{it} e_{st} + (1+r_{1t}-\delta)\hat a_{ist} + \hat{bq}_{ist} - \hat a_{i,s+1,t+1}e^{g^A} ; \forall i,s \\
-		\hat c_{ist}^{-\sigma} & = \beta (1-\rho_{i,s+1,t+1}) \left(\hat c_{i,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta); \forall i,s \\ 
+		\hat c_{ist} & = w_{it} e_{st} + (1+r_{1t}-\delta)\hat a_{ist} + \hat{bq}_{ist} - \hat a_{i,s+1,t+1}e^{g^A} ; \forall i,s 
+	\end{align}
+	\begin{align}
+		& \hat c_{ist}^{-\sigma} - \beta \left(\hat c_{i,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,s \\ 
 		& r_{it} - r_{1t} = 0; \forall i>1 \\
 		& \sum_{i=1}^I \hat k^f_{it} \left( \sum_{s=1}^S \hat N_{ist} \right) = 0
 	\end{align}
@@ -243,7 +225,7 @@
 	\end{equation}
 	subject to the following budget constraint each period.
 	\begin{equation} \label{eq_3bc}
-		c_{ist} + KID_{ist}c^K_{ist} = w_{it} e_{st} (\bar \ell_t -\ell_{ist}) + (1+r_{it}-\delta)a_{ist} + bq_{ist} - a_{i,s+1,t+1}
+		c_{ist} + KID_{ist}c^K_{ist} = w_{it} e_{st} (\bar \ell_t -\ell_{ist}) + (1+r_{it}-\delta)a_{ist} - a_{i,s+1,t+1}
 	\end{equation}
 	with $a_{i1t} = a_{i,S+1,t} = 0$.  $\ell$ denotes leisure consumption and $c^K$ denotes consumption by children.
 
@@ -316,10 +298,10 @@
 		\hat BQ_{it} & = \sum_{s=67}^S \hat a_{ist} \rho_{ist} \hat N_{ist} ; \forall i \\
 		\hat BQ_{it} & = \sum_{s=23}^{67} \hat bq_{ist} (1-\rho_{ist}) \hat N_{ist}	; \forall i \\
 		\Gamma_{it} & = \left\{ \left[1 + \chi \left(\frac{\chi}{w_{it} e_{st}}\right)^\rho\right]^{\tfrac{1-\rho \sigma}{\rho}} \right\}^{-\tfrac{1}{\sigma}}; \forall i,s \\
-    	\hat c_{ist} & = \frac{w_{it} e_{st} \bar \ell_t + (1+r_{it}-\delta)\hat a_{ist} + \hat{bq}_{ist} - \hat a_{i,s+1,t+1} e^{g^A}} {1 + KID_{ist}\Gamma_{it} + \left(\tfrac{\chi}{w_{it}e_{st}}\right)^\rho}; \forall i,s \\
+    	\hat c_{ist} & = \frac{w_{it} e_{st} \bar \ell_t + (1+r_{it}-\delta)\hat a_{ist} - \hat a_{i,s+1,t+1} e^{g^A}} {1 + KID_{ist}\Gamma_{it} + \left(\tfrac{\chi}{w_{it}e_{st}}\right)^\rho}; \forall i,s \\
 		\hat \ell_{ist} & = \hat c_{ist} \left(\frac{\chi}{w_{it}e_{st}}\right)^\rho ; \forall i,s \\
 		\hat c^K_{ist} & = \hat c_{ist} \Gamma_{it}; \forall i,s \\
-		\left({\hat c^K_{ist}}\right)^{-\sigma} & = \beta (1-\rho_{i,s+1,t+1}) \left(\hat c^K_{i,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta); \forall i,s \\
+		& \left({\hat c^K_{ist}}\right)^{-\sigma} - \beta \left(\hat c^K_{i,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,s \\
 		& r_{it} - r_{1t} = 0; \forall i>1 \\
 		& \sum_{i=1}^I \hat k^f_{it} \left( \sum_{s=1}^S \hat N_{ist} \right) = 0
 	\end{align}
@@ -372,10 +354,10 @@
 		\hat BQ_{ijt} & = \sum_{s=67}^S \hat a_{ijst} \rho_{ijst} \hat N_{ijst} ; \forall i,j \\
 		\hat BQ_{ijt} & = \sum_{s=23}^{67} \hat bq_{ijst} (1-\rho_{ijst}) \hat N_{ijst}	; \forall i \\
 		\Gamma_{ijt} & = \left\{ \left[1 + \chi \left(\frac{\chi}{w_{ijt} e_{jst}}\right)^\rho\right]^{\tfrac{1-\rho \sigma}{\rho}} \right\}^{-\tfrac{1}{\sigma}}; \forall i,j,s \\
-    	\hat c_{ijst} & = \frac{w_{ijt} e_{jst} \bar \ell_t + (1+r_{it}-\delta)\hat a_{ijst} + \hat{bq}_{jist} - \hat a_{i,j,s+1,t+1} e^{g^A}} {1 + KID_{ist}\Gamma_{ijt} + \left(\tfrac{\chi}{w_{ijt}e_{jst}}\right)^\rho}; \forall i,j,s \\
+    	\hat c_{ijst} & = \frac{w_{ijt} e_{jst} \bar \ell_t + (1+r_{it}-\delta)\hat a_{ijst} - \hat a_{i,j,s+1,t+1} e^{g^A}} {1 + KID_{ist}\Gamma_{ijt} + \left(\tfrac{\chi}{w_{ijt}e_{jst}}\right)^\rho}; \forall i,j,s \\
 		\hat \ell_{ijst} & = \hat c_{ijst} \left(\frac{\chi}{w_{ijt}e_{jst}}\right)^\rho ; \forall i,j,s \\
 		\hat c^K_{ijst} & = \hat c_{ijst} \Gamma_{ijt}; \forall i,j,s \\
-		\left({\hat c^K_{ijst}}\right)^{-\sigma} & = \beta (1-\rho_{i,s+1,t+1}) \left(\hat c^K_{i,j,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta); \forall i,j,s \\
+		& \left({\hat c^K_{ijst}}\right)^{-\sigma} - \beta \left(\hat c^K_{i,j,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,j,s \\
 		& r_{it} - r_{1t} = 0; \forall i>1 \\
 		& \sum_{i=1}^I \hat k^f_{it} \left( \sum_{j=1}^J \sum_{s=1}^S \hat N_{ijst} \right) = 0
 	\end{align}
@@ -425,15 +407,17 @@
 		r_{it} & = (1-\tau^K_{it})\alpha \frac{\hat y_{it}}{\hat k_{it}} + \delta \tau^K_{it}; \forall i \\
 		w_{ijt} & = (1-\alpha_j) \frac{\hat y_{it}}{\hat n_{ijt}}; \forall i.j \\
 		\hat BQ_{ijt} & = \sum_{s=67}^S \hat a_{ijst} \rho_{ijst} \hat N_{ijst} ; \forall i,j \\
-		\hat BQ_{ijt} & = \sum_{s=23}^{67} \hat bq_{ijst} (1-\rho_{ijst}) \hat N_{ijst}	; \forall i
+		\hat BQ_{ijt} & = \sum_{s=23}^{67} \hat bq_{ijst} (1-\rho_{ijst}) \hat N_{ijst}	; \forall i \\
 	\end{align}
 	\begin{align}
 		\Gamma_{ijt} & = \left\{ \left[1 + \chi \left(\frac{\chi}{w_{ijt} e_{jst}}\right)^\rho\right]^{\tfrac{1-\rho \sigma}{\rho}} \right\}^{-\tfrac{1}{\sigma}}; \forall i,j,s \\
 		\hat T^L_{it} & = \tau^K_{it} (\hat y_{it} - w_{it}\hat n_{it} - \delta \hat k_{it}); \forall i \\
-    	\hat c_{ijst} & = \frac{w_{ijt} e_{jst} \bar \ell_t + (1+r_{it}-\delta)\hat a_{ijst} + \hat{bq}_{ijst} - \hat a_{i,j,s+1,t+1} e^{g^A} + \hat T^L_{it}} {1 + KID_{ist}\Gamma_{ijt} + \left(\tfrac{\chi}{w_{ijt}e_{jst}}\right)^\rho}; \forall i,s \\
+    	\hat c_{ijst} & = \frac{w_{ijt} e_{jst} \bar \ell_t + (1+r_{it}-\delta)\hat a_{ijst} - \hat a_{i,j,s+1,t+1} e^{g^A} + \hat T^L_{it}} {1 + KID_{ist}\Gamma_{ijt} + \left(\tfrac{\chi}{w_{ijt}e_{jst}}\right)^\rho}; \forall i,s \\
 		\hat \ell_{ijst} & = \hat c_{ijst} \left(\frac{\chi}{w_{ijt}e_{jst}}\right)^\rho ; \forall i,j,s \\
-		\hat c^K_{ijst} & = \hat c_{ijst} \Gamma_{ijt}; \forall i,j,s \\
-		\left({\hat c^K_{ijst}}\right)^{-\sigma} & = \beta (1-\rho_{i,j,s+1,t+1}) \left(\hat c^K_{i,j,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta); \forall i,j,s \\
+		\hat c^K_{ijst} & = \hat c_{ijst} \Gamma_{ijt}; \forall i,j,s
+	\end{align}
+	\begin{align}
+		& \left({\hat c^K_{ijst}}\right)^{-\sigma} - \beta \left(\hat c^K_{i,j,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,j,s \\
 		& r_{it} - r_{1t} = 0; \forall i>1 \\
 		& \sum_{i=1}^I \hat k^f_{it} \left( \sum_{j=1}^J \sum_{s=1}^S \hat N_{ijst} \right) = 0
 	\end{align}
