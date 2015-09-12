@@ -10,9 +10,9 @@ size=comm.Get_size()
 
 Sinputs=np.array([20,40,60,80]) #Input the levels of numbers of cohorts you want checked
 S=Sinputs.size
-IUB=4 #Upper bound for the number of countries
+IUB=8 #Upper bound for the number of countries
 Istart=2 #Lower bound for the number of countries, absolute minimum is 2.
-SigUB=5 #Upper bound for the sigma parameter (The slope of the curve)
+SigUB=4 #Upper bound for the sigma parameter (The slope of the curve)
 Sigstart=1 #Lower Bound for the sigma parameter
 IRange=IUB-Istart #Range of the number of countries
 SigRange=SigUB-Sigstart #Range of the slope parameter
@@ -96,7 +96,7 @@ comm.Gatherv(checkerpiece,[checker,tuple1,tuple2,MPI.BOOL])
 #Where it did not.
 if rank==0:
     checker=np.reshape(checker,(SigRange,IRange,S))
-    for z in xrange(1,SigRange+1):
-        label="Curve_" +str(z)+".csv"
+    for z in xrange(SigRange):
+        label="Curve_" +str(z+1)+".csv"
         np.savetxt(label,checker[z,:,:],delimiter=",")
 
