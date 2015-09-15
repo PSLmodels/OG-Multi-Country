@@ -6,7 +6,7 @@ np.set_printoptions(threshold = 3000, linewidth=2000, suppress=True)
 
 #Parameters Zone
 I_all = ["usa","eu","japan","china","india","russia","korea"]
-I = 3 #Number of countries
+I = 7 #Number of countries
 S = 80 #Upper bound of age for agents
 T = int(round(2.5*S)) #Number of time periods to convergence, based on Rick Evans' function.
 I_touse = ["usa","eu","japan","china","india","russia","korea"]
@@ -27,8 +27,8 @@ alpha = .3 #Capital Share of production
 diff = 1e-8 #Convergence Tolerance
 demog_ss_tol = 1e-8 #Used in getting ss for population share
 distance = 10 #Used in taking the norm, arbitrarily set to 10
-xi = .7 #Parameter used to take the convex conjugate of paths
-MaxIters = 500 #Maximum number of iterations on TPI.
+xi = .98 #Parameter used to take the convex conjugate of paths
+MaxIters = 50000000 #Maximum number of iterations on TPI.
 
 #Program Levers
 CalcTPI = True #Activates the calculation of Time Path Iteration
@@ -46,7 +46,7 @@ UseStaggeredAges = False #Activates using staggered ages
 UseDiffDemog = True #Turns on different demographics over countries.
 UseSSDemog = False #Activates using only steady state demographics for TPI calculation
 UseDiffProductivities = False #Activates having e vary across cohorts
-UseTape = False #Activates setting any value of kd<0 to 0.0001 in TPI calculation
+UseTape = True #Activates setting any value of kd<0 to 0.0001 in TPI calculation
 
 
 LeaveHouseAge, FirstFertilityAge, LastFertilityAge, MaxImmigrantAge, FirstDyingAge, agestopull = Stepfuncs.getkeyages(S, PrintAges, UseStaggeredAges)
@@ -67,6 +67,10 @@ if UseDiffProductivities:
     e[:,:LeaveHouseAge,:] = 0.01
 else:
     e = np.ones((I, S, T+S)) #Labor productivities
+
+if UseTape:
+    print "WARNING: We are using tape on any guesses that produce negative domestic capital" 
+    time.sleep(2)
 
 #MAIN CODE
 
@@ -103,7 +107,7 @@ if CalcTPI==True: #Time Path Iteration, activated by line 24
     print "Beginning TPI"
     #Gets initial guesses for TPI
     initialguess_params = (I, S, T, delta, alpha, e[:,:,0], A, FirstFertilityAge, FirstDyingAge, Nhat_matrix[:,:,0], MortalityRates[:,:,0], g_A)
-    assets_init, kf_init, wpath_initguess, rpath_initguess = \
+    assets_init, wpath_initguess, rpath_initguess = \
         Stepfuncs.get_initialguesses(initialguess_params, assets_ss, kf_ss, w_ss, r_ss, PrintLoc)
 
     #Gets timepaths for w, r, C, K, and Y

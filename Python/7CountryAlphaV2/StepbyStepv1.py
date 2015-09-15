@@ -14,7 +14,7 @@ def getkeyages(S, PrintAges, UseStaggeredAges):
         -Gets the key ages for calculating demographics based on S
 
     Inputs:
-        S                = Scalar in [10,80], Number of cohorts
+        S                = Int in [10,80], Number of cohorts
         PrintAges        = Bool, Prints key ages if true
         UseStaggeredAges = Bool, Gets ages to use from a linspace rather than a sequence of integers
 
@@ -23,11 +23,11 @@ def getkeyages(S, PrintAges, UseStaggeredAges):
 
     Objects in Function:
         agestopull        = (S) List, Contains the ages from the data files to use for the demographic data in the program
-        LeaveHouseAge     = Scalar, Age where children become adults and are no longer dependent on parents for consumption
-        FirstFertilityAge = Scalar in (0,S), First age when agents bear children
-        LastFertilityAge  = Scalar in (0,S), Last age when agents bear children
-        FirstDyingAge     = Scalar in (0,S), First age when agents die
-        MaxImmigrantAge   = Scalar in (0,S), Age of the oldest immigrants
+        LeaveHouseAge     = Int, Age where children become adults and are no longer dependent on parents for consumption
+        FirstFertilityAge = Int in (0,S), First age when agents bear children
+        LastFertilityAge  = Int in (0,S), Last age when agents bear children
+        FirstDyingAge     = Int in (0,S), First age when agents die
+        MaxImmigrantAge   = Int in (0,S), Age of the oldest immigrants
        
     Returns: LeaveHouseAge, FirstFertilityAge, LastFertilityAge, MaxImmigrantAge, FirstDyingAge, agestopull
     """
@@ -79,15 +79,15 @@ def getDemographics(params, UseStaggeredAges, DiffDemog, Graphs, I_all, I_touse)
     Inputs:
         params            = Tuple, Contains parameters I, S, T, T_1, LeaveHouseAge, FirstFertilityAge, LastFertilityAge, 
                             FirstDyingAge, MaxImmigrantAge, g_A, and tol
-        I                 = Scalar in [1,7], Number of countries
-        S                 = Scalar in [10,80], Number of cohorts
-        T                 = Scalar >0, Number of years away from time t=0 until we reach the steady-state
-        T_1               = Scalar >0, Number of years away from time t=0 until the demographics are stationarized
-        LeaveHouseAge     = Scalar, Age where children become adults and are no longer dependent on parents for consumption
-        FirstFertilityAge = Scalar in (0,S), First age when agents bear children
-        LastFertilityAge  = Scalar in (0,S), Last age when agents bear children
-        FirstDyingAge     = Scalar in (0,S), First age when agents die
-        MaxImmigrantAge   = Scalar in (0,S), Age of the oldest immigrants
+        I                 = Int in [1,7], Number of countries
+        S                 = Int in [10,80], Number of cohorts
+        T                 = Int >0, Number of years away from time t=0 until we reach the steady-state
+        T_1               = Int >0, Number of years away from time t=0 until the demographics are stationarized
+        LeaveHouseAge     = Int, Age where children become adults and are no longer dependent on parents for consumption
+        FirstFertilityAge = Int in (0,S), First age when agents bear children
+        LastFertilityAge  = Int in (0,S), Last age when agents bear children
+        FirstDyingAge     = Int in (0,S), First age when agents die
+        MaxImmigrantAge   = Int in (0,S), Age of the oldest immigrants
         g_A               = Scalar >0, Technical growth rate
         tol               = Scalar >0, Tolerance level below which the change population share is considered to be in the steady-state
         UseStaggeredAges  = Boolean, Uses a linspace of ages from csv files if true, uses range(S) for ages if false
@@ -99,7 +99,7 @@ def getDemographics(params, UseStaggeredAges, DiffDemog, Graphs, I_all, I_touse)
         -None
 
     Objects in Function:
-        f_range            = Scalar >0, Number of years the agents are fertile
+        f_range            = Int >0, Number of years the agents are fertile
         N_matrix           = [I, S+1, T+S+1] Matrix, Population for each country, generation, and year
         Nhat               = [I, S+1, T+S+1] Matrix, Population share for each country, generation, and year
         all_FertilityRates = [I, S+1, f_range+T+S+1] Matrix, Fertility rates for each country, generation, and year. 
@@ -112,13 +112,13 @@ def getDemographics(params, UseStaggeredAges, DiffDemog, Graphs, I_all, I_touse)
         Migrants           = [I, S+1, T+S+1] Matrix, Net migration for each country, generation, and year.
         g_N                = [T+S+1,] Vector, Population growth rate for each year
         N_temp             = [I, S+1] Matrix, QUESTION WHAT IS THIS???
-        index              = Scalar in [0,I], Used in for loop to gather csv demographic data. Always 0 if DiffDemog==False
+        index              = Int in [0,I], Used in for loop to gather csv demographic data. Always 0 if DiffDemog==False
         f_bar              = [S+1,] Vector, Stationarized fertility rate for each country and year beyond T_1
         rho_bar            = [S+1,] Vector, Stationarized mortality rate for each country and year beyond T_1
         Nhat_ss            = [I, S+1] Matrix, Steady-state for population share
         pop_old            = [I, S+1] Matrix, Compared to pop_new for converging to the steady-state
         pop_new            = [I, S+1] Matrix, Compared to pop_old for converging to the steady-state
-        iter               = Scalar >=0, Counts the number of years beyond T+S+1 until Nhat converges to the steady-state
+        iter               = Int >=0, Counts the number of years beyond T+S+1 until Nhat converges to the steady-state
         lbar               = [T+S+1,] Vector, Labor endowment for each year
 
     Returns: MortalityRates, Nhat, KIDs, Nhatss_new, KIDs_ss, lbar
@@ -276,8 +276,8 @@ def plotDemographics(params, indexes, years, Nhat, countrynames):
 
     Inputs:
         params       = Tuple, Contains parameters S, T
-        S            = Scalar in [10,80], Number of cohorts
-        T            = Scalar >0, Number of years away from time t=0 until we reach the steady-state
+        S            = Int in [10,80], Number of cohorts
+        T            = Int >0, Number of years away from time t=0 until we reach the steady-state
         indexes      = List, Contains all indexes of countries to plot. Typically either range(I) or a single-item list (like [0])
         years        = List, Contains all indexes of years to plot. Typically either range(T+S) or a list like [0,20,100]
         Nhat         = [I,S,T+S+?] Matrix, Contains the population share, 
@@ -455,10 +455,10 @@ def getBequests(params, assets):
 
     Inputs:
         params            = Tuple that contains the parameters I, S, FirstFertilityAge, FirstDyingAge, Nhat_current, Mortality_current
-        I                 = Scalar in [1,7], Number of countries
-        S                 = Scalar in [10,80], Number of cohorts
-        FirstFertilityAge = Scalar in (0,S), First age when agents bear children
-        FirstDyingAge     = Scalar in (0,S), First age when agents die
+        I                 = Int in [1,7], Number of countries
+        S                 = Int in [10,80], Number of cohorts
+        FirstFertilityAge = Int in (0,S), First age when agents bear children
+        FirstDyingAge     = Int in (0,S), First age when agents die
         Nhat_current      = [I, S] Matrix, Population share for a given year
         Mortality_current = [I, S] Matrix, Mortality rates for a given year
         assets            = [I, S] Matrix, Number of assets per agent in each cohort
@@ -501,16 +501,16 @@ def get_cvecss(params, w, r, assets):
         e      = [I,S] Matrix, Labor productivities
         delta  = Scalar in (0,1), Depreciation rate
         bq     = [I,S] Matrix, Bequests given to each cohort
-        g_A    = 
-        w      =
-        r      =
+        g_A    = Scalar in (0,1), Technical growth rate
+        w      = [I,] Vector, Wage rates for each country in the steady state
+        r      = [I,] Vector, Rental rates for each country in the steady state
         assets = [I,S+1] Matrix, Assets for each cohort, along with remaining assets after period S
 
     Functions called:
         -None
 
     Objects in Function:
-        c_vec = 
+        c_vec = [I,S] Matrix, Consumption for each cohort in the steady state
 
     Returns: c_vec
     """
@@ -595,16 +595,16 @@ def SteadyStateSolution(guess, I, S, beta, sigma, delta, alpha, e_ss, A, FirstFe
 
     Inputs:
         guess             = [I*S,] Matrix, Contains guesses for assets and foreign capital held in the steady state
-        I                 = Scalar in [1,7], Number of countries
-        S                 = Scalar in [10,80], Number of cohorts
+        I                 = Int in [1,7], Number of countries
+        S                 = Int in [10,80], Number of cohorts
         beta              = Scalar in (0,1), Time preference
         sigma             = Scalar in (0,1), Intratemporal elasticity of substitution
         delta             = Scalar in (0,1), Depreciation rate
         alpha             = Scalar in (0,1), Capital share of production
         e_ss              = [I,S] Matrix, Labor productivities by country and cohort
         A                 = [I] Vector, Scales production
-        FirstFertilityAge = Scalar in (0,S), First age when agents bear children
-        FirstDyingAge     = Scalar in (0,S), First age when agents die         
+        FirstFertilityAge = Int in (0,S), First age when agents bear children
+        FirstDyingAge     = Int in (0,S), First age when agents die         
         Nhat_ss           = [I,S] Matrix, Steady state population shares
         Mortality_ss      = [I,S] Matrix, Steady state mortality rates
         g_A               = Scalar >0, Technical growth rate
@@ -692,16 +692,16 @@ def getSteadyState(params, assets_init, kf_init):
         params            = Tuple, Contains the parameters I, S, beta, sigma, delta, alpha, e_ss, A,
                                                            FirstFertilityAge, FirstDyingAge, Nhat_ss, 
                                                            Mortality_ss, g_A, PrintEulErrors
-        I                 = Scalar in [1,7], Number of countries
-        S                 = Scalar in [10,80], Number of cohorts
+        I                 = Int in [1,7], Number of countries
+        S                 = Int in [10,80], Number of cohorts
         beta              = Scalar in (0,1), Time preference
         sigma             = Scalar in (0,1), Intratemporal elasticity of substitution
         delta             = Scalar in (0,1), Depreciation rate
         alpha             = Scalar in (0,1), Capital share of production
         e_ss              = [I,S] Matrix, Labor productivities by country and cohort
         A                 = [I] Vector, Scales production
-        FirstFertilityAge = Scalar in (0,S), First age when agents bear children
-        FirstDyingAge     = Scalar in (0,S), First age when agents die         
+        FirstFertilityAge = Int in (0,S), First age when agents bear children
+        FirstDyingAge     = Int in (0,S), First age when agents die         
         Nhat_ss           = [I,S] Matrix, Steady state population shares
         Mortality_ss      = [I,S] Matrix, Steady state mortality rates
         g_A               = Scalar >0, Technical growth rate
@@ -767,6 +767,47 @@ def getSteadyState(params, assets_init, kf_init):
 
     return assets_ss, kf_ss, kd_ss, n_ss, Y_ss, r_ss, w_ss, c_vec_ss
 
+
+
+"""
+Description:
+    -Gets the consumption vector in the steady state while disregarding time differences
+
+Inputs:
+    params            = Tuple, Contains the parameters I, S, beta, sigma, delta, alpha, e_ss, A,
+                                                       FirstFertilityAge, FirstDyingAge, Nhat_ss, 
+                                                       Mortality_ss, g_A, PrintEulErrors
+    I                 = Int in [1,7], Number of countries
+    S                 = Int in [10,80], Number of cohorts
+    T                 = Int >0, Number of time periods
+    beta              = Scalar in (0,1), Time preference
+    sigma             = Scalar in (0,1), Intratemporal elasticity of substitution
+    delta             = Scalar in (0,1), Depreciation rate
+    alpha             = Scalar in (0,1), Capital share of production
+    e_ss              = [I,S] Matrix, Labor productivities by country and cohort
+    A                 = [I] Vector, Scales production
+    FirstFertilityAge = Int in (0,S), First age when agents bear children
+    FirstDyingAge     = Int in (0,S), First age when agents die         
+    Nhat_ss           = [I,S] Matrix, Steady state population shares
+    Mortality_ss      = [I,S] Matrix, Steady state mortality rates
+    g_A               = Scalar >0, Technical growth rate
+    PrintEulErrors    = Boolean, Prints euler errors if set to True
+    assets_init       = [I,S-1] Matrix, Contains guess for stedy state assets held beginning from age 1 (since assets at age 0 are 0)
+    kf_init           = [I,] Vector, Contains guess for steady state foreign-held capital
+    PrintLoc          = Boolean, Prints "Getting initial guesses" at the beginning of the function if True
+
+Functions called:
+    get_kd: Gets domestic-owned capital
+    get_n: Gets labor supply
+    get_Y: Gets output
+    get_r: Gets rental rate
+    get_w: Gets wages
+
+Objects in Function:
+    c_vec = [I,S] Matrix, Consumption for each cohort in the steady state
+
+Returns: c_vec
+"""
 #TIMEPATH FUNCTIONS
 
 def get_initialguesses(params, assets_ss, kf_ss, w_ss, r_ss, PrintLoc):
@@ -776,25 +817,53 @@ def get_initialguesses(params, assets_ss, kf_ss, w_ss, r_ss, PrintLoc):
         initial guesses in a linear path.
 
     Inputs:
-        -Params (Tuple): Tuple of parameters from Main.py
-        -Assets_ss[I,S+1,T+S]: Steady state assets value
-        -kf_ss[I,]: Steady State value of foreign owned domestic capital
-        -w_ss[I,]: Steady state value of wages
-        -r_ss[I,]: Steady state value of rental rate
+        params = Tuple that contains the parameters I, S, T, delta, alpha, e_init, A,
+                                                    FirstFertilityAge, FirstDyingAge, 
+                                                    Nhat_init, Mortality_init, and g_A
+
+        I                 = Int in [1,7], Number of countries
+        S                 = Int in [10,80], Number of cohorts
+        T                 = Int >0, Number of time periods
+        delta             = Scalar in (0,1), Depreciation rate
+        alpha             = Scalar in (0,1), Production share of capital
+        e_init            = [I,S] Matrix, Labor productivities by country and cohort in period t=0 
+        A                 = [I] Vector, Scales production 
+        FirstFertilityAge = Int in (0,S), First age when agents bear children 
+        FirstDyingAge     = Int in (0,S), First age when agents die    
+        Nhat_init         = [I,S] Matrix, Population shares in period t=0 
+        Mortality_init    = [I,S] Matrix, Mortality rates in period t=0
+        g_A               = Scalar in (0,1), Technical growth rate
+        assets_ss         = [I,S+1] Matix, Assets for each country and cohort in the steady state
+        kf_ss             = [I,] Vector, Foreign-held capital in the steady state
+        w_ss              = [I,] Vector, Wage rates for each country in the steady state
+        r_ss              = Scalar >0, Global intrest rate in the steady state
+        PrintLoc          = Boolean, Prints "Getting initial guesses" at the beginning of the function if True
+
+    Functions called:
+        get_kd: Gets domestic-owned capital
+        get_n: Gets labor supply
+        get_Y: Gets output
+        get_r: Gets rental rate
+        get_w: Gets wages
 
     Objects in Function:
-        -othervariable_params (Tuple): A tuple specifically made for GetOtherVariables
+        assets_init = [I,S+1] Matix, Assets for each country and cohort in period t=0
+        kf_init     = [I,] Vector, Foreign-held capital in period t=0
+        kd_init     = [I,] Vector, Domestic-owned capital in period t=0
+        n_init      = [I,] Vector, Labor supply in each country in period t=0
+        Y_init      = [I,] Vector, Output in each country in period t=0
+        r_init      = Scalar >0, Global intrest rate in period t=0
+        w_init      = [I,] Vector, Wage rate in each country in period t=0
+        wpath_guess = [I,T+S] Matrix, Initial guess for the timepath for wages, set to be parabolic
+        rpath_guess = [T+S,] Vector, Initial guess for the timepath for global intrest rate, set to be parabolic
+
+                      Rental Rate:     or     Wage Rate:
+        cc          = [I,] Vector      or     [I,T+S] Matrix     y-intercept for the parabolic guess for price timepaths
+        bb          = [I,] Vector      or     [I,T+S] Matrix     Coefficient for x term for the parabolic guess for price timepaths 
+        aa          = [I,] Vector      or     [I,T+S] Matrix     Coefficient for x**2 term for the parabolic guess for price timepaths 
 
 
-    Outputs:
-        -assets_init[I,]: Initial Asset path
-        -kf_init[I,]: New initial foreign held capital
-        -w_initguess[I,T+S]: Initial guess wage timepath
-        -r_initguess[I,T+S]: Initial guess rental rate timepath
-        -k_init[I,]: total capital stock initial guess
-        -n_init[I,]: total labor initial guess
-        -y_init[I,]: output labor initial guess
-        -c_init[I,]: consumption initial guess
+    Returns: assets_init, wpath_guess, rpath_guess
     """
 
     if PrintLoc: print "Getting initial guesses"
@@ -805,9 +874,6 @@ def get_initialguesses(params, assets_ss, kf_ss, w_ss, r_ss, PrintLoc):
     assets_init = assets_ss*.9
     kf_init = kf_ss*0
 
-    wpath_guess = np.zeros((I, T+S))
-    rpath_guess = np.zeros((T+S))
-
     #Gets initial kd, n, y, r, w, and K
     kd_init = get_kd(assets_init, kf_init, Nhat_init)
     nparams = e_init, Nhat_init
@@ -817,40 +883,58 @@ def get_initialguesses(params, assets_ss, kf_ss, w_ss, r_ss, PrintLoc):
     r_init = get_r(alpha, Y_init[0], kd_init[0])
     w_init = get_w(alpha, Y_init, n_init)
 
+    #Initializes the initial guess for prices
+    wpath_guess = np.zeros((I, T+S))
+    rpath_guess = np.zeros((T+S))
+
     #Gets initial guess for rental rate path. This is set up to be parabolic.
-    bb = -2 * (r_init-r_ss)/(T-1)
     cc = r_init
+    bb = -2 * (r_init-r_ss)/(T-1)
     aa = -bb / (2*(T-1))
     rpath_guess[:T] = aa * np.arange(0,T)**2 + bb*np.arange(0,T) + cc
     rpath_guess[T:] = r_ss
 
     #Gets initial guess for wage rate path. This is set up to be parabolic.
-    bb = -2 * (w_init-w_ss)/(T-1)
     cc = w_init
+    bb = -2 * (w_init-w_ss)/(T-1)
     aa = -bb / (2*(T-1))
     wpath_guess[:,:T] = np.einsum("i,it->it", aa, np.tile(np.arange(0,T), (I,1))**2)\
                       + np.einsum("i,it->it", bb, np.tile(np.arange(0,T), (I,1)))\
                       + np.einsum("i,it->it", cc, np.ones((I,T)))
     wpath_guess[:,T:] = np.einsum("i,it->it", w_ss, np.ones((I,S)))
 
-    return assets_init, kf_init, wpath_guess, rpath_guess
+    return assets_init, wpath_guess, rpath_guess
 
 def get_foreignK_path(params, Kpath, rpath, kf_ss, PrintLoc):
     """
     Description:
        This calculates the timepath of the foreign capital stock. This is based on equation (1.12 and 1.13).
-    Inputs:
-        apath: Asset path, from our calculations
-        rpath: Rental Rate path, also from our calculation
-        
-    Objects in Function:
-        kdpath[I,S+T+1]: Path of domestic owned capital
-        n[I,S+T+1]: Path of total labor
-        kf_ss[I,]: Calculated from the steady state. 
-        A[I,]: Parameters from above
 
-    Outputs:
-        kfPath[I,S+T+1]: Path of domestic capital held by foreigners.
+    Inputs:
+        params   = Tuple, Contains the parameters I, S, T, alpha, e, A, and Nhat
+        I        = Int in [1,7], Number of countries
+        S        = Int in [10,80], Number of cohorts
+        T        = Int >0, Number of time periods
+        alpha    = Scalar in (0,1), Capital share of production
+        e        = [I,S,T+S] Matrix, Labor productivities timepath
+        A        = [I] Vector, Scales production        
+        Nhat     = [I,S] Matrix, Population shares timepath
+        Kpath    = [I,S,T+S] Matrix, Total capital timepath 
+        rpath    = [T+S,] Vector, Global intrest rate timepath
+        kf_ss    = [I,] Vector, Foreign-held capital in the steady state
+        PrintLoc = Boolean, Prints "Entering get_foreignK_path" at the beginning of the function if True
+
+    Functions called:
+        get_n: Gets labor supply
+
+    Objects in Function:
+        n      = [I,T+S] Matrix, Timepath for labor supply
+        kdPath = [I,T+S] Matrix, Timepath for domestic-owned capital
+        kfPath = [I,T+S] Matrix, Timepath for foreign-held capital, 
+                                 where the foreign-held capital for country 0 
+                                 is the negative of all foreign-held capital in other countries
+
+    Returns: kfPath
     """
     if PrintLoc: print "Entering get_foreignK_path"
 
@@ -860,8 +944,8 @@ def get_foreignK_path(params, Kpath, rpath, kf_ss, PrintLoc):
     n = get_n((e, Nhat))
 
     #Declares the array that will later be used.
-    kfPath = np.zeros((I,S+T))
-    kdPath = np.zeros((I,S+T))
+    kfPath = np.zeros((I,T+S))
+    kdPath = np.zeros((I,T+S))
 
     #Gets the domestic-owned capital stock for each country except for the first country
     kdPath[1:,:] = (rpath/alpha)**(1/(alpha-1))*np.einsum("i,is->is", A[1:], n[1:,:])
@@ -876,32 +960,49 @@ def get_foreignK_path(params, Kpath, rpath, kf_ss, PrintLoc):
     #Making every year beyond t equal to the steady-state
     kfPath[:,T:] = np.einsum("i,s->is", kf_ss, np.ones(S))
         
-    if PrintLoc: print "Leaving get_foreignK_path"
     return kfPath
 
 def get_lifetime_decisions(params, c_1, wpath_chunk, rpath_chunk, e_chunk, mortality_chunk, starting_assets, bq, current_age):
     """
     Description:
-        This solves for equations 1.15 and 1.16 in the StepbyStep pdf for a certain generation
+        This solves for the remaining lifetime decisions equations (1.15 and 1.16) for a certain generation of age 'current_age'
+
     Inputs:
-        -c_1: Initial consumption (not necessarily for the year they were born)
-        -wpath_chunk: Wages of an agents lifetime, a section of the timepath
-        -rpath_chunk: Rental rate of an agents lifetime, a section of the timepath
-        -e_chunk: Worker productivities of an agents lifetime, a section of the global matrix
-        -starting_assets: Initial assets of the agent. Will be 0s if we are beginning in the year the agent was born
-        -current_age: Current age of the agent
+        params          = Tuple, Contains the parameters I, S, beta, sigma, delta, and g_A
+        I               = Int in [1,7], Number of countries
+        S               = Int in [10,80], Number of cohorts
+        beta            = Scalar in (0,1), Time preference
+        sigma           = Scalar in (0,1), Intratemporal elasticity of substitution
+        delta           = Scalar in (0,1), Depreciation rate
+        g_A             = Scalar >0, Technical growth rate
+        c_1             = [I,] Vector, Initial Consumption for a given-aged agent in each country
+        wpath_chunk     = [I,S-current_age] Matrix, Chunk of the wage timepath that corresponds to 
+                                                    this agent's remaining lifetime
+        rpath_chunk     = [S-current_age+1,] Vector, Chunk of the rental rate timepath that this agent will face 
+                                                     for each year of his remaining lifetime
+        e_chunk         = [I,S-current_age] Matrix, Chunk of the labor productivities matrix that this agent will face 
+                                                    for each year of his remaining lifetime
+        mortality_chunk = [I,S-current_age] Matrix, Chunk of the mortality rates matrix that this agent will face 
+                                                    for each year of his remaining lifetime
+        starting_assets = [I,S] Matrix
+        bq              = [I,S-current_age] Matrix, Chunk of the bequests timepath that this agent will face 
+                                                     for each year of his remaining lifetime
+        current_age     = Int in [0,S-2], Current age of the agent
 
-        Objects in Function:
-            -NONE
+    Functions called:
+        -None
 
-    Outputs:
-        -c_path[I, S]: Path of consumption until the agent dies
-        -asset_path[I, S+1]: Path of assets until the agent dies
+    Objects in Function:
+        num_decisions = Int in [1,S-1], Number of decisions this agent must make in his remaining lifetime
+        c_path        = [I,num_decisions+1], Consumption for this agent's remaining lifetime
+        asset_path    = [I,num_decisions+2], Assets for this agent's remaining lifetime
+
+    Returns: c_path, asset_path
     """
 
     I, S, beta, sigma, delta, g_A = params
 
-    num_decisions = S-current_age-1# -1 Because we already have (or have guessed) our starting consumption
+    num_decisions = S-current_age-1 # -1 Because we already have (or have guessed) our starting 
 
     #Initializes the cpath and asset path vectors
     c_path = np.zeros((I, num_decisions+1))
@@ -916,6 +1017,7 @@ def get_lifetime_decisions(params, c_1, wpath_chunk, rpath_chunk, e_chunk, morta
         c_path[:,p] = ((beta * (1-mortality_chunk[:,p-1]) * (1 + rpath_chunk[p] - delta))**(1/sigma) * c_path[:,p-1])*np.exp(-g_A)
         asset_path[:,p] = (wpath_chunk[:,p-1]*e_chunk[:,p-1] + (1 + rpath_chunk[p-1] - delta)*asset_path[:,p-1] + bq[:,p-1] - c_path[:,p-1])*np.exp(-g_A)
 	
+    #Solves for assets in the year after the agent dies
     asset_path[:,p+1] = (wpath_chunk[:,p]*e_chunk[:,p] + (1 + rpath_chunk[p] - delta)*asset_path[:,p] - c_path[:,p])*np.exp(-g_A)
 
     return c_path, asset_path
@@ -923,35 +1025,38 @@ def get_lifetime_decisions(params, c_1, wpath_chunk, rpath_chunk, e_chunk, morta
 def find_optimal_starting_consumptions(c_1, wpath_chunk, rpath_chunk, e_chunk, mortality_chunk, starting_assets, bq, current_age, params):
     """
     Description:
-       Takes the assets path from the get_householdchoices_path function and creates Euluer errors
+       Euler system for solving the individual household decisions
 
     Inputs:
-    Dimension varies
-        -c_1: Initial consumption (not necessarily for the year they were born)
-        -wpath_chunk: Wages of an agents lifetime, a part of the timepath
-        -rpath_chunk: Rental rate of an agents lifetime, another part of the timepath.
-        -epath_chunk: Worker productivities of an agents lifetime, another part.
-        -starting_assets: Initial assets of the agent. It's 0 at the beginning of life.
-        -current_age: Current age of the agent
+        params          = Tuple, Contains the parameters I, S, beta, sigma, delta, and g_A. 
+                                 Directly passed into get_lifetime_decisions function
+        c_1             = [I,], Initial consumption for this agent in each country
+        wpath_chunk     = [I,]
+        rpath_chunk     = 
+        e_chunk         = 
+        mortality_chunk = 
+        starting_assets = 
+        bq              = 
+        current_age     = Int in (0,S), Current age of the agent
 
+    Functions called:
+        get_lifetime_decisions: Gets the rest of the decisions, 
 
     Objects in Function:
-        -cpath: Path of consumption based on chunk given.
-        -assets_path: Path of assets based on the chunks given
+        c_path = 
+        asset_path =
+        Euler =
 
-    Outputs:
-        -Euler:A flattened version of the assets_path matrix
+    Returns: Euler
     """
 
     #Executes the get_household_choices_path function. Sees above.
     c_path, assets_path = get_lifetime_decisions(params, c_1, wpath_chunk, rpath_chunk, e_chunk, mortality_chunk, starting_assets, bq, current_age)
     Euler = np.ravel(assets_path[:,-1])
-
+    print c_1.shape, wpath_chunk.shape, rpath_chunk.shape, e_chunk.shape, mortality_chunk.shape, starting_assets.shape, bq.shape, current_age
     if np.any(c_path<0):
-        #print "WARNING! The fsolve for initial optimal kids consumption guessed a negative number"
+        print "WARNING! The fsolve for initial optimal consumption guessed a negative number"
         Euler=np.ones(Euler.shape[0])*9999.
-
-    #print "Max Euler Error in find_optimal_starting_consumptionsK", np.max(np.absolute(Euler))
 
     return Euler
 
