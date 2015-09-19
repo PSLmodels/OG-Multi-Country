@@ -90,3 +90,4 @@ def TheWholeSmack(S,I,sigma):
             np.savetxt("rpath.csv",rpath,delimiter=",")
 
 
+TheWholeSmack(80,7,4)

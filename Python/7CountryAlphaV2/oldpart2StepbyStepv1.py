@@ -114,6 +114,7 @@ def getDemographics(params, PrintAges, DiffDemog):
 		N_matrix[:,0,t] = np.sum((N_matrix[:,:,t-1]*FertilityRates[:,:,t-1]),axis=1)
 		N_temp[:,0] = np.sum((Nhat_matrix[:,:,t-1]*FertilityRates[:,:,t-1]),axis=1)
 
+		#CHANGE: Immigration Rates don't take into account t<=T_1
 		#Finds the immigration rate for each year
 		if t <= T_1:
 			ImmigrationRates[:,:,t-1] = Migrants[:,:,t-1]/N_matrix[:,:,t-1]
@@ -139,6 +140,7 @@ def getDemographics(params, PrintAges, DiffDemog):
 
 	iter = 0
 
+	#CHANGE: Doesn't calculate farthur out in the steady state
 	while np.max(np.abs(Nhatss_old - Nhatss_new)) > diff:
 		Nhatss_old = Nhatss_new
 		pop_new[:,0] = np.sum((pop_old[:,:]*FertilityRates[:,:,-1]),axis=1)
@@ -147,6 +149,7 @@ def getDemographics(params, PrintAges, DiffDemog):
 		Nhat_matrix = np.dstack((Nhat_matrix, Nhatss_new))
 		iter+=1
 	print "The SS Population Share converged in", iter, "years beyond T"
+
 
 	"""
 	for i in range(I):
