@@ -9,7 +9,7 @@ def TheWholeSmack(S, I, sigma):
     #Parameters Zone
     I_all = ["usa","eu","japan","china","india","russia","korea"]
     T = int(round(2.5*S)) #Number of time periods to convergence, based on Rick Evans' function.
-    I_touse = ["usa","eu","japan","russia","korea","china","india"]
+    I_touse = ["japan","usa","korea","eu","russia","china","india"]
 
     T_1 = S #This is like TransYear in the FORTRAN I think
     if S > 50:
@@ -115,4 +115,4 @@ def TheWholeSmack(S, I, sigma):
         if TPIGraphs==True:
             Stepfuncs.plotTimepaths(I, S, T, wpath, rpath, Cpath, Kpath, Ypath, I_touse)
 
-TheWholeSmack(80, 7, 4)
+TheWholeSmack(20, 5, 4)

@@ -299,6 +299,13 @@ def getDemographics(params, levers, I_all, I_touse):
         plt.clf()
 
         for i in range(I):
+            plt.plot(range(MaxImmigrantAge), Migrants[i,:MaxImmigrantAge,0])
+        plt.legend(I_touse)
+        plt.title("ImmigrationRates")
+        plt.show()
+        plt.clf()
+
+        for i in range(I):
             plt.plot(range(MaxImmigrantAge), ImmigrationRates[i,:MaxImmigrantAge,0])
         plt.legend(I_touse)
         plt.title("ImmigrationRates")
@@ -320,7 +327,7 @@ def getDemographics(params, levers, I_all, I_touse):
         plt.show()
         plt.clf()
 
-        plotDemographics((S,T), range(I), [T+S], Nhat, I_touse)
+        plotDemographics((S,T), range(I), [0], Nhat, I_touse)
     
     #Gets labor endowment per household. For now it grows at a constant rate g_A
     lbar[:T] = np.cumsum(np.ones(T)*g_A)
@@ -1413,7 +1420,7 @@ def get_Timepath(params, wstart, rstart, starting_assets, kd_ss, kf_ss, PrintLoc
         #Gets new iterations of the w, r, C, K, and Y timepaths
         wpath_new, rpath_new, Cpath, Kpath, Ypath, num_Taped = \
         get_wpathnew_rpathnew(wr_params, wstart, rstart, starting_assets, kd_ss, kf_ss, PrintLoc, Print_cabqTimepaths, UseTape)
-       
+
         try:
             #Norms of the wage and intrest rate paths
             dist_w=sp.linalg.norm(wstart-wpath_new,2)
