@@ -75,7 +75,7 @@ if rank!=0:
     for s in xrange(S):
         for i in xrange(Istart,IUB):
             try:
-                mn.TheWholeSmack(Sinputs[s],i,sig)
+                mn.Multi_Country(Sinputs[s],i,sig)
                 checkerpiece=np.reshape(checkerpiece,(IRange,S))
                 checkerpiece[i-Istart,s]=True
                 checkerpiece=np.reshape(checkerpiece, (IRange)*(S))

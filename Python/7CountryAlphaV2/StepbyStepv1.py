@@ -1455,7 +1455,7 @@ def get_Timepath(params, wstart, rstart, starting_assets, kd_ss, kf_ss, PrintLoc
 
     return wend, rend, Cpath, Kpath, Ypath
 
-def plotTimepaths(I, S, T, wpath, rpath, Cpath, Kpath, Ypath, I_touse):
+def plotTimepaths(I, S, T, sig, wpath, rpath, Cpath, Kpath, Ypath, I_touse, save, show):
     """
     Description:
         -Plots the timepaths for w, r, C, K, and Y
@@ -1479,7 +1479,10 @@ def plotTimepaths(I, S, T, wpath, rpath, Cpath, Kpath, Ypath, I_touse):
 
     Returns: None
     """
-
+    if save==True and show==True:
+        print "Cannot save and show graphs at the same time, showing only!"
+        save=False
+    
     #Wages
     for i in xrange(I):
         plt.plot(np.arange(0,T),wpath[i,:T], label=I_touse[i])
@@ -1487,7 +1490,11 @@ def plotTimepaths(I, S, T, wpath, rpath, Cpath, Kpath, Ypath, I_touse):
     plt.ylabel("Wages")
     plt.xlabel("Time Period")
     plt.legend(loc="upper right")
-    plt.show()
+    if show: plt.show()
+    if save: 
+        name= "wages_"+str(I)+"_"+str(S)+"_"+str(sig)+".png"
+        plt.savefig(name)
+        plt.cla()
 
     #Rental Rates  
     plt.plot(np.arange(0,T),rpath[:T], label='Global Interest Rate')
@@ -1495,7 +1502,12 @@ def plotTimepaths(I, S, T, wpath, rpath, Cpath, Kpath, Ypath, I_touse):
     plt.ylabel("Rental Rates")
     plt.xlabel("Time Period")
     plt.legend(loc="upper right")
-    plt.show()
+    if show: plt.show()
+    if save: 
+        name= "rentalrate_"+str(I)+"_"+str(S)+"_"+str(sig)+".png"
+        plt.savefig(name)
+        plt.cla()
+
 
     #Aggregate Consumption
     for i in xrange(I):
@@ -1504,7 +1516,12 @@ def plotTimepaths(I, S, T, wpath, rpath, Cpath, Kpath, Ypath, I_touse):
     plt.ylabel("Consumption Level")
     plt.xlabel("Time Period")
     plt.legend(loc="upper right")
-    plt.show()
+    if show: plt.show()
+    if save: 
+        name= "aconsump_"+str(I)+"_"+str(S)+"_"+str(sig)+".png"
+        plt.savefig(name)
+        plt.cla()
+
 
     #Aggregate Capital Stock
     for i in xrange(I):
@@ -1513,7 +1530,12 @@ def plotTimepaths(I, S, T, wpath, rpath, Cpath, Kpath, Ypath, I_touse):
     plt.ylabel("Capital Stock level")
     plt.xlabel("Time Period")
     plt.legend(loc="upper right")
-    plt.show()
+    if show: plt.show()
+    if save: 
+        name= "acapitalstock_"+str(I)+"_"+str(S)+"_"+str(sig)+".png"
+        plt.savefig(name)
+        plt.cla()
+
 
     #Output
     for i in xrange(I):
@@ -1522,4 +1544,8 @@ def plotTimepaths(I, S, T, wpath, rpath, Cpath, Kpath, Ypath, I_touse):
     plt.ylabel("Output Stock level")
     plt.xlabel("Time Period")
     plt.legend(loc="upper right")
-    plt.show()
+    if show: plt.show()
+    if save: 
+        name= "aoutput_"+str(I)+"_"+str(S)+"_"+str(sig)+".png"
+        plt.savefig(name)
+        plt.cla()

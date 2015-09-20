@@ -4,12 +4,14 @@ import time as time
 
 np.set_printoptions(threshold = 3000, linewidth=2000, suppress=True)
 
-def TheWholeSmack(S, I, sigma):
+def Multi_Country(S,I,sigma):
 
     #Parameters Zone
     I_all = ["usa","eu","japan","china","india","russia","korea"]
+    #I = 3 #Number of countries
+    #S = 80 #Upper bound of age for agents
     T = int(round(2.5*S)) #Number of time periods to convergence, based on Rick Evans' function.
-    I_touse = ["japan","usa","korea","eu","russia","china","india"]
+    I_touse = ["usa","eu","japan","russia","korea","china","india"]
 
     T_1 = S #This is like TransYear in the FORTRAN I think
     if S > 50:
@@ -25,7 +27,7 @@ def TheWholeSmack(S, I, sigma):
 
     tpi_tol = 1e-8 #Convergence Tolerance
     demog_ss_tol = 1e-8 #Used in getting ss for population share
-    xi = .98 #Parameter used to take the convex conjugate of paths
+    xi = .8 #Parameter used to take the convex conjugate of paths
     MaxIters = 50000000 #Maximum number of iterations on TPI.
 
     #Program Levers
@@ -45,6 +47,8 @@ def TheWholeSmack(S, I, sigma):
     UseSSDemog = False #Activates using only steady state demographics for TPI calculation
     UseDiffProductivities = False #Activates having e vary across cohorts
     UseTape = True #Activates setting any value of kd<0 to 0.001 in TPI calculation
+    SAVE = True #Saves the graphs
+    SHOW = False #Shows the graphs
 
     LeaveHouseAge, FirstFertilityAge, LastFertilityAge, MaxImmigrantAge, FirstDyingAge, agestopull = Stepfuncs.getkeyages(S, PrintAges, UseStaggeredAges)
 
@@ -64,10 +68,6 @@ def TheWholeSmack(S, I, sigma):
         e[:,:LeaveHouseAge,:] = 0.01
     else:
         e = np.ones((I, S, T+S)) #Labor productivities
-
-    if UseTape:
-        print "WARNING: We are using tape on any guesses that produce negative domestic capital" 
-        time.sleep(2)
 
     #MAIN CODE
 
@@ -113,6 +113,7 @@ def TheWholeSmack(S, I, sigma):
         wpath, rpath, Cpath, Kpath, Ypath = Stepfuncs.get_Timepath(tp_params, wpath_initguess, rpath_initguess, assets_init, kd_ss, kf_ss, PrintLoc, Print_cabqTimepaths, UseTape)
     	
         if TPIGraphs==True:
-            Stepfuncs.plotTimepaths(I, S, T, wpath, rpath, Cpath, Kpath, Ypath, I_touse)
+            Stepfuncs.plotTimepaths(I, S, T, sigma, wpath, rpath, Cpath, Kpath, Ypath, I_touse, SAVE, SHOW)
 
-TheWholeSmack(20, 5, 4)
+
+Multi_Country(20,3,2)
