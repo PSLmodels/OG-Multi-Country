@@ -301,21 +301,21 @@ def getDemographics(params, levers, I_all, I_touse):
         for i in range(I):
             plt.plot(range(MaxImmigrantAge), Migrants[i,:MaxImmigrantAge,0])
         plt.legend(I_touse)
-        plt.title("ImmigrationRates")
+        plt.title("Net Migration")
         plt.show()
         plt.clf()
 
         for i in range(I):
             plt.plot(range(MaxImmigrantAge), ImmigrationRates[i,:MaxImmigrantAge,0])
         plt.legend(I_touse)
-        plt.title("ImmigrationRates")
+        plt.title("Immigration Rates")
         plt.show()
         plt.clf()
 
         for i in range(I):
             plt.plot(range(FirstFertilityAge,LastFertilityAge+1), FertilityRates[i,FirstFertilityAge:LastFertilityAge+1,0])
         plt.legend(I_touse)
-        plt.title("FertilityRates")
+        plt.title("Fertility Rates")
         plt.show()
         plt.clf()
 
@@ -323,7 +323,7 @@ def getDemographics(params, levers, I_all, I_touse):
         for i in range(I):
             plt.plot(range(FirstDyingAge, S), MortalityRates[i,FirstDyingAge:,0])
         plt.legend(I_touse)
-        plt.title("MortalityRates")
+        plt.title("Mortality Rates")
         plt.show()
         plt.clf()
 
@@ -1414,44 +1414,61 @@ def get_Timepath(params, wstart, rstart, starting_assets, kd_ss, kf_ss, PrintLoc
     #Gets the parameters needed in getting a new iteration of the timepath
     wr_params = (I, S, T, T_1, beta, sigma, delta, alpha, e, A, FirstFertilityAge, FirstDyingAge, Nhat, MortalityRates, g_A)
 
+    #Sets the initial values of TPI
+    w_old = wstart
+    r_old = rstart
+
+    num_Taped = 3
+
     #The timepath iteration runs until the distance gets below a threshold or the iterations hit the maximum
     while distance>tpi_tol and Iter<MaxIters:
 
         #Gets new iterations of the w, r, C, K, and Y timepaths
         wpath_new, rpath_new, Cpath, Kpath, Ypath, num_Taped = \
-        get_wpathnew_rpathnew(wr_params, wstart, rstart, starting_assets, kd_ss, kf_ss, PrintLoc, Print_cabqTimepaths, UseTape)
+        get_wpathnew_rpathnew(wr_params, w_old, r_old, starting_assets, kd_ss, kf_ss, PrintLoc, Print_cabqTimepaths, UseTape)
+        
+        #If we needed to tape too many values, reset the timepath with a higher xi value
+        if num_Taped >= 3:
+            print "Changing xi from", xi, "to", xi + (1-xi)/2
+            xi = xi + (1-xi)/2
+            w_old = wstart.copy()
+            r_old = rstart.copy()
+            print "Starting over with our initial guess and the new xi value"
+            Iter = 1
+        
+        #Else if there were only a few values that we taped
+        else:
+            try:
+                #Norms of the wage and intrest rate paths
+                dist_w=sp.linalg.norm(w_old-wpath_new,2)
+                dist_r=sp.linalg.norm(r_old-rpath_new,2)
 
-        try:
-            #Norms of the wage and intrest rate paths
-            dist_w=sp.linalg.norm(wstart-wpath_new,2)
-            dist_r=sp.linalg.norm(rstart-rpath_new,2)
+                #We take the maximum of the two norms to get the distance
+                distance=max([dist_w,dist_r])
 
-            #We take the maximum of the two norms to get the distance
-            distance=max([dist_w,dist_r])
+                print "Iteration:",Iter,", Norm Distance: ", distance
 
-            print "Iteration:",Iter,", Norm Distance: ", distance
+            #If there was an error in getting the norms (probably because of nan values in the timepaths)
+            except:
+                distance = tpi_tol+333
+                print "Iteration:",Iter,", Error in calculating the distance"
+                sys.exit("\nSo thus... we will quit the program\n")
 
-        #If there was an error in getting the norms (probably because of nan values in the timepaths)
-        except:
-            distance = tpi_tol+333
-            print "Iteration:",Iter,", Error in calculating the distance"
-            sys.exit("\nSo thus... we will quit the program\n")
+            #Updates the iteration counter
+            Iter+=1
 
-        #Updates the iteration counter
-        Iter+=1
+            #When the distance gets below the tolerance or the maximum of iterations is hit, then the TPI finishes.
+            if distance<tpi_tol or Iter==MaxIters:
+                wend=wpath_new
+                rend=rpath_new
 
-        #When the distance gets below the tolerance or the maximum of iterations is hit, then the TPI finishes.
-        if distance<tpi_tol or Iter==MaxIters:
-            wend=wpath_new
-            rend=rpath_new
+            #In case it never gets below the tolerance, it will throw this warning and give the last timepath.
+            if Iter==MaxIters:
+                print "\nDoesn't converge within the maximum number of iterations", "\nProviding the last iteration"
 
-        #In case it never gets below the tolerance, it will throw this warning and give the last timepath.
-        if Iter==MaxIters:
-            print "\nDoesn't converge within the maximum number of iterations", "\nProviding the last iteration"
-
-        #We take a convex combination of our new and old timepaths to get our new guess
-        wstart=wstart*xi+(1-xi)*wpath_new
-        rstart=rstart*xi+(1-xi)*rpath_new
+            #We take a convex combination of our new and old timepaths to get our new guess
+            w_old=w_old*xi+(1-xi)*wpath_new
+            r_old=r_old*xi+(1-xi)*rpath_new
 
     return wend, rend, Cpath, Kpath, Ypath
 
