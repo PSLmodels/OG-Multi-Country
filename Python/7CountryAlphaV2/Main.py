@@ -11,7 +11,7 @@ def Multi_Country(S,I,sigma):
     #I = 3 #Number of countries
     #S = 80 #Upper bound of age for agents
     T = int(round(2.5*S)) #Number of time periods to convergence, based on Rick Evans' function.
-    I_touse = ["usa","eu","japan","russia","korea","china","india"]
+    I_touse = ["usa","eu","japan","china","india","russia","korea"]
 
     T_1 = S #This is like TransYear in the FORTRAN I think
     if S > 50:
@@ -27,7 +27,7 @@ def Multi_Country(S,I,sigma):
 
     tpi_tol = 1e-8 #Convergence Tolerance
     demog_ss_tol = 1e-8 #Used in getting ss for population share
-    xi = .8 #Parameter used to take the convex conjugate of paths
+    xi = .7 #Parameter used to take the convex conjugate of paths
     MaxIters = 50000000 #Maximum number of iterations on TPI.
 
     #Program Levers
@@ -116,4 +116,4 @@ def Multi_Country(S,I,sigma):
             Stepfuncs.plotTimepaths(I, S, T, sigma, wpath, rpath, Cpath, Kpath, Ypath, I_touse, SAVE, SHOW)
 
 
-Multi_Country(20,3,2)
+#Multi_Country(35,7,3)
