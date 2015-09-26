@@ -10,7 +10,7 @@ def Multi_Country(S,I,sigma):
     I_all = ["usa","eu","japan","china","india","russia","korea"]
     #I = 3 #Number of countries
     #S = 80 #Upper bound of age for agents
-    T = int(round(2.5*S)) #Number of time periods to convergence, based on Rick Evans' function.
+    T = int(round(4.5*S)) #Number of time periods to convergence, based on Rick Evans' function.
     I_touse = ["usa","eu","japan","china","india","russia","korea"]
 
     T_1 = S #This is like TransYear in the FORTRAN I think
@@ -38,6 +38,7 @@ def Multi_Country(S,I,sigma):
     PrintEulErrors = False #Prints the euler errors in each attempt of calculating the steady state
     PrintSS = False #Prints the result of the Steady State functions
     Print_cabqTimepaths = False #Prints the consumption, assets, and bequests timepath as it gets filled in for each iteration of TPI
+    CheckerMode = True #Reduces the number of prints when checking for robustness
 
     DemogGraphs = False #Activates graphing graphs with demographic data and population shares
     TPIGraphs = True #Activates graphing the graphs.
@@ -73,7 +74,7 @@ def Multi_Country(S,I,sigma):
 
     #Gets demographic data
     demog_params = (I, S, T, T_1, LeaveHouseAge, FirstFertilityAge, LastFertilityAge, FirstDyingAge, MaxImmigrantAge, agestopull, g_A, demog_ss_tol)
-    demog_levers = PrintLoc, UseStaggeredAges, UseDiffDemog, DemogGraphs
+    demog_levers = PrintLoc, UseStaggeredAges, UseDiffDemog, DemogGraphs, CheckerMode
     MortalityRates, Nhat_matrix, Nhat_ss = Stepfuncs.getDemographics(demog_params, demog_levers, I_all, I_touse)
 
     #Initalizes initial guesses
@@ -81,7 +82,7 @@ def Multi_Country(S,I,sigma):
     kf_guess = np.zeros((I))
 
     #Gets the steady state variables
-    params_ss = (I, S, beta, sigma, delta, alpha, e[:,:,-1], A, FirstFertilityAge, FirstDyingAge, Nhat_ss, MortalityRates[:,:,-1], g_A, PrintEulErrors)
+    params_ss = (I, S, beta, sigma, delta, alpha, e[:,:,-1], A, FirstFertilityAge, FirstDyingAge, Nhat_ss, MortalityRates[:,:,-1], g_A, PrintEulErrors, CheckerMode)
     assets_ss, kf_ss, kd_ss, n_ss, y_ss, r_ss, w_ss, c_vec_ss = Stepfuncs.getSteadyState(params_ss, assets_guess, kf_guess)
 
     if PrintSS==True: #Prints the results of the steady state, line 23 activates this
@@ -109,11 +110,11 @@ def Multi_Country(S,I,sigma):
             Stepfuncs.get_initialguesses(initialguess_params, assets_ss, kf_ss, w_ss, r_ss, PrintLoc)
 
         #Gets timepaths for w, r, C, K, and Y
-        tp_params = (I, S, T, T_1, beta, sigma, delta, alpha, e, A, FirstFertilityAge, FirstDyingAge, Nhat_matrix, MortalityRates, g_A, tpi_tol, xi, MaxIters)
+        tp_params = (I, S, T, T_1, beta, sigma, delta, alpha, e, A, FirstFertilityAge, FirstDyingAge, Nhat_matrix, MortalityRates, g_A, tpi_tol, xi, MaxIters, CheckerMode)
         wpath, rpath, Cpath, Kpath, Ypath = Stepfuncs.get_Timepath(tp_params, wpath_initguess, rpath_initguess, assets_init, kd_ss, kf_ss, PrintLoc, Print_cabqTimepaths, UseTape)
     	
         if TPIGraphs==True:
             Stepfuncs.plotTimepaths(I, S, T, sigma, wpath, rpath, Cpath, Kpath, Ypath, I_touse, SAVE, SHOW)
 
 
-#Multi_Country(35,7,3)
+Multi_Country(35,7,3)
