@@ -237,7 +237,7 @@ def getDemographics(params, levers, I_all, I_touse):
     """
     #Unpacks parameters
     I, S, T, T_1, LeaveHouseAge, FirstFertilityAge, LastFertilityAge, FirstDyingAge, MaxImmigrantAge, agestopull, g_A, tol = params
-    PrintLoc, UseStaggeredAges, DiffDemog, Graphs = levers
+    PrintLoc, UseStaggeredAges, DiffDemog, Graphs, CheckerMode= levers
 
     data_params = (I, S, T, T_1, LeaveHouseAge, FirstFertilityAge, LastFertilityAge, FirstDyingAge, MaxImmigrantAge, agestopull)
     data_levers = PrintLoc, UseStaggeredAges, DiffDemog
@@ -333,7 +333,9 @@ def getDemographics(params, levers, I_all, I_touse):
     lbar[:T] = np.cumsum(np.ones(T)*g_A)
     lbar[T:] = np.ones(S)
 
-    print "\nDemographics obtained!"
+
+    if CheckerMode==False:
+        print "\nDemographics obtained!"
 
     return MortalityRates, Nhat[:,:,:T+S], Nhat_ss
 
@@ -590,7 +592,7 @@ def get_cvecss(params, w, r, assets):
 
     return c_vec
 
-def check_feasible(kd, Y, w, r, c):
+def check_feasible(kd, Y, w, r, c, CheckerMode):
     """
     Description:
         -Checks to see if the matrices have infeasible values
@@ -620,17 +622,18 @@ def check_feasible(kd, Y, w, r, c):
     for tp, timepath in enumerate([kd, Y, w, r, c]):
         if np.any(timepath<0) or np.any(np.isnan(timepath)):
             Feasible=False
-            print "\n"
-            for i, entry in enumerate(timepath[timepath<=0]):
-                print str("WARNING: The entry at "+str(np.argwhere(timepath<0)[i])+" of "+(timepath_names[tp])+" is equal to "+str(entry))
-            print "\n"
-            for i, entry in enumerate(timepath[np.isnan(timepath)]):
-                print str("WARNING: The entry at "+str(np.argwhere(np.isnan(timepath))[i])+" of "+(timepath_names[tp])+" is equal to nan")
-            print "\n"
+            if CheckerMode==False:
+                print "\n"
+                for i, entry in enumerate(timepath[timepath<=0]):
+                    print str("WARNING: The entry at "+str(np.argwhere(timepath<0)[i])+" of "+(timepath_names[tp])+" is equal to "+str(entry))
+                print "\n"
+                for i, entry in enumerate(timepath[np.isnan(timepath)]):
+                    print str("WARNING: The entry at "+str(np.argwhere(np.isnan(timepath))[i])+" of "+(timepath_names[tp])+" is equal to nan")
+                print "\n"
 
     return Feasible
 
-def SteadyStateSolution(guess, I, S, beta, sigma, delta, alpha, e_ss, A, FirstFertilityAge, FirstDyingAge, Nhat_ss, Mortality_ss, g_A, PrintEulErrors):
+def SteadyStateSolution(guess, I, S, beta, sigma, delta, alpha, e_ss, A, FirstFertilityAge, FirstDyingAge, Nhat_ss, Mortality_ss, g_A, PrintEulErrors, CheckerMode):
     """
     Description: 
         -This is the function that will be optimized by fsolve to find the steady state
@@ -703,11 +706,12 @@ def SteadyStateSolution(guess, I, S, beta, sigma, delta, alpha, e_ss, A, FirstFe
     cparams = (e_ss, delta, bq, g_A)
     c_vec = get_cvecss(cparams, w, r, assets)
 
-    Feasible = check_feasible(kd, Y, w, r, c_vec)
+    Feasible = check_feasible(kd, Y, w, r, c_vec, CheckerMode)
 
     if Feasible == False: #Punishes the the poor choice of negative values in the fsolve
         all_Euler=np.ones((I*S))*999.
-        print "Punishing fsolve"
+        if CheckerMode == False:
+            print "Punishing fsolve"
     else:
         #Gets Euler equations
         Euler_c = c_vec[:,:-1] ** (-sigma) - beta * (1-Mortality_ss[:,:-1])*(c_vec[:,1:]*np.exp(g_A)) ** (-sigma) * (1 + r[0] - delta)
@@ -776,7 +780,7 @@ def getSteadyState(params, assets_init, kf_init):
 
     Returns: assets_ss, kf_ss, kd_ss, n_ss, Y_ss, r_ss, w_ss, c_vec_ss
     """
-    I, S, beta, sigma, delta, alpha, e_ss, A, FirstFertilityAge, FirstDyingAge, Nhat_ss, Mortality_ss, g_A, PrintEulErrors = params
+    I, S, beta, sigma, delta, alpha, e_ss, A, FirstFertilityAge, FirstDyingAge, Nhat_ss, Mortality_ss, g_A, PrintEulErrors, CheckerMode = params
 
     #Merges the assets and kf together into one matrix that can be inputted into the fsolve function
     guess = np.column_stack((assets_init, kf_init))
@@ -1134,7 +1138,7 @@ def get_household_timepaths(params, wpath, rpath, starting_assets, PrintLoc, Pri
     """
     if PrintLoc: print "Entering get_cons_assets_matrix"
 
-    I, S, T, T_1, beta, sigma, delta, e, FirstFertilityAge, FirstDyingAge, Nhat, MortalityRates, g_A = params
+    I, S, T, T_1, beta, sigma, delta, e, FirstFertilityAge, FirstDyingAge, Nhat, MortalityRates, g_A, CheckerMode = params
 
     #Initializes timepath variables
     c_timepath = np.zeros((I, S, S+T))
@@ -1298,10 +1302,10 @@ def get_wpathnew_rpathnew(params, wpath, rpath, starting_assets, kd_ss, kf_ss, P
     if PrintLoc: print "Entering get_wpathnew_rpathnew"
 
     #Unpacks parameters
-    I, S, T, T_1, beta, sigma, delta, alpha, e, A, FirstFertilityAge, FirstDyingAge, Nhat, MortalityRates, g_A = params
+    I, S, T, T_1, beta, sigma, delta, alpha, e, A, FirstFertilityAge, FirstDyingAge, Nhat, MortalityRates, g_A, CheckerMode = params
 
     #Calulates consumption timepath and assets timepath
-    ca_params = (I, S, T, T_1, beta, sigma, delta, e, FirstFertilityAge, FirstDyingAge, Nhat, MortalityRates, g_A)
+    ca_params = (I, S, T, T_1, beta, sigma, delta, e, FirstFertilityAge, FirstDyingAge, Nhat, MortalityRates, g_A, CheckerMode)
     c_timepath, a_timepath = get_household_timepaths(ca_params, wpath, rpath, starting_assets, PrintLoc, Print_cabqTimepaths)
 
     #Calculates the total amount of capital in each country
@@ -1338,7 +1342,7 @@ def get_wpathnew_rpathnew(params, wpath, rpath, starting_assets, kd_ss, kf_ss, P
     wpath_new = get_w(alpha, Ypath, npath)
 
     #Checks to see if any of the timepaths have negative values or nans
-    Feasible = check_feasible(kdpath, Ypath, wpath, rpath, c_timepath)
+    Feasible = check_feasible(kdpath, Ypath, wpath, rpath, c_timepath, CheckerMode)
 
     if PrintLoc: print "Leaving get_wpathnew_rpathnew"
     return wpath_new, rpath_new, Cpath, Kpath, Ypath, num_Taped
@@ -1403,7 +1407,7 @@ def get_Timepath(params, wstart, rstart, starting_assets, kd_ss, kf_ss, PrintLoc
     Returns: wend, rend, Cpath, Kpath, Ypath
     """
     #Unpacks parameters
-    I, S, T, T_1, beta, sigma, delta, alpha, e, A, FirstFertilityAge, FirstDyingAge, Nhat, MortalityRates, g_A, tpi_tol, xi, MaxIters = params
+    I, S, T, T_1, beta, sigma, delta, alpha, e, A, FirstFertilityAge, FirstDyingAge, Nhat, MortalityRates, g_A, tpi_tol, xi, MaxIters, CheckerMode = params
 
     #Serves as the iteration counter
     Iter = 1
@@ -1412,7 +1416,7 @@ def get_Timepath(params, wstart, rstart, starting_assets, kd_ss, kf_ss, PrintLoc
     distance = 10
 
     #Gets the parameters needed in getting a new iteration of the timepath
-    wr_params = (I, S, T, T_1, beta, sigma, delta, alpha, e, A, FirstFertilityAge, FirstDyingAge, Nhat, MortalityRates, g_A)
+    wr_params = (I, S, T, T_1, beta, sigma, delta, alpha, e, A, FirstFertilityAge, FirstDyingAge, Nhat, MortalityRates, g_A, CheckerMode)
 
     #Sets the initial values of TPI
     w_old = wstart
@@ -1433,7 +1437,8 @@ def get_Timepath(params, wstart, rstart, starting_assets, kd_ss, kf_ss, PrintLoc
             xi = xi + (1-xi)/2
             w_old = wstart.copy()
             r_old = rstart.copy()
-            print "Starting over with our initial guess and the new xi value"
+            if CheckerMode==False:
+                print "Starting over with our initial guess and the new xi value"
             Iter = 1
         
         #Else if there were only a few values that we taped
@@ -1446,7 +1451,8 @@ def get_Timepath(params, wstart, rstart, starting_assets, kd_ss, kf_ss, PrintLoc
                 #We take the maximum of the two norms to get the distance
                 distance=max([dist_w,dist_r])
 
-                print "Iteration:",Iter,", Norm Distance: ", distance
+                if CheckerMode==False:
+                    print "Iteration:",Iter,", Norm Distance: ", distance
 
             #If there was an error in getting the norms (probably because of nan values in the timepaths)
             except:
@@ -1464,7 +1470,10 @@ def get_Timepath(params, wstart, rstart, starting_assets, kd_ss, kf_ss, PrintLoc
 
             #In case it never gets below the tolerance, it will throw this warning and give the last timepath.
             if Iter==MaxIters:
-                print "\nDoesn't converge within the maximum number of iterations", "\nProviding the last iteration"
+                if CheckerMode==False:
+                    print "\nDoesn't converge within the maximum number of iterations", "\nProviding the last iteration"
+                if CheckerMode==True:
+                    print "\nDidn't finish"
 
             #We take a convex combination of our new and old timepaths to get our new guess
             w_old=w_old*xi+(1-xi)*wpath_new
