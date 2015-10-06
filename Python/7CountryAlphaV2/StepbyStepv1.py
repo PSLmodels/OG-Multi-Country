@@ -237,7 +237,7 @@ def getDemographics(params, levers, I_all, I_touse):
     """
     #Unpacks parameters
     I, S, T, T_1, LeaveHouseAge, FirstFertilityAge, LastFertilityAge, FirstDyingAge, MaxImmigrantAge, agestopull, g_A, tol = params
-    PrintLoc, UseStaggeredAges, DiffDemog, Graphs = levers
+    PrintLoc, UseStaggeredAges, DiffDemog, Graphs, CheckerMode= levers
 
     data_params = (I, S, T, T_1, LeaveHouseAge, FirstFertilityAge, LastFertilityAge, FirstDyingAge, MaxImmigrantAge, agestopull)
     data_levers = PrintLoc, UseStaggeredAges, DiffDemog
@@ -335,7 +335,9 @@ def getDemographics(params, levers, I_all, I_touse):
     lbar[:T] = np.cumsum(np.ones(T)*g_A)
     lbar[T:] = np.ones(S)
 
-    print "\nDemographics obtained!"
+
+    if CheckerMode==False:
+        print "\nDemographics obtained!"
 
     return MortalityRates, Nhat[:,:,:T+S], Nhat_ss
 
@@ -519,6 +521,28 @@ def get_w(alpha, Y, n):
     w = (1-alpha) * Y / n
     return w
 
+def get_denom(params,w,e):
+
+    chi, rho = params
+
+    if e.ndim == 2:
+        denom=np.einsum("i,is->is",w,e)
+        denom=(chi/denom)**rho
+
+    elif e.ndim == 3:
+        denom = np.einsum("it,ist->ist",w,e)
+        denom = (chi/denom)**rho
+    
+    return denom
+
+def get_Psi(params, denom):
+
+    chi, rho, sigma = params
+
+    psi=(1+chi*denom)**((1-rho*(sigma))/rho)
+
+    return psi
+
 def getBequests(params, assets):
     """
     Description:
@@ -563,7 +587,13 @@ def getBequests(params, assets):
 
     return bq
 
-def get_cvecss(params, w, r, assets):
+def get_lhat(params,c,w,e):
+
+    chi, rho = params
+
+    lhat=chat*(chi/(np.einsum("it,st->ist",w,e)))**rho
+
+def get_cvecss(params, denom, w, r, assets):
     """
     Description:
         -Gets the consumption vector in the steady state while disregarding time differences
@@ -586,15 +616,15 @@ def get_cvecss(params, w, r, assets):
 
     Returns: c_vec
     """
-    e, delta, bq, g_A = params
+    e, delta, bq, g_A, rho = params
 
-    c_vec = np.einsum("i, is -> is", w, e)\
+    c_vec = (np.einsum("i, is -> is", w, e)\
           + np.einsum("i, is -> is",(1 + r - delta) , assets[:,:-1])\
-          + bq - assets[:,1:]*np.exp(g_A)
+          + bq - assets[:,1:]*np.exp(g_A))/(1+np.einsum("i,is->is",w,e)*denom)
 
     return c_vec
 
-def check_feasible(kd, Y, w, r, c):
+def check_feasible(kd, Y, w, r, c, CheckerMode):
     """
     Description:
         -Checks to see if the matrices have infeasible values
@@ -624,17 +654,18 @@ def check_feasible(kd, Y, w, r, c):
     for tp, timepath in enumerate([kd, Y, w, r, c]):
         if np.any(timepath<0) or np.any(np.isnan(timepath)):
             Feasible=False
-            print "\n"
-            for i, entry in enumerate(timepath[timepath<=0]):
-                print str("WARNING: The entry at "+str(np.argwhere(timepath<0)[i])+" of "+(timepath_names[tp])+" is equal to "+str(entry))
-            print "\n"
-            for i, entry in enumerate(timepath[np.isnan(timepath)]):
-                print str("WARNING: The entry at "+str(np.argwhere(np.isnan(timepath))[i])+" of "+(timepath_names[tp])+" is equal to nan")
-            print "\n"
+            if CheckerMode==False:
+                print "\n"
+                for i, entry in enumerate(timepath[timepath<=0]):
+                    print str("WARNING: The entry at "+str(np.argwhere(timepath<0)[i])+" of "+(timepath_names[tp])+" is equal to "+str(entry))
+                print "\n"
+                for i, entry in enumerate(timepath[np.isnan(timepath)]):
+                    print str("WARNING: The entry at "+str(np.argwhere(np.isnan(timepath))[i])+" of "+(timepath_names[tp])+" is equal to nan")
+                print "\n"
 
     return Feasible
 
-def SteadyStateSolution(guess, I, S, beta, sigma, delta, alpha, e_ss, A, FirstFertilityAge, FirstDyingAge, Nhat_ss, Mortality_ss, g_A, PrintEulErrors):
+def SteadyStateSolution(guess, I, S, beta, sigma, delta, alpha, chi, rho, e_ss, A, FirstFertilityAge, FirstDyingAge, Nhat_ss, Mortality_ss, g_A, PrintEulErrors, CheckerMode):
     """
     Description: 
         -This is the function that will be optimized by fsolve to find the steady state
@@ -704,18 +735,26 @@ def SteadyStateSolution(guess, I, S, beta, sigma, delta, alpha, e_ss, A, FirstFe
     w = get_w(alpha, Y, n)
     bqparams = (I, S, FirstFertilityAge, FirstDyingAge, Nhat_ss, Mortality_ss)
     bq = getBequests(bqparams, assets)
-    cparams = (e_ss, delta, bq, g_A)
-    c_vec = get_cvecss(cparams, w, r, assets)
 
-    Feasible = check_feasible(kd, Y, w, r, c_vec)
+    denomparams = (chi, rho)
+    denom = get_denom(denomparams,w,e_ss)
+
+    psi_params=(chi,rho,sigma)
+    psi=get_Psi(psi_params,denom)
+
+    cparams = (e_ss, delta, bq, g_A,rho)
+    c_vec = get_cvecss(cparams, denom, w, r, assets)
+
+
+    Feasible = check_feasible(kd, Y, w, r, c_vec, CheckerMode)
 
     if Feasible == False: #Punishes the the poor choice of negative values in the fsolve
         all_Euler=np.ones((I*S))*999.
         print "Punishing fsolve"
     else:
         #Gets Euler equations
-        #QUESTION: CHANGE THE PSI INDEXING TO MATCH THE COHORT???
-        Euler_c = c_vec[:,:-1] ** (-sigma) - beta * (1-Mortality_ss[:,:-1])*(c_vec[:,1:]*np.exp(g_A)) ** (-sigma) * (1 + r[0] - delta)
+
+        Euler_c = psi[:,:-1] * c_vec[:,:-1] ** (-sigma) - beta * (1-Mortality_ss[:,:-1])*psi[:,1:]*(c_vec[:,1:]*np.exp(g_A)) ** (-sigma) * (1 + r[0] - delta)
         Euler_r = r[1:] - r[0]
         Euler_kf = np.sum(kf*np.sum(Nhat_ss, axis=1))
 
@@ -781,7 +820,7 @@ def getSteadyState(params, assets_init, kf_init):
 
     Returns: assets_ss, kf_ss, kd_ss, n_ss, Y_ss, r_ss, w_ss, c_vec_ss
     """
-    I, S, beta, sigma, delta, alpha, e_ss, A, FirstFertilityAge, FirstDyingAge, Nhat_ss, Mortality_ss, g_A, PrintEulErrors = params
+    I, S, beta, sigma, delta, alpha, chi, rho, e_ss, A, FirstFertilityAge, FirstDyingAge, Nhat_ss, Mortality_ss, g_A, PrintEulErrors, CheckerMode = params
 
     #Merges the assets and kf together into one matrix that can be inputted into the fsolve function
     guess = np.column_stack((assets_init, kf_init))
@@ -805,11 +844,16 @@ def getSteadyState(params, assets_init, kf_init):
     #Because of the euler conditions in the fsolve, r_ss will be the same regardless of which country we use to calculate it
     r_ss = get_r(alpha, Y_ss[0], kd_ss[0])
     w_ss = get_w(alpha, Y_ss, n_ss)
+
+    denomparams = (chi, rho)
+    denom = get_denom(denomparams,w_ss,e_ss)
+
     bqparams = (I, S, FirstFertilityAge, FirstDyingAge, Nhat_ss, Mortality_ss)
     bq_ss = getBequests(bqparams, assets_ss)
-    c_vec_ss = np.einsum("i, is -> is", w_ss, e_ss)\
-              + (1 + r_ss - delta)*assets_ss[:,:-1]\
-              + bq_ss - assets_ss[:,1:]*np.exp(g_A)
+
+    c_vec_ss =  (np.einsum("i, is -> is", w_ss, e_ss)\
+          + (1 + r_ss - delta)*assets_ss[:,:-1]\
+          + bq_ss - assets_ss[:,1:]*np.exp(g_A))/(1+np.einsum("i,is->is",w_ss,e_ss)*denom)
 
     print "\nSteady State Found!\n"
 
@@ -969,7 +1013,7 @@ def get_foreignK_path(params, Kpath, rpath, kf_ss, PrintLoc):
         
     return kfPath
 
-def get_lifetime_decisions(params, c_1, wpath_chunk, rpath_chunk, e_chunk, mortality_chunk, starting_assets, bq, current_age):
+def get_lifetime_decisions(params, c_1, wpath_chunk, rpath_chunk, e_chunk, mortality_chunk, psi_chunk, starting_assets, bq, current_age):
     """
     Description:
         -This solves for the remaining lifetime decisions equations (1.15 and 1.16) for a certain generation of age 'current_age'
@@ -1007,7 +1051,7 @@ def get_lifetime_decisions(params, c_1, wpath_chunk, rpath_chunk, e_chunk, morta
     Returns: c_path, asset_path
     """
 
-    I, S, beta, sigma, delta, g_A = params
+    I, S, beta, sigma, delta, rho, chi, g_A = params
 
     num_decisions = S-current_age-1 # -1 Because we already have (or have guessed) our starting 
 
@@ -1019,17 +1063,18 @@ def get_lifetime_decisions(params, c_1, wpath_chunk, rpath_chunk, e_chunk, morta
     c_path[:,0] = c_1
     asset_path[:,0] = starting_assets
 
+
     #Based on the individual chunks, these are the households choices
     for p in range(1,num_decisions+1):
-        c_path[:,p] = ((beta * (1-mortality_chunk[:,p-1]) * (1 + rpath_chunk[p] - delta))**(1/sigma) * c_path[:,p-1])*np.exp(-g_A)
-        asset_path[:,p] = (wpath_chunk[:,p-1]*e_chunk[:,p-1] + (1 + rpath_chunk[p-1] - delta)*asset_path[:,p-1] + bq[:,p-1] - c_path[:,p-1])*np.exp(-g_A)
+        c_path[:,p] = (beta * (1-mortality_chunk[:,p-1]) * (1 + rpath_chunk[p] - delta)*psi_chunk[:,p]/psi_chunk[:,p-1])**(1/sigma) * c_path[:,p-1]*np.exp(-g_A)
+        asset_path[:,p] = (wpath_chunk[:,p-1]*e_chunk[:,p-1] + (1 + rpath_chunk[p-1] - delta)*asset_path[:,p-1] + bq[:,p-1] - c_path[:,p-1]*(1+wpath_chunk[:,p-1]*e_chunk[:,p-1]*(chi/(wpath_chunk[:,p-1]*e_chunk[:,p-1])**rho)))*np.exp(-g_A)
 	
     #Solves for assets in the year after the agent dies
-    asset_path[:,p+1] = (wpath_chunk[:,p]*e_chunk[:,p] + (1 + rpath_chunk[p] - delta)*asset_path[:,p] - c_path[:,p])*np.exp(-g_A)
+    asset_path[:,p+1] = (wpath_chunk[:,p]*e_chunk[:,p] + (1 + rpath_chunk[p] - delta)*asset_path[:,p] - c_path[:,p]*(1+wpath_chunk[:,p]*e_chunk[:,p]*(chi/(wpath_chunk[:,p]*e_chunk[:,p])**rho)))*np.exp(-g_A)
 
     return c_path, asset_path
 
-def find_optimal_starting_consumption(c_1, wpath_chunk, rpath_chunk, e_chunk, mortality_chunk, starting_assets, bq, current_age, params):
+def find_optimal_starting_consumption(c_1, wpath_chunk, rpath_chunk, e_chunk, mortality_chunk, psi_chunk, starting_assets, bq, current_age, params):
     """
     Description:
        -Euler system for solving the individual household decisions
@@ -1064,7 +1109,7 @@ def find_optimal_starting_consumption(c_1, wpath_chunk, rpath_chunk, e_chunk, mo
     """
 
     #Executes the get_household_choices_path function. Sees above.
-    c_path, assets_path = get_lifetime_decisions(params, c_1, wpath_chunk, rpath_chunk, e_chunk, mortality_chunk, starting_assets, bq, current_age)
+    c_path, assets_path = get_lifetime_decisions(params, c_1, wpath_chunk, rpath_chunk, e_chunk, mortality_chunk, psi_chunk, starting_assets, bq, current_age)
     Euler = np.ravel(assets_path[:,-1])
 
     if np.any(c_path<0):
@@ -1139,7 +1184,7 @@ def get_household_timepaths(params, wpath, rpath, starting_assets, PrintLoc, Pri
     """
     if PrintLoc: print "Entering get_cons_assets_matrix"
 
-    I, S, T, T_1, beta, sigma, delta, e, FirstFertilityAge, FirstDyingAge, Nhat, MortalityRates, g_A = params
+    I, S, T, T_1, beta, sigma, delta, rho, chi, e, FirstFertilityAge, FirstDyingAge, Nhat, MortalityRates, g_A = params
 
     #Initializes timepath variables
     c_timepath = np.zeros((I, S, S+T))
@@ -1147,11 +1192,18 @@ def get_household_timepaths(params, wpath, rpath, starting_assets, PrintLoc, Pri
     a_timepath[:,:,0] = starting_assets
     bq_timepath = np.zeros((I, S, S+T))
 
+    denom_params = (chi, rho)
+    denom_path=get_denom(denom_params,wpath,e)
+
+    psi_params = (chi, rho, sigma)
+    psi_timepath = get_Psi(psi_params,denom_path)
+
     #Gets the consumption for the oldest living agent. 
     #Since this agent dies next period and we already know his assets, we know his consumption by equation 2.21
-    c_timepath[:,S-1,0] = wpath[:,0]*e[:,S-1,0] + (1 + rpath[0] - delta)*a_timepath[:,S-1,0]
+    c_timepath[:,S-1,0] = (wpath[:,0]*e[:,S-1,0] + (1 + rpath[0] - delta)*a_timepath[:,S-1,0])\
+            /(1+wpath[:,0]*e[:,S-1,0]*(chi/(wpath[:,0]*e[:,S-1,0]))**rho)
 
-    household_params = (I, S, beta, sigma, delta, g_A)
+    household_params = (I, S, beta, sigma, delta, rho, chi, g_A)
 
     if Print_cabqTimepaths:
         print "Initial matrices"
@@ -1173,7 +1225,8 @@ def get_household_timepaths(params, wpath, rpath, starting_assets, PrintLoc, Pri
             current_age = S-p-1
 
             #Uses the previous generation's consumption at age s to get the value for our guess
-            c1_guess = (c_timepath[:,current_age+1,t]/((beta*(1+rpath[t]-delta))**(1/sigma)))/np.exp(g_A)
+            c1_guess = (c_timepath[:,current_age+1,t]*(psi_timepath[:,current_age,t]/psi_timepath[:,current_age+1,t+1])\
+                    /((beta*(1+rpath[t]-delta))**(1/sigma)))/np.exp(g_A)
 
             #Current assets an agent has coming into period t=0
             agent_assets = starting_assets[:,current_age]
@@ -1197,16 +1250,19 @@ def get_household_timepaths(params, wpath, rpath, starting_assets, PrintLoc, Pri
         #Gets labor productivities this agent will have in his remaining lifetime
         agent_e = np.diagonal(e[:,current_age:,t:t+p+1], axis1=1, axis2=2)
 
+
+        agent_psi = np.diagonal(psi_timepath[:,current_age:,t:t+p+1], axis1=1, axis2=2)
+
         #Gets the probablities of dying in each period of this agent's remaining lifetime
         agent_mortality = np.diagonal(MortalityRates[:,current_age:,t:t+p+1], axis1=1, axis2=2)
 
         #Gets optimal initial consumption beginning in the current age of the agent using chunks of w and r that span the lifetime of the given generation
         opt_c1 = opt.fsolve(find_optimal_starting_consumption, c1_guess, args = \
-            (wpath[:,t:t+p+1], rpath[t:t+p+2], agent_e, agent_mortality, agent_assets, agent_bq, current_age, household_params))
+            (wpath[:,t:t+p+1], rpath[t:t+p+2], agent_e, agent_mortality, agent_psi, agent_assets, agent_bq, current_age, household_params))
 
         #Gets a given cohort's optimal lifetime decision paths, given their initial consumption
         cpath_indiv, apath_indiv = get_lifetime_decisions\
-            (household_params, opt_c1, wpath[:,t:t+p+1], rpath[t:t+p+2], agent_e, agent_mortality, agent_assets, agent_bq, current_age)
+            (household_params, opt_c1, wpath[:,t:t+p+1], rpath[t:t+p+2], agent_e, agent_mortality, agent_psi, agent_assets, agent_bq, current_age)
 
         #Filling the timepaths with the cohort's optimal lifetime decision paths for each country
         for i in xrange(I):
@@ -1303,10 +1359,10 @@ def get_wpathnew_rpathnew(params, wpath, rpath, starting_assets, kd_ss, kf_ss, P
     if PrintLoc: print "Entering get_wpathnew_rpathnew"
 
     #Unpacks parameters
-    I, S, T, T_1, beta, sigma, delta, alpha, e, A, FirstFertilityAge, FirstDyingAge, Nhat, MortalityRates, g_A = params
+    I, S, T, T_1, beta, sigma, delta, alpha, rho, chi, e, A, FirstFertilityAge, FirstDyingAge, Nhat, MortalityRates, g_A, CheckerMode = params
 
     #Calulates consumption timepath and assets timepath
-    ca_params = (I, S, T, T_1, beta, sigma, delta, e, FirstFertilityAge, FirstDyingAge, Nhat, MortalityRates, g_A)
+    ca_params = (I, S, T, T_1, beta, sigma, delta, rho, chi, e, FirstFertilityAge, FirstDyingAge, Nhat, MortalityRates, g_A)
     c_timepath, a_timepath = get_household_timepaths(ca_params, wpath, rpath, starting_assets, PrintLoc, Print_cabqTimepaths)
 
     #Calculates the total amount of capital in each country
@@ -1343,7 +1399,7 @@ def get_wpathnew_rpathnew(params, wpath, rpath, starting_assets, kd_ss, kf_ss, P
     wpath_new = get_w(alpha, Ypath, npath)
 
     #Checks to see if any of the timepaths have negative values or nans
-    Feasible = check_feasible(kdpath, Ypath, wpath, rpath, c_timepath)
+    Feasible = check_feasible(kdpath, Ypath, wpath, rpath, c_timepath, CheckerMode)
 
     if PrintLoc: print "Leaving get_wpathnew_rpathnew"
     return wpath_new, rpath_new, Cpath, Kpath, Ypath, num_Taped
@@ -1408,7 +1464,7 @@ def get_Timepath(params, wstart, rstart, starting_assets, kd_ss, kf_ss, PrintLoc
     Returns: wend, rend, Cpath, Kpath, Ypath
     """
     #Unpacks parameters
-    I, S, T, T_1, beta, sigma, delta, alpha, e, A, FirstFertilityAge, FirstDyingAge, Nhat, MortalityRates, g_A, tpi_tol, xi, MaxIters = params
+    I, S, T, T_1, beta, sigma, delta, alpha, rho, chi, e, A, FirstFertilityAge, FirstDyingAge, Nhat, MortalityRates, g_A, tpi_tol, xi, MaxIters, CheckerMode = params
 
     #Serves as the iteration counter
     Iter = 1
@@ -1417,41 +1473,43 @@ def get_Timepath(params, wstart, rstart, starting_assets, kd_ss, kf_ss, PrintLoc
     distance = 10
 
     #Gets the parameters needed in getting a new iteration of the timepath
-    wr_params = (I, S, T, T_1, beta, sigma, delta, alpha, e, A, FirstFertilityAge, FirstDyingAge, Nhat, MortalityRates, g_A)
+    wr_params = (I, S, T, T_1, beta, sigma, delta, alpha, rho, chi, e, A, FirstFertilityAge, FirstDyingAge, Nhat, MortalityRates, g_A, CheckerMode)
 
     #Sets the initial values of TPI
     w_old = wstart
     r_old = rstart
 
     num_Taped = 3
-
     #The timepath iteration runs until the distance gets below a threshold or the iterations hit the maximum
     while distance>tpi_tol and Iter<MaxIters:
 
         #Gets new iterations of the w, r, C, K, and Y timepaths
         wpath_new, rpath_new, Cpath, Kpath, Ypath, num_Taped = \
         get_wpathnew_rpathnew(wr_params, w_old, r_old, starting_assets, kd_ss, kf_ss, PrintLoc, Print_cabqTimepaths, UseTape)
-        
-        #If we needed to tape too many values, reset the timepath with a higher xi value
+
+
         if num_Taped >= 3:
             print "Changing xi from", xi, "to", xi + (1-xi)/2
             xi = xi + (1-xi)/2
             w_old = wstart.copy()
             r_old = rstart.copy()
-            print "Starting over with our initial guess and the new xi value"
+
+            if CheckerMode == False:
+                print "Starting over with our intial guess and the new xi value"
+
             Iter = 1
-        
-        #Else if there were only a few values that we taped
+
         else:
             try:
                 #Norms of the wage and intrest rate paths
-                dist_w=sp.linalg.norm(w_old-wpath_new,2)
-                dist_r=sp.linalg.norm(r_old-rpath_new,2)
+                dist_w=sp.linalg.norm(wstart-wpath_new,2)
+                dist_r=sp.linalg.norm(rstart-rpath_new,2)
 
                 #We take the maximum of the two norms to get the distance
                 distance=max([dist_w,dist_r])
 
-                print "Iteration:",Iter,", Norm Distance: ", distance
+                if CheckerMode == False:
+                    print "Iteration:",Iter,", Norm Distance: ", distance
 
             #If there was an error in getting the norms (probably because of nan values in the timepaths)
             except:
@@ -1469,7 +1527,10 @@ def get_Timepath(params, wstart, rstart, starting_assets, kd_ss, kf_ss, PrintLoc
 
             #In case it never gets below the tolerance, it will throw this warning and give the last timepath.
             if Iter==MaxIters:
-                print "\nDoesn't converge within the maximum number of iterations", "\nProviding the last iteration"
+                if CheckerMode == False:
+                    print "\nDoesn't converge within the maximum number of iterations", "\nProviding the last iteration"
+                if CheckerMode == True:
+                    print "\nDidn't finish"
 
             #We take a convex combination of our new and old timepaths to get our new guess
             w_old=w_old*xi+(1-xi)*wpath_new
@@ -1477,7 +1538,7 @@ def get_Timepath(params, wstart, rstart, starting_assets, kd_ss, kf_ss, PrintLoc
 
     return wend, rend, Cpath, Kpath, Ypath
 
-def plotTimepaths(I, S, T, sig, wpath, rpath, Cpath, Kpath, Ypath, I_touse, save, show):
+def plotTimepaths(I, S, T, sig, wpath, rpath, Cpath, Kpath, Ypath, I_touse, save, show, RobustMode):
     """
     Description:
         -Plots the timepaths for w, r, C, K, and Y
@@ -1504,70 +1565,110 @@ def plotTimepaths(I, S, T, sig, wpath, rpath, Cpath, Kpath, Ypath, I_touse, save
     if save==True and show==True:
         print "Cannot save and show graphs at the same time, showing only!"
         save=False
-    
-    #Wages
-    for i in xrange(I):
-        plt.plot(np.arange(0,T),wpath[i,:T], label=I_touse[i])
-    plt.title("Time path for Wages")
-    plt.ylabel("Wages")
-    plt.xlabel("Time Period")
-    plt.legend(loc="upper right")
-    if show: plt.show()
-    if save: 
-        name= "wages_"+str(I)+"_"+str(S)+"_"+str(sig)+".png"
-        plt.savefig(name)
-        plt.cla()
 
-    #Rental Rates  
-    plt.plot(np.arange(0,T),rpath[:T], label='Global Interest Rate')
-    plt.title("Time path for Rental Rates")
-    plt.ylabel("Rental Rates")
-    plt.xlabel("Time Period")
-    plt.legend(loc="upper right")
-    if show: plt.show()
-    if save: 
-        name= "rentalrate_"+str(I)+"_"+str(S)+"_"+str(sig)+".png"
-        plt.savefig(name)
-        plt.cla()
+        
+    if RobustMode==False:
+        #Wages
+        for i in xrange(I):
+            plt.plot(np.arange(0,T),wpath[i,:T], label=I_touse[i])
+        plt.title("Time path for Wages")
+        plt.ylabel("Wages")
+        plt.xlabel("Time Period")
+        plt.legend(loc="upper right")
+        if show: plt.show()
+        if save: 
+            name= "wages_"+str(I)+"_"+str(S)+"_"+str(sig)+".png"
+            plt.savefig(name)
+            plt.cla()
 
-
-    #Aggregate Consumption
-    for i in xrange(I):
-        plt.plot(np.arange(0,S+T),Cpath[i,:],label=I_touse[i])
-    plt.title("Time Path for Aggregate Consumption")
-    plt.ylabel("Consumption Level")
-    plt.xlabel("Time Period")
-    plt.legend(loc="upper right")
-    if show: plt.show()
-    if save: 
-        name= "aconsump_"+str(I)+"_"+str(S)+"_"+str(sig)+".png"
-        plt.savefig(name)
-        plt.cla()
+        #Rental Rates  
+        plt.plot(np.arange(0,T),rpath[:T], label='Global Interest Rate')
+        plt.title("Time path for Rental Rates")
+        plt.ylabel("Rental Rates")
+        plt.xlabel("Time Period")
+        plt.legend(loc="upper right")
+        if show: plt.show()
+        if save: 
+            name= "rentalrate_"+str(I)+"_"+str(S)+"_"+str(sig)+".png"
+            plt.savefig(name)
+            plt.cla()
 
 
-    #Aggregate Capital Stock
-    for i in xrange(I):
-        plt.plot(np.arange(0,T),Kpath[i,:T],label=I_touse[i])
-    plt.title("Time path for Aggregate Capital Stock")
-    plt.ylabel("Capital Stock level")
-    plt.xlabel("Time Period")
-    plt.legend(loc="upper right")
-    if show: plt.show()
-    if save: 
-        name= "acapitalstock_"+str(I)+"_"+str(S)+"_"+str(sig)+".png"
-        plt.savefig(name)
-        plt.cla()
+        #Aggregate Consumption
+        for i in xrange(I):
+            plt.plot(np.arange(0,S+T),Cpath[i,:],label=I_touse[i])
+        plt.title("Time Path for Aggregate Consumption")
+        plt.ylabel("Consumption Level")
+        plt.xlabel("Time Period")
+        plt.legend(loc="upper right")
+        if show: plt.show()
+        if save: 
+            name= "aconsump_"+str(I)+"_"+str(S)+"_"+str(sig)+".png"
+            plt.savefig(name)
+            plt.cla()
 
 
-    #Output
-    for i in xrange(I):
-        plt.plot(np.arange(0,T),Ypath[i,:T],label=I_touse[i])
-    plt.title("Time path for Output")
-    plt.ylabel("Output Stock level")
-    plt.xlabel("Time Period")
-    plt.legend(loc="upper right")
-    if show: plt.show()
-    if save: 
-        name= "aoutput_"+str(I)+"_"+str(S)+"_"+str(sig)+".png"
-        plt.savefig(name)
-        plt.cla()
+        #Aggregate Capital Stock
+        for i in xrange(I):
+            plt.plot(np.arange(0,T),Kpath[i,:T],label=I_touse[i])
+        plt.title("Time path for Aggregate Capital Stock")
+        plt.ylabel("Capital Stock level")
+        plt.xlabel("Time Period")
+        plt.legend(loc="upper right")
+        if show: plt.show()
+        if save: 
+            name= "acapitalstock_"+str(I)+"_"+str(S)+"_"+str(sig)+".png"
+            plt.savefig(name)
+            plt.cla()
+
+
+        #Output
+        for i in xrange(I):
+            plt.plot(np.arange(0,T),Ypath[i,:T],label=I_touse[i])
+        plt.title("Time path for Output")
+        plt.ylabel("Output Stock level")
+        plt.xlabel("Time Period")
+        plt.legend(loc="upper right")
+        if show: plt.show()
+        if save: 
+            name= "aoutput_"+str(I)+"_"+str(S)+"_"+str(sig)+".png"
+            plt.savefig(name)
+            plt.cla()
+
+    else:
+
+        plt.suptitle("OLG Model Results")
+
+        #Wages
+        plt.subplot(321)
+        for i in xrange(I):
+            plt.plot(np.arange(0,T),wpath[i,:T], label=I_touse[i])
+        plt.ylabel("Wages")
+        plt.legend(loc="lower right")
+
+        plt.subplot(322)
+        plt.plot(np.arange(0,T),rpath[:T], label='Global Interest Rate')
+        plt.ylabel("Rental Rates")
+        plt.legend(loc="upper right")
+
+        plt.subplot(323)
+        for i in xrange(I):
+            plt.plot(np.arange(0,S+T),Cpath[i,:],label=I_touse[i])
+        plt.ylabel("Consumption Level")
+
+        plt.subplot(324)
+        for i in xrange(I):
+            plt.plot(np.arange(0,T),Kpath[i,:T],label=I_touse[i])
+        plt.ylabel("Capital Stock level")
+
+        plt.subplot(325)
+        for i in xrange(I):
+            plt.plot(np.arange(0,T),Ypath[i,:T],label=I_touse[i])
+        plt.ylabel("Output Stock level")
+        plt.xlabel("Time Period")
+
+        if show: plt.show()
+        if save: 
+            name= "OLGresult_"+str(I)+"_"+str(S)+"_"+str(sig)+".png"
+            plt.savefig(name)
+            plt.cla()
