@@ -24,6 +24,9 @@ def Multi_Country(S,I,sigma):
     beta = beta_ann**(70/S) #Future consumption discount rate
     delta = 1-(1-delta_ann)**(70/S) #Depreciation Rate
     alpha = .3 #Capital Share of production
+    chi = 1.5 #New Parameter
+    rho = .4 #Other New Parameter
+
 
     tpi_tol = 1e-8 #Convergence Tolerance
     demog_ss_tol = 1e-8 #Used in getting ss for population share
@@ -82,7 +85,7 @@ def Multi_Country(S,I,sigma):
     kf_guess = np.zeros((I))
 
     #Gets the steady state variables
-    params_ss = (I, S, beta, sigma, delta, alpha, e[:,:,-1], A, FirstFertilityAge, FirstDyingAge, Nhat_ss, MortalityRates[:,:,-1], g_A, PrintEulErrors, CheckerMode)
+    params_ss = (I, S, beta, sigma, delta, alpha, chi, rho, e[:,:,-1], A, FirstFertilityAge, FirstDyingAge, Nhat_ss, MortalityRates[:,:,-1], g_A, PrintEulErrors, CheckerMode)
     assets_ss, kf_ss, kd_ss, n_ss, y_ss, r_ss, w_ss, c_vec_ss = Stepfuncs.getSteadyState(params_ss, assets_guess, kf_guess)
 
     if PrintSS==True: #Prints the results of the steady state, line 23 activates this
@@ -110,11 +113,11 @@ def Multi_Country(S,I,sigma):
             Stepfuncs.get_initialguesses(initialguess_params, assets_ss, kf_ss, w_ss, r_ss, PrintLoc)
 
         #Gets timepaths for w, r, C, K, and Y
-        tp_params = (I, S, T, T_1, beta, sigma, delta, alpha, e, A, FirstFertilityAge, FirstDyingAge, Nhat_matrix, MortalityRates, g_A, tpi_tol, xi, MaxIters, CheckerMode)
+        tp_params = (I, S, T, T_1, beta, sigma, delta, alpha, rho, chi, e, A, FirstFertilityAge, FirstDyingAge, Nhat_matrix, MortalityRates, g_A, tpi_tol, xi, MaxIters, CheckerMode)
         wpath, rpath, Cpath, Kpath, Ypath = Stepfuncs.get_Timepath(tp_params, wpath_initguess, rpath_initguess, assets_init, kd_ss, kf_ss, PrintLoc, Print_cabqTimepaths, UseTape)
     	
         if TPIGraphs==True:
-            Stepfuncs.plotTimepaths(I, S, T, sigma, wpath, rpath, Cpath, Kpath, Ypath, I_touse, SAVE, SHOW)
+            Stepfuncs.plotTimepaths(I, S, T, sigma, wpath, rpath, Cpath, Kpath, Ypath, I_touse, SAVE, SHOW, CheckerMode)
 
 
-Multi_Country(35,7,3)
+Multi_Country(20,2,3)
