@@ -8,12 +8,11 @@ def Multi_Country(S,I,sigma):
 
     #Parameters Zone
     I_all = ["usa","eu","japan","china","india","russia","korea"]
-    #I = 3 #Number of countries
-    #S = 80 #Upper bound of age for agents
-    T = int(round(4.5*S)) #Number of time periods to convergence, based on Rick Evans' function.
+    T = int(round(4*S)) #Number of time periods to convergence, based on Rick Evans' function.
     I_touse = ["usa","eu","japan","china","india","russia","korea"]
 
     T_1 = S #This is like TransYear in the FORTRAN I think
+
     if S > 50:
         T_1 = 50
 
@@ -29,7 +28,7 @@ def Multi_Country(S,I,sigma):
 
     tpi_tol = 1e-8 #Convergence Tolerance
     demog_ss_tol = 1e-8 #Used in getting ss for population share
-    xi = .95 #Parameter used to take the convex conjugate of paths
+    xi = .9999 #Parameter used to take the convex conjugate of paths
     MaxIters = 50000000 #Maximum number of iterations on TPI.
 
     #Program Levers
@@ -41,6 +40,7 @@ def Multi_Country(S,I,sigma):
     PrintSS = False #Prints the result of the Steady State functions
     Print_cabqTimepaths = False #Prints the consumption, assets, and bequests timepath as it gets filled in for each iteration of TPI
     CheckerMode = False #Reduces the number of prints when checking for robustness
+    ADJUSTKOREAIMMIGRATION = True
 
     DemogGraphs = False #Activates graphing graphs with demographic data and population shares
     TPIGraphs = True #Activates graphing the graphs.
@@ -50,8 +50,8 @@ def Multi_Country(S,I,sigma):
     UseSSDemog = False #Activates using only steady state demographics for TPI calculation
     UseDiffProductivities = False #Activates having e vary across cohorts
     UseTape = True #Activates setting any value of kd<0 to 0.001 in TPI calculation
-    SAVE = True #Saves the graphs
-    SHOW = False #Shows the graphs
+    SAVE = False #Saves the graphs
+    SHOW = True #Shows the graphs
 
     LeaveHouseAge, FirstFertilityAge, LastFertilityAge, MaxImmigrantAge, FirstDyingAge, agestopull = Stepfuncs.getkeyages(S, PrintAges, UseStaggeredAges)
 
@@ -66,18 +66,18 @@ def Multi_Country(S,I,sigma):
         A = np.ones(I) #Techonological Change, used for idential countries
 
     if UseDiffProductivities:
-        e = np.ones((I, S, T+S))
+        e = np.ones((I, S, T))
         e[:,FirstDyingAge:,:] = 0.01
         e[:,:LeaveHouseAge,:] = 0.01
     else:
-        e = np.ones((I, S, T+S)) #Labor productivities
+        e = np.ones((I, S, T)) #Labor productivities
 
     #MAIN CODE
 
     #Gets demographic data
     demog_params = (I, S, T, T_1, LeaveHouseAge, FirstFertilityAge, LastFertilityAge, FirstDyingAge, MaxImmigrantAge, agestopull, g_A, demog_ss_tol)
     demog_levers = PrintLoc, UseStaggeredAges, UseDiffDemog, DemogGraphs, CheckerMode
-    MortalityRates, Nhat_matrix, Nhat_ss = Stepfuncs.getDemographics(demog_params, demog_levers, I_all, I_touse)
+    MortalityRates, Nhat_matrix, Nhat_ss = Stepfuncs.getDemographics(demog_params, demog_levers, I_all, I_touse, ADJUSTKOREAIMMIGRATION)
 
     #Initalizes initial guesses
     assets_guess = np.ones((I, S-1))*.1
@@ -99,9 +99,8 @@ def Multi_Country(S,I,sigma):
 
     if UseSSDemog == True:
         print "NOTE: USING SS DEMOGRAPHICS FOR TIMEPATH\n"
-        Nhat_matrix = np.einsum("is,t->ist", Nhat_matrix[:,:,-1],np.ones(T+S))
-        MortalityRates = np.einsum("is,t->ist", MortalityRates[:,:,-1],np.ones(T+S))
-        lbar[:] = 1
+        Nhat_matrix = np.einsum("is,t->ist", Nhat_matrix[:,:,-1],np.ones(T))
+        MortalityRates = np.einsum("is,t->ist", MortalityRates[:,:,-1],np.ones(T))
         time.sleep(2)
 
     if CalcTPI==True: #Time Path Iteration, activated by line 24
@@ -118,4 +117,4 @@ def Multi_Country(S,I,sigma):
         if TPIGraphs==True:
             Stepfuncs.plotTimepaths(I, S, T, sigma, wpath, rpath, Cpath, Kpath, Ypath, I_touse, SAVE, SHOW, CheckerMode)
 
-Multi_Country(20,2,2)
+Multi_Country(80,2,4)

@@ -68,7 +68,7 @@ def getkeyages(S, PrintAges, UseStaggeredAges):
 
     return LeaveHouseAge, FirstFertilityAge, LastFertilityAge, MaxImmigrantAge, FirstDyingAge, agestopull
 
-def get_demog_data(params, levers, I_all, I_touse):
+def get_demog_data(params, levers, I_all, I_touse, ADJUSTKOREAIMMIGRATION):
     """
     Description:
         -Imports and stores data from csv files for initial populations, fertility rates, mortality rates, and net migrants.
@@ -121,14 +121,14 @@ def get_demog_data(params, levers, I_all, I_touse):
     f_range = LastFertilityAge+1-FirstFertilityAge
 
     #Initializes demographics matrices
-    N = np.zeros((I, S, T+S))
-    Nhat = np.zeros((I, S, T+S))
-    all_FertilityRates = np.zeros((I, S, f_range+T+S))
-    FertilityRates = np.zeros((I, S, T+S))
-    MortalityRates = np.zeros((I, S, T+S))
-    Migrants = np.zeros((I, S, T+S))
-    g_N = np.zeros(T+S)
-    lbar = np.zeros(T+S)
+    N = np.zeros((I, S, T))
+    Nhat = np.zeros((I, S, T))
+    all_FertilityRates = np.zeros((I, S, f_range+T))
+    FertilityRates = np.zeros((I, S, T))
+    MortalityRates = np.zeros((I, S, T))
+    Migrants = np.zeros((I, S, T))
+    g_N = np.zeros(T)
+    lbar = np.zeros(T)
     
     #Gathers demographic data from the csv files for each I countries in countrynames
     for i in range(I):
@@ -157,19 +157,23 @@ def get_demog_data(params, levers, I_all, I_touse):
         
         if PrintLoc: print "Got demographics for", I_all[index]
 
+        if ADJUSTKOREAIMMIGRATION and I_all[index] == "korea":
+
+            Migrants[index,:]/= 100
+
     #Gets initial population share
     Nhat[:,:,0] = N[:,:,0]/np.sum(N[:,:,0])
 
     #The last generation dies with probability 1
-    MortalityRates[:,-1,:] = np.ones((I, T+S))
+    MortalityRates[:,-1,:] = np.ones((I, T))
 
     #Gets steady-state values for all countries by taking the mean at year T_1-1 across countries
     f_bar = np.mean(all_FertilityRates[:,:,f_range+T_1-1], axis=0)
     rho_bar = np.mean(MortalityRates[:,:,T_1-1], axis=0)
 
     #Set to the steady state for every year beyond year T_1
-    all_FertilityRates[:,:,f_range+T_1:] = np.tile(np.expand_dims(f_bar, axis=2), (I,1,T-T_1+S))
-    MortalityRates[:,:,T_1:] = np.tile(np.expand_dims(rho_bar, axis=2), (I,1,T-T_1+S))
+    all_FertilityRates[:,:,f_range+T_1:] = np.tile(np.expand_dims(f_bar, axis=2), (I,1,T-T_1))
+    MortalityRates[:,:,T_1:] = np.tile(np.expand_dims(rho_bar, axis=2), (I,1,T-T_1))
 
     #FertilityRates is exactly like all_FertilityRates except it begins at time t=0 rather than time t=-f_range
     FertilityRates[:,FirstFertilityAge:LastFertilityAge+1,:] = all_FertilityRates[:,FirstFertilityAge:LastFertilityAge+1,f_range:]
@@ -179,7 +183,7 @@ def get_demog_data(params, levers, I_all, I_touse):
 
     return N, Nhat, FertilityRates, MortalityRates, Migrants, g_N, lbar
 
-def getDemographics(params, levers, I_all, I_touse):
+def getDemographics(params, levers, I_all, I_touse, ADJUSTKOREAIMMIGRATION):
     """
     Description:
         -Imports and stores data from csv files for initial populations, fertility rates, mortality rates, and net migrants. 
@@ -241,14 +245,14 @@ def getDemographics(params, levers, I_all, I_touse):
 
     data_params = (I, S, T, T_1, LeaveHouseAge, FirstFertilityAge, LastFertilityAge, FirstDyingAge, MaxImmigrantAge, agestopull)
     data_levers = PrintLoc, UseStaggeredAges, DiffDemog
-    N, Nhat, FertilityRates, MortalityRates, Migrants, g_N, lbar = get_demog_data(data_params, data_levers, I_all, I_touse)
+    N, Nhat, FertilityRates, MortalityRates, Migrants, g_N, lbar = get_demog_data(data_params, data_levers, I_all, I_touse, ADJUSTKOREAIMMIGRATION)
 
-    ImmigrationRates = np.zeros((I, S, T+S))
+    ImmigrationRates = np.zeros((I, S, T))
     #QUESTION HOW TO INTERPRET N_temp???
     N_temp = np.ones((I, S))/(I*S)
 
     #Calculates population numbers for each country
-    for t in range(1,T+S):
+    for t in range(1,T):
         #Gets the total number of children and and percentage of children and stores them in generation 0 of their respective matrices
         #See equation 2.1
         N[:,0,t] = np.sum((N[:,:,t-1]*FertilityRates[:,:,t-1]), axis=1)
@@ -292,7 +296,7 @@ def getDemographics(params, levers, I_all, I_touse):
 
     if Graphs:
         for i in range(I):
-            plt.plot(range(T+S), np.sum(Nhat[i,:,:T+S], axis=0))
+            plt.plot(range(T), np.sum(Nhat[i,:,:T], axis=0))
         plt.legend(I_touse)
         plt.title("Total Population Shares Transition Path")
         plt.xlabel('Years')
@@ -333,13 +337,13 @@ def getDemographics(params, levers, I_all, I_touse):
     
     #Gets labor endowment per household. For now it grows at a constant rate g_A
     lbar[:T] = np.cumsum(np.ones(T)*g_A)
-    lbar[T:] = np.ones(S)
+    lbar[T-S:] = np.ones(S)
 
 
     if CheckerMode==False:
         print "\nDemographics obtained!"
 
-    return MortalityRates, Nhat[:,:,:T+S], Nhat_ss
+    return MortalityRates, Nhat[:,:,:T], Nhat_ss
 
 def plotDemographics(params, indexes, years, Nhat, countrynames):
     """
@@ -935,24 +939,37 @@ def get_initialguesses(params, assets_ss, kf_ss, w_ss, r_ss, PrintLoc):
     w_init = get_w(alpha, Y_init, n_init)
 
     #Initializes the initial guess for prices
-    wpath_guess = np.zeros((I, T+S))
-    rpath_guess = np.zeros((T+S))
+    wpath_guess = np.zeros((I, T))
+    rpath_guess = np.zeros((T))
 
     #Gets initial guess for rental rate path. This is set up to be parabolic.
     cc = r_init
-    bb = -2 * (r_init-r_ss)/(T-1)
-    aa = -bb / (2*(T-1))
-    rpath_guess[:T] = aa * np.arange(0,T)**2 + bb*np.arange(0,T) + cc
-    rpath_guess[T:] = r_ss
+    bb = -2 * (r_init-r_ss)/(T-S-1)
+    aa = -bb / (2*(T-S-1))
+    rpath_guess[:T-S] = aa * np.arange(0,T-S)**2 + bb*np.arange(0,T-S) + cc
+    """
+    rpath_guess[:T-S] = np.array([0.71478844,  0.64002819,  0.59426796,  0.56472265,  0.54495788,  0.53192275,  0.52450368,\
+                                  0.5179574,   0.51274531,  0.50871851,  0.50447231,  0.49995494,  0.49633367,  0.49459149,\
+                                  0.49850222,  0.50427543,  0.51247218,  0.52111765,  0.52587392,  0.51859613,  0.46863391,\
+                                  0.47859965,  0.4874162,   0.49575407,  0.50320705,  0.50863949,  0.50957934,  0.4978336,\
+                                  0.49161017,  0.49136887,  0.49538024,  0.5001406,   0.50487951,  0.50750681,  0.5041324,\
+                                  0.49951,     0.49625146,  0.49530012,  0.49569111,  0.49794382,  0.50052927,  0.50281578,\
+                                  0.50244582,  0.50050301,  0.49854235,  0.4973308,   0.49733431,  0.49840319,  0.50004724,
+                                  0.50110635,  0.49923804,  0.49963461,  0.50080544,  0.50201592,  0.50251829,  0.50219168,\
+                                  0.50133411,  0.50042015,  0.49990343,  0.50003811,  0.500709,    0.50148499,  0.50193644,\
+                                  0.50187234,  0.50138822,  0.50077331,  0.50035979,  0.50035065,  0.50071056,  0.50120764])
+    """
+    rpath_guess[T-S:] = r_ss
 
     #Gets initial guess for wage rate path. This is set up to be parabolic.
     cc = w_init
-    bb = -2 * (w_init-w_ss)/(T-1)
-    aa = -bb / (2*(T-1))
-    wpath_guess[:,:T] = np.einsum("i,it->it", aa, np.tile(np.arange(0,T), (I,1))**2)\
-                      + np.einsum("i,it->it", bb, np.tile(np.arange(0,T), (I,1)))\
-                      + np.einsum("i,it->it", cc, np.ones((I,T)))
-    wpath_guess[:,T:] = np.einsum("i,it->it", w_ss, np.ones((I,S)))
+    bb = -2 * (w_init-w_ss)/(T-S-1)
+    aa = -bb / (2*(T-S-1))
+    wpath_guess[:,:T-S] = np.einsum("i,it->it", aa, np.tile(np.arange(0,T-S), (I,1))**2)\
+                      + np.einsum("i,it->it", bb, np.tile(np.arange(0,T-S), (I,1)))\
+                      + np.einsum("i,it->it", cc, np.ones((I,T-S)))
+    wpath_guess[:,T-S:] = np.einsum("i,it->it", w_ss, np.ones((I,S)))
+
 
     return assets_init, wpath_guess, rpath_guess
 
@@ -995,8 +1012,8 @@ def get_foreignK_path(params, Kpath, rpath, kf_ss, PrintLoc):
     n = get_n((e, Nhat))
 
     #Initializes kfpath and kdpath matrices
-    kfPath = np.zeros((I,T+S))
-    kdPath = np.zeros((I,T+S))
+    kfPath = np.zeros((I,T))
+    kdPath = np.zeros((I,T))
 
     #Gets the domestic-owned capital stock for each country except for the first country based on equations 2.16 and 2.17
     kdPath[1:,:] = (rpath/alpha)**(1/(alpha-1))*np.einsum("i,is->is", A[1:], n[1:,:])
@@ -1009,7 +1026,7 @@ def get_foreignK_path(params, Kpath, rpath, kf_ss, PrintLoc):
     kfPath[0,:] = -np.sum(kfPath[1:,:],axis=0)
 
     #Making every year beyond t equal to the steady-state
-    kfPath[:,T:] = np.einsum("i,s->is", kf_ss, np.ones(S))
+    kfPath[:,T-S:] = np.einsum("i,s->is", kf_ss, np.ones(S))
         
     return kfPath
 
@@ -1187,10 +1204,10 @@ def get_household_timepaths(params, wpath, rpath, starting_assets, PrintLoc, Pri
     I, S, T, T_1, beta, sigma, delta, rho, chi, e, FirstFertilityAge, FirstDyingAge, Nhat, MortalityRates, g_A = params
 
     #Initializes timepath variables
-    c_timepath = np.zeros((I, S, S+T))
-    a_timepath = np.zeros((I, S+1, S+T))
+    c_timepath = np.zeros((I, S, T))
+    a_timepath = np.zeros((I, S+1, T))
     a_timepath[:,:,0] = starting_assets
-    bq_timepath = np.zeros((I, S, S+T))
+    bq_timepath = np.zeros((I, S, T))
 
     denom_params = (chi, rho)
     denom_path=get_denom(denom_params,wpath,e)
@@ -1215,7 +1232,7 @@ def get_household_timepaths(params, wpath, rpath, starting_assets, PrintLoc, Pri
         print np.round(np.transpose(bq_timepath[0,:,:2]), decimals=3)
 
     #Loops through each diagonal for S+T periods 
-    for j in range(1,S+T):
+    for j in range(1,T):
 
         if j < S:
             if PrintLoc and j==1: print "Getting upper triangle entries"
@@ -1372,8 +1389,8 @@ def get_wpathnew_rpathnew(params, wpath, rpath, starting_assets, kd_ss, kf_ss, P
     Cpath=np.sum(c_timepath, axis=1)
 
     #After time period T, the total capital stock and total consumption is forced to be the steady state
-    Kpath[:,T:] = np.einsum("i,t->it", kd_ss+kf_ss, np.ones(S))
-    Cpath[:,T:] = np.einsum("i,t->it", Cpath[:,T-1], np.ones(S))
+    Kpath[:,T-S:] = np.einsum("i,t->it", kd_ss+kf_ss, np.ones(S))
+    Cpath[:,T-S:] = np.einsum("i,t->it", Cpath[:,T-S-1], np.ones(S))
 
     #Gets the foriegned owned capital
     kf_params = (I, S, T, alpha, e, A, Nhat)
@@ -1402,7 +1419,7 @@ def get_wpathnew_rpathnew(params, wpath, rpath, starting_assets, kd_ss, kf_ss, P
     Feasible = check_feasible(kdpath, Ypath, wpath, rpath, c_timepath, CheckerMode)
 
     if PrintLoc: print "Leaving get_wpathnew_rpathnew"
-    return wpath_new, rpath_new, Cpath, Kpath, Ypath, num_Taped
+    return wpath_new, rpath_new, Cpath, Kpath, Ypath, num_Taped, kfpath
 
 def get_Timepath(params, wstart, rstart, starting_assets, kd_ss, kf_ss, PrintLoc, Print_cabqTimepaths, UseTape):
     """
@@ -1484,7 +1501,7 @@ def get_Timepath(params, wstart, rstart, starting_assets, kd_ss, kf_ss, PrintLoc
     while distance>tpi_tol and Iter<MaxIters:
 
         #Gets new iterations of the w, r, C, K, and Y timepaths
-        wpath_new, rpath_new, Cpath, Kpath, Ypath, num_Taped = \
+        wpath_new, rpath_new, Cpath, Kpath, Ypath, num_Taped, kfpath = \
         get_wpathnew_rpathnew(wr_params, w_old, r_old, starting_assets, kd_ss, kf_ss, PrintLoc, Print_cabqTimepaths, UseTape)
 
 
@@ -1509,7 +1526,7 @@ def get_Timepath(params, wstart, rstart, starting_assets, kd_ss, kf_ss, PrintLoc
                 distance=max([dist_w,dist_r])
 
                 if CheckerMode == False:
-                    print "Iteration:",Iter,", Norm Distance: ", distance
+                    print "Iteration:",Iter,", Norm Distance: ", distance, "w Distance", dist_w, "r Distance", dist_r
 
             #If there was an error in getting the norms (probably because of nan values in the timepaths)
             except:
@@ -1531,14 +1548,15 @@ def get_Timepath(params, wstart, rstart, starting_assets, kd_ss, kf_ss, PrintLoc
                     print "\nDoesn't converge within the maximum number of iterations", "\nProviding the last iteration"
                 if CheckerMode == True:
                     print "\nDidn't finish"
+                return wpath_new, rpath_new, Cpath, Kpath, Ypath
 
             #We take a convex combination of our new and old timepaths to get our new guess
             w_old=w_old*xi+(1-xi)*wpath_new
             r_old=r_old*xi+(1-xi)*rpath_new
 
-    return wend, rend, Cpath, Kpath, Ypath
+    return wend, rend, Cpath, Kpath, Ypath, kfpath
 
-def plotTimepaths(I, S, T, sig, wpath, rpath, Cpath, Kpath, Ypath, I_touse, save, show, RobustMode):
+def plotTimepaths(I, S, T, sig, wpath, rpath, Cpath, Kpath, Ypath, kfpath, I_touse, save, show, RobustMode):
     """
     Description:
         -Plots the timepaths for w, r, C, K, and Y
@@ -1596,7 +1614,7 @@ def plotTimepaths(I, S, T, sig, wpath, rpath, Cpath, Kpath, Ypath, I_touse, save
 
         #Aggregate Consumption
         for i in xrange(I):
-            plt.plot(np.arange(0,S+T),Cpath[i,:],label=I_touse[i])
+            plt.plot(np.arange(0,T),Cpath[i,:T],label=I_touse[i])
         plt.title("Time Path for Aggregate Consumption")
         plt.ylabel("Consumption Level")
         plt.xlabel("Time Period")
@@ -1634,6 +1652,17 @@ def plotTimepaths(I, S, T, sig, wpath, rpath, Cpath, Kpath, Ypath, I_touse, save
             name= "aoutput_"+str(I)+"_"+str(S)+"_"+str(sig)+".png"
             plt.savefig(name)
             plt.cla()
+
+
+
+        #kf
+        for i in xrange(I):
+            plt.plot(np.arange(0,T),kfpath[i,:T],label=I_touse[i])
+        plt.title("Time path for Output")
+        plt.ylabel("kf level")
+        plt.xlabel("Time Period")
+        plt.legend(loc="upper right")
+        if show: plt.show()
 
     else:
 
