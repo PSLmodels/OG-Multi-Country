@@ -295,45 +295,9 @@ def getDemographics(params, levers, I_all, I_touse, ADJUSTKOREAIMMIGRATION):
     Nhat_ss = Nhat[:,:,-1]
 
     if Graphs:
-        for i in range(I):
-            plt.plot(range(T), np.sum(Nhat[i,:,:T], axis=0))
-        plt.legend(I_touse)
-        plt.title("Total Population Shares Transition Path")
-        plt.xlabel('Years')
-        plt.ylabel('Population Shares')
-        plt.show()
-        plt.clf()
-
-        for i in range(I):
-            plt.plot(range(MaxImmigrantAge), Migrants[i,:MaxImmigrantAge,0])
-        plt.legend(I_touse)
-        plt.title("Net Migration")
-        plt.show()
-        plt.clf()
-
-        for i in range(I):
-            plt.plot(range(MaxImmigrantAge), ImmigrationRates[i,:MaxImmigrantAge,0])
-        plt.legend(I_touse)
-        plt.title("Immigration Rates")
-        plt.show()
-        plt.clf()
-
-        for i in range(I):
-            plt.plot(range(FirstFertilityAge,LastFertilityAge+1), FertilityRates[i,FirstFertilityAge:LastFertilityAge+1,0])
-        plt.legend(I_touse)
-        plt.title("Fertility Rates")
-        plt.show()
-        plt.clf()
-
-    	
-        for i in range(I):
-            plt.plot(range(FirstDyingAge, S), MortalityRates[i,FirstDyingAge:,0])
-        plt.legend(I_touse)
-        plt.title("Mortality Rates")
-        plt.show()
-        plt.clf()
-
-        plotDemographics((S,T), range(I), [0], Nhat, I_touse)
+        ages = FirstFertilityAge, LastFertilityAge, FirstDyingAge, MaxImmigrantAge
+        datasets = FertilityRates, MortalityRates, ImmigrationRates, Nhat
+        plotDemographics(ages, datasets, I, S, T, I_touse, T_touse="default", compare_across="T")
     
     #Gets labor endowment per household. For now it grows at a constant rate g_A
     lbar[:T] = np.cumsum(np.ones(T)*g_A)
@@ -345,57 +309,138 @@ def getDemographics(params, levers, I_all, I_touse, ADJUSTKOREAIMMIGRATION):
 
     return MortalityRates, Nhat[:,:,:T], Nhat_ss
 
-def plotDemographics(params, indexes, years, Nhat, countrynames):
-    """
-    Description:
-        -Plots the population distribution of a given country for any number of specified years
+def plotDemographics(ages, datasets, I, S, T, I_touse, T_touse = None, compare_across = "T"):
 
-    Inputs:
-        params       = Tuple, Contains parameters S, T
-        S            = Int in [10,80], Number of cohorts
-        T            = Int >0, Number of years away from time t=0 until we reach the steady-state
-        indexes      = List, Contains all indexes of countries to plot. Typically either range(I) or a single-item list (like [0])
-        years        = List, Contains all indexes of years to plot. Typically either range(T+S) or a list like [0,20,100]
-        Nhat         = [I,S,T+S+?] Matrix, Contains the population share, 
-                                           including the years until it converges to the steady-state
-        countrynames = len(I) List, Contains the names of each country to be plotted. Used only for the plot legend
+    FirstFertilityAge, LastFertilityAge, FirstDyingAge, MaxImmigrantAge = ages
+    FertilityRates, MortalityRates, ImmigrationRates, Nhat = datasets
 
-    Functions called:
-        -None
+    if T_touse is None or T_touse == "default":
+        T_touse = [0, S//4, S//2, S, T]
 
-    Objects in Function:
-        -None
-
-    Returns: None
-    """
-
-    S, T = params
-
-    #If we want to plot total population across years...
-    if len(years) == 0:
-        for i in indexes:
-            plt.plot(range(S), np.sum(Nhat[i,:,:], axis=0))
-        plt.legend(countrynames)
-    #If we want to compare years rather than countries...
-    else:
+    def firstPlot():
+        plt.subplot(231)
+        for i in range(I):
+            plt.plot(range(FirstDyingAge, S-1), MortalityRates[i,FirstDyingAge:-1,0])
+        plt.title("Mortality Rates", fontsize=14)
         plt.xlabel('Age')
-        for yeartograph in years:
-            for i in indexes:
-            #Checks to make sure we haven't requested to plot a year past the max year
-                if yeartograph <= Nhat.shape[2]:
-                    plt.plot(range(S), Nhat[i,:,yeartograph])
-                else:
-                    print "\nERROR: WE HAVE ONLY SIMULATED UP TO THE YEAR", T
-                    time.sleep(15)
-        if len(years) == 1:
-            plt.legend(countrynames)
-        else:
-            plt.legend(years)
+        plt.ylabel('Mortality Rate')
+
+
+        plt.subplot(232)
+        for i in range(I):
+            plt.plot(range(FirstFertilityAge,LastFertilityAge+1), FertilityRates[i,FirstFertilityAge:LastFertilityAge+1,0])
+        plt.legend(I_touse, prop={'size':11}, loc="upper right")
+        plt.title("Fertility Rates", fontsize=14)
+        plt.xlabel('Age')
+        plt.ylabel('Fertility Rate')
+
+
+        plt.subplot(233)
+        for i in range(I):
+            plt.plot(range(MaxImmigrantAge), ImmigrationRates[i,:MaxImmigrantAge,0])
+        plt.title("Immigration Rates", fontsize=14)
+        plt.xlabel('Age')
+        plt.ylabel('Immigration Rate')
+
+
+        plt.subplot(234)
+        for i in range(I):
+            plt.plot(range(S), Nhat[i,:,0])
+        plt.xlabel('Age')
+        plt.ylabel('Population Share')
+        plt.title("Initial Population Shares", fontsize=14)
+
+
+        plt.subplot(235)
+        for i in range(I):
+            plt.plot(range(S), Nhat[i,:,-1])
+        plt.xlabel('Age')
+        plt.ylabel('Population Share')
+        plt.title("Steady State Population Shares", fontsize=14)
+
+
+        plt.subplot(236)           
+        for i in range(I):
+            plt.plot(range(T), np.sum(Nhat[i,:,:T], axis=0))
+        plt.title("Total Pop Shares Transition Path", fontsize=14)
+        plt.xlabel('Year')
+        plt.ylabel('Total Population Share')
+
+
+        plt.tight_layout()
+        figManager = plt.get_current_fig_manager()
+        figManager.window.showMaximized()
+        plt.show()
+
+    def secondPlot():
+
+        subplotdim_dict = {2: (122, False), 3:(222, False), 4:(222, False), 5:(232, True), 6:(232, True), 7:(242, True), 8:(242, True)}
+
+        if compare_across == "T":
+
+            if len(T_touse) == 1:
+                for i in range(I):
+                    plt.plot(range(S), Nhat[i,:,T_touse[0]])
+                if T_touse[0] < 0:
+                    T_touse[0] += T+1
+                plt.title("Time t =" + str(T_touse[0]), fontsize=14)
+                plt.xlabel('Age')
+                plt.ylabel('Population Share')
+                plt.legend(I_touse, loc="upper right")
+                full_screen = False
+
+            else:
+
+                if len(T_touse) > 8: raise ValueError("Too many years to plot")
+                magic_int = subplotdim_dict[len(T_touse)][0]
+                full_screen = subplotdim_dict[len(T_touse)][1]
+
+                plt.subplot(magic_int-1)
+                for i in range(I): plt.plot(0,0)
+                plt.legend(I_touse, loc="center")
+                plt.gca().axes.get_xaxis().set_visible(False)
+                plt.gca().axes.get_yaxis().set_visible(False)
+
+                for count, t in enumerate(T_touse):
+
+                    plt.subplot(magic_int+count)
+                    for i in range(I):
+                        plt.plot(range(S), Nhat[i,:,t])
+                        if t < 0:
+                            t += T+1
+                        plt.title("Time t =" + str(t), fontsize=14)
+                        plt.xlabel('Age')
+                        plt.ylabel('Population Share')
+
+        elif compare_across == "I":
+            magic_int = subplotdim_dict[I][0]
+            full_screen = subplotdim_dict[I][1]
+
+            plt.subplot(magic_int-1)
+            for i in range(I): plt.plot(0,0)
+            legend = ["t = " + str(T_touse[index]) if t >= 0 else "t = " + str(T+1+T_touse[index]) for index, t in enumerate(T_touse)]
+            plt.legend(legend, loc="center")
+            plt.gca().axes.get_xaxis().set_visible(False)
+            plt.gca().axes.get_yaxis().set_visible(False)
+
+            for i in range(I):
+                plt.subplot(magic_int+i)
+
+                for t in T_touse:
+                    plt.plot(range(S), Nhat[i,:,t])
+                    plt.title(I_touse[i], fontsize=14)
+                    plt.xlabel('Age')
+                    plt.ylabel('Population Share')
         
-    plt.ylabel('Population Share')
-    plt.title("Population Distribution")
-    plt.show()
-    plt.clf()
+        else: raise TypeError(compare_across + " is not a valid name for 'compare_across'")
+
+        plt.tight_layout()
+        if full_screen: plt.get_current_fig_manager().window.showMaximized()
+        plt.show()
+
+
+    firstPlot()
+    secondPlot()
 
 #STEADY STATE FUNCTIONS
 
