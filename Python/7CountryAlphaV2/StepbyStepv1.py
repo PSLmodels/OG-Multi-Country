@@ -334,12 +334,13 @@ def getDemographics(params, levers, I_all, I_touse):
     #Gets labor endowment per household. For now it grows at a constant rate g_A
     lbar[:T] = np.cumsum(np.ones(T)*g_A)
     lbar[T:] = np.ones(S)
+    print lbar
 
 
     if CheckerMode==False:
         print "\nDemographics obtained!"
 
-    return MortalityRates, Nhat[:,:,:T+S], Nhat_ss
+    return MortalityRates, Nhat[:,:,:T+S], Nhat_ss, lbar
 
 def plotDemographics(params, indexes, years, Nhat, countrynames):
     """
@@ -419,7 +420,49 @@ def get_kd(assets, kf, Nhat):
 
     return kd
 
-def get_n(params):
+def get_n(params,lbar,lhat):
+    """
+    Description: 
+        -Calculates the total labor supply for each country
+        -Corresponds equation 2.13
+
+    Inputs:
+        e    = [I,S] or [I,S,T+S] Matrix, Labor productivities
+        Nhat = [I,S] or [I,S,T+S] Matrix, Population share for a given year
+
+    Functions called:
+        -None
+
+    Objects in Function:
+        n = [I,] or [I,T+S] Matrix, Total labor supply
+	
+    Returns: n
+    """
+    e, Nhat = params
+
+    #print "lbar matrix",lbar
+    #print "lhat matrix",lhat
+
+    lbar2=np.copy(lbar)
+
+    lbar2[:]=1
+
+
+    lbar2D=np.column_stack((lbar2,lbar2))
+
+    n = np.einsum("ist,it->it",e*Nhat,(np.transpose(lbar2D)-lhat))
+
+    #print "small n matrix", n
+
+    #n = np.sum(e*Nhat, axis=1)
+    #print n.shape
+    #lhat=getl()
+    #eist(lbar-lhat)Nhat
+
+    return n
+
+
+def get_nss(params):
     """
     Description: 
         -Calculates the total labor supply for each country
@@ -440,8 +483,12 @@ def get_n(params):
 
     e, Nhat = params
     n = np.sum(e*Nhat, axis=1)
+    #print n.shape
+    #lhat=getl()
+    #eist(lbar-lhat)Nhat
 
     return n
+
 
 def get_Y(params, kd, n):
     """
@@ -591,7 +638,13 @@ def get_lhat(params,c,w,e):
 
     chi, rho = params
 
-    lhat=chat*(chi/(np.einsum("it,st->ist",w,e)))**rho
+    #print c.shape
+    #print w.shape
+    #print e.shape
+
+    lhat=c*(chi/(np.einsum("it,ist->it",w,e)))**rho
+
+    return lhat
 
 def get_cvecss(params, denom, w, r, assets):
     """
@@ -665,7 +718,7 @@ def check_feasible(kd, Y, w, r, c, CheckerMode):
 
     return Feasible
 
-def SteadyStateSolution(guess, I, S, beta, sigma, delta, alpha, chi, rho, e_ss, A, FirstFertilityAge, FirstDyingAge, Nhat_ss, Mortality_ss, g_A, PrintEulErrors, CheckerMode):
+def SteadyStateSolution(guess, I, S, beta, sigma, delta, alpha, chi, rho, e_ss, A, FirstFertilityAge, FirstDyingAge, Nhat_ss, Mortality_ss, g_A, lbar, PrintEulErrors, CheckerMode):
     """
     Description: 
         -This is the function that will be optimized by fsolve to find the steady state
@@ -728,7 +781,7 @@ def SteadyStateSolution(guess, I, S, beta, sigma, delta, alpha, chi, rho, e_ss, 
     #Getting the other variables
     kd = get_kd(assets, kf, Nhat_ss)
     nparams = (e_ss, Nhat_ss)
-    n = get_n(nparams)
+    n = get_nss(nparams)
     Yparams = (alpha, A)
     Y = get_Y(Yparams, kd, n)
     r = get_r(alpha, Y, kd)
@@ -820,7 +873,7 @@ def getSteadyState(params, assets_init, kf_init):
 
     Returns: assets_ss, kf_ss, kd_ss, n_ss, Y_ss, r_ss, w_ss, c_vec_ss
     """
-    I, S, beta, sigma, delta, alpha, chi, rho, e_ss, A, FirstFertilityAge, FirstDyingAge, Nhat_ss, Mortality_ss, g_A, PrintEulErrors, CheckerMode = params
+    I, S, beta, sigma, delta, alpha, chi, rho, e_ss, A, FirstFertilityAge, FirstDyingAge, Nhat_ss, Mortality_ss, g_A, lbar, PrintEulErrors, CheckerMode = params
 
     #Merges the assets and kf together into one matrix that can be inputted into the fsolve function
     guess = np.column_stack((assets_init, kf_init))
@@ -838,7 +891,7 @@ def getSteadyState(params, assets_init, kf_init):
     #Gets the other steady-state values using assets and kf
     kd_ss = get_kd(assets_ss, kf_ss, Nhat_ss)
     nparams = (e_ss, Nhat_ss)
-    n_ss = get_n(nparams)
+    n_ss = get_nss(nparams)
     Yparams = (alpha, A)
     Y_ss = get_Y(Yparams, kd_ss, n_ss)
     #Because of the euler conditions in the fsolve, r_ss will be the same regardless of which country we use to calculate it
@@ -928,7 +981,7 @@ def get_initialguesses(params, assets_ss, kf_ss, w_ss, r_ss, PrintLoc):
     #Gets initial kd, n, y, r, w, and K
     kd_init = get_kd(assets_init, kf_init, Nhat_init)
     nparams = e_init, Nhat_init
-    n_init = get_n(nparams)
+    n_init = get_nss(nparams)
     Yparams = (alpha, A)
     Y_init = get_Y(Yparams, kd_init, n_init)
     r_init = get_r(alpha, Y_init[0], kd_init[0])
@@ -992,7 +1045,7 @@ def get_foreignK_path(params, Kpath, rpath, kf_ss, PrintLoc):
     I, S, T, alpha, e, A, Nhat = params
 
     #Sums the labor productivities across cohorts to get labor supply
-    n = get_n((e, Nhat))
+    n = get_nss((e, Nhat)) #FIX THIS
 
     #Initializes kfpath and kdpath matrices
     kfPath = np.zeros((I,T+S))
@@ -1359,17 +1412,23 @@ def get_wpathnew_rpathnew(params, wpath, rpath, starting_assets, kd_ss, kf_ss, P
     if PrintLoc: print "Entering get_wpathnew_rpathnew"
 
     #Unpacks parameters
-    I, S, T, T_1, beta, sigma, delta, alpha, rho, chi, e, A, FirstFertilityAge, FirstDyingAge, Nhat, MortalityRates, g_A, CheckerMode = params
+    I, S, T, T_1, beta, sigma, delta, alpha, rho, chi, e, A, FirstFertilityAge, FirstDyingAge, Nhat, MortalityRates, g_A, lbar, CheckerMode = params
 
     #Calulates consumption timepath and assets timepath
     ca_params = (I, S, T, T_1, beta, sigma, delta, rho, chi, e, FirstFertilityAge, FirstDyingAge, Nhat, MortalityRates, g_A)
     c_timepath, a_timepath = get_household_timepaths(ca_params, wpath, rpath, starting_assets, PrintLoc, Print_cabqTimepaths)
+
 
     #Calculates the total amount of capital in each country
     Kpath=np.sum(a_timepath[:,:-1,:]*Nhat, axis=1)
 
     #Calculates Aggregate Consumption
     Cpath=np.sum(c_timepath, axis=1)
+
+    #Calculates the lhat for each country
+    lhatparams = (chi, rho)
+    lhat=get_lhat(lhatparams, Cpath,wpath,e)
+
 
     #After time period T, the total capital stock and total consumption is forced to be the steady state
     Kpath[:,T:] = np.einsum("i,t->it", kd_ss+kf_ss, np.ones(S))
@@ -1392,7 +1451,7 @@ def get_wpathnew_rpathnew(params, wpath, rpath, starting_assets, kd_ss, kf_ss, P
 
     #Gets other timepaths needed to get the new w and r paths
     nparams = (e, Nhat)
-    npath = get_n(nparams)
+    npath = get_n(nparams,lbar,lhat)
     Yparams = (alpha, A)
     Ypath = get_Y(Yparams, kdpath_with_tape, npath)
     rpath_new = get_r(alpha, Ypath[0], kdpath_with_tape[0])
@@ -1464,7 +1523,7 @@ def get_Timepath(params, wstart, rstart, starting_assets, kd_ss, kf_ss, PrintLoc
     Returns: wend, rend, Cpath, Kpath, Ypath
     """
     #Unpacks parameters
-    I, S, T, T_1, beta, sigma, delta, alpha, rho, chi, e, A, FirstFertilityAge, FirstDyingAge, Nhat, MortalityRates, g_A, tpi_tol, xi, MaxIters, CheckerMode = params
+    I, S, T, T_1, beta, sigma, delta, alpha, rho, chi, e, A, FirstFertilityAge, FirstDyingAge, Nhat, MortalityRates, g_A, lbar, tpi_tol, xi, MaxIters, CheckerMode = params
 
     #Serves as the iteration counter
     Iter = 1
@@ -1473,7 +1532,7 @@ def get_Timepath(params, wstart, rstart, starting_assets, kd_ss, kf_ss, PrintLoc
     distance = 10
 
     #Gets the parameters needed in getting a new iteration of the timepath
-    wr_params = (I, S, T, T_1, beta, sigma, delta, alpha, rho, chi, e, A, FirstFertilityAge, FirstDyingAge, Nhat, MortalityRates, g_A, CheckerMode)
+    wr_params = (I, S, T, T_1, beta, sigma, delta, alpha, rho, chi, e, A, FirstFertilityAge, FirstDyingAge, Nhat, MortalityRates, g_A, lbar, CheckerMode)
 
     #Sets the initial values of TPI
     w_old = wstart
