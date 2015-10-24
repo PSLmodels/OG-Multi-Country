@@ -307,7 +307,7 @@ def getDemographics(params, levers, I_all, I_touse, ADJUSTKOREAIMMIGRATION):
     if CheckerMode==False:
         print "\nDemographics obtained!"
 
-    return MortalityRates, Nhat[:,:,:T], Nhat_ss
+    return MortalityRates, Nhat[:,:,:T], Nhat_ss, lbar
 
 def plotDemographics(ages, datasets, I, S, T, I_touse, T_touse = None, compare_across = "T"):
 
@@ -342,7 +342,6 @@ def plotDemographics(ages, datasets, I, S, T, I_touse, T_touse = None, compare_a
         plt.xlabel('Age')
         plt.ylabel('Immigration Rate')
 
-
         plt.subplot(234)
         for i in range(I):
             plt.plot(range(S), Nhat[i,:,0])
@@ -350,14 +349,12 @@ def plotDemographics(ages, datasets, I, S, T, I_touse, T_touse = None, compare_a
         plt.ylabel('Population Share')
         plt.title("Initial Population Shares", fontsize=14)
 
-
         plt.subplot(235)
         for i in range(I):
             plt.plot(range(S), Nhat[i,:,-1])
         plt.xlabel('Age')
         plt.ylabel('Population Share')
         plt.title("Steady State Population Shares", fontsize=14)
-
 
         plt.subplot(236)           
         for i in range(I):
@@ -438,7 +435,6 @@ def plotDemographics(ages, datasets, I, S, T, I_touse, T_touse = None, compare_a
         if full_screen: plt.get_current_fig_manager().window.showMaximized()
         plt.show()
 
-
     firstPlot()
     secondPlot()
 
@@ -468,7 +464,7 @@ def get_kd(assets, kf, Nhat):
 
     return kd
 
-def get_n(params):
+def get_n(params, lhat):
     """
     Description: 
         -Calculates the total labor supply for each country
@@ -486,9 +482,13 @@ def get_n(params):
 	
     Returns: n
     """
+    e, Nhat, lbar = params
 
-    e, Nhat = params
-    n = np.sum(e*Nhat, axis=1)
+    if Nhat.shape == 3:
+        I, S, T = Nhat.shape
+        lhat = np.einsum('t,is->ist', lhat, np.ones((I,S)))
+
+    n = np.sum(e*(lbar - lhat)*Nhat, axis=1)
 
     return n
 
@@ -570,9 +570,9 @@ def get_w(alpha, Y, n):
     w = (1-alpha) * Y / n
     return w
 
-def get_denom(params,w,e):
+def get_Psi(params, w, e):
 
-    chi, rho = params
+    chi, rho, sigma = params
 
     if e.ndim == 2:
         denom=np.einsum("i,is->is",w,e)
@@ -581,12 +581,6 @@ def get_denom(params,w,e):
     elif e.ndim == 3:
         denom = np.einsum("it,ist->ist",w,e)
         denom = (chi/denom)**rho
-    
-    return denom
-
-def get_Psi(params, denom):
-
-    chi, rho, sigma = params
 
     psi=(1+chi*denom)**((1-rho*(sigma))/rho)
 
@@ -640,7 +634,12 @@ def get_lhat(params,c,w,e):
 
     chi, rho = params
 
-    lhat=chat*(chi/(np.einsum("it,st->ist",w,e)))**rho
+    if e.ndim == 2:
+        lhat=c*(chi/(np.einsum("i,is->is",w,e)))**rho
+    elif e.ndim == 3:
+        lhat=c*(chi/(np.einsum("it,ist->ist",w,e)))**rho
+
+    return lhat
 
 def get_cvecss(params, denom, w, r, assets):
     """
@@ -714,7 +713,7 @@ def check_feasible(kd, Y, w, r, c, CheckerMode):
 
     return Feasible
 
-def SteadyStateSolution(guess, I, S, beta, sigma, delta, alpha, chi, rho, e_ss, A, FirstFertilityAge, FirstDyingAge, Nhat_ss, Mortality_ss, g_A, PrintEulErrors, CheckerMode):
+def SteadyStateSolution(guess, I, S, beta, sigma, delta, alpha, chi, rho, e_ss, A, FirstFertilityAge, FirstDyingAge, Nhat_ss, Mortality_ss, g_A, lbar, PrintEulErrors, CheckerMode):
     """
     Description: 
         -This is the function that will be optimized by fsolve to find the steady state
@@ -777,7 +776,7 @@ def SteadyStateSolution(guess, I, S, beta, sigma, delta, alpha, chi, rho, e_ss, 
     #Getting the other variables
     kd = get_kd(assets, kf, Nhat_ss)
     nparams = (e_ss, Nhat_ss)
-    n = get_n(nparams)
+    n = get_nss(nparams)
     Yparams = (alpha, A)
     Y = get_Y(Yparams, kd, n)
     r = get_r(alpha, Y, kd)
@@ -869,7 +868,7 @@ def getSteadyState(params, assets_init, kf_init):
 
     Returns: assets_ss, kf_ss, kd_ss, n_ss, Y_ss, r_ss, w_ss, c_vec_ss
     """
-    I, S, beta, sigma, delta, alpha, chi, rho, e_ss, A, FirstFertilityAge, FirstDyingAge, Nhat_ss, Mortality_ss, g_A, PrintEulErrors, CheckerMode = params
+    I, S, beta, sigma, delta, alpha, chi, rho, e_ss, A, FirstFertilityAge, FirstDyingAge, Nhat_ss, Mortality_ss, g_A, lbar, PrintEulErrors, CheckerMode = params
 
     #Merges the assets and kf together into one matrix that can be inputted into the fsolve function
     guess = np.column_stack((assets_init, kf_init))
@@ -887,7 +886,7 @@ def getSteadyState(params, assets_init, kf_init):
     #Gets the other steady-state values using assets and kf
     kd_ss = get_kd(assets_ss, kf_ss, Nhat_ss)
     nparams = (e_ss, Nhat_ss)
-    n_ss = get_n(nparams)
+    n_ss = get_nss(nparams)
     Yparams = (alpha, A)
     Y_ss = get_Y(Yparams, kd_ss, n_ss)
     #Because of the euler conditions in the fsolve, r_ss will be the same regardless of which country we use to calculate it
@@ -907,6 +906,87 @@ def getSteadyState(params, assets_init, kf_init):
     print "\nSteady State Found!\n"
 
     return assets_ss, kf_ss, kd_ss, n_ss, Y_ss, r_ss, w_ss, c_vec_ss
+
+def SS_Iteration(params, w_ss, r_ss):
+
+    I, S, beta, sigma, delta, alpha, chi, rho, e_ss, A, \
+    FirstFertilityAge, FirstDyingAge, Nhat_ss, mortality_ss, \
+    g_A, lbar_ss, PrintEulErrors, CheckerMode = params
+
+    def get_lifetime_decisionsSS(params, c_1, w_ss, r_ss):
+
+        I, S, beta, sigma, delta, rho, chi, e_ss, psi_ss, mortality_ss, g_A
+
+        cvec_ss = np.zeros((I,S))
+        avec_ss = np.zeros((I,S+1))
+        cvec_ss[:,0] = c_1
+
+        for s in range(S-1):
+            cvec_ss[:,s+1] = (beta * (1-mortality_ss[:,s]) * (1 + r_ss - delta)*psi_ss[:,s+1]/psi_ss[:,s])**(1/sigma) * cvec_ss[:,s]*np.exp(-g_A)
+            avec_ss[:,s+1] = (w_ss*e_ss[:,s] + (1 + r_ss - delta)*avec_ss[:,s] - cvec_ss[:,s]*(1+w_ss*e_ss[:,s]*(chi/(w_ss*e_ss[:,s])**rho)))*np.exp(-g_A)
+    
+        #Solves for assets in the year after the agent dies
+        avec_ss[:,s+2] = (w_ss*e_ss[:,s+1] + (1 + r_ss - delta)*avec_ss[:,s+1] - cvec_ss[:,s+1]*(1+w_ss*e_ss[:,s+1]*(chi/(w_ss*e_ss[:,s+1])**rho)))*np.exp(-g_A)
+        
+        return cvec_ss, avec_ss
+
+    def householdEuler_SS(c_1, w_ss, r_ss, params):
+
+        #Executes the get_household_choices_path function. See above.
+        c_path, assets_path = get_lifetime_decisionsSS(params, c_1, w_ss, r_ss)
+        Euler = np.ravel(assets_path[:,-1])
+
+        if np.any(c_path<0):
+            print "WARNING! The fsolve for initial optimal consumption guessed a negative number"
+            Euler=np.ones(Euler.shape[0])*9999.
+
+        return Euler
+
+    psi_params = (chi, rho, sigma)
+    psi_ss = get_Psi(psi_params, w_ss, e_ss)
+
+    c1_guess = np.ones(I)*.02
+    household_params = I, S, beta, sigma, delta, rho, chi, e_ss, psi_ss, mortality_ss, g_A
+
+    opt_c1 = opt.fsolve(householdEuler_SS, c1_guess, args = (w_ss, r_ss, household_params))
+    cvec_ss, avec_ss = get_lifetime_decisionsSS(household_params, opt_c1, w_ss, r_ss)
+
+    lhat_ss = get_lhat((chi, rho), cvec_ss, w_ss, e_ss)
+
+    n_ss = get_n((e_ss, Nhat_ss, lbar_ss), lhat_ss)
+
+    kd_ss = np.sum(avec_ss, axis=1)
+
+    kf_ss = np.zeros(I)
+    kf_ss[1:] = (alpha*A[1:]/r_ss)**(1/(1-alpha)) * n_ss[1:] - kd_ss[1:]
+    kf_ss[0] = (-np.sum(np.sum(Nhat_ss[1:,:], axis=1)*kf_ss[1:]))/np.sum(Nhat_ss[0,:])
+
+    wnew_ss = alpha*A*(kd_ss + kf_ss)**alpha * Nhat**(-alpha)
+    rnew_ss = alpha*A[0]*(kd_ss[0] + kf_ss[0])**(alpha-1)*Nhat
+
+    return wnew_ss, rnew_ss
+
+def getSteadyStateNEW(params, w_start, r_start):
+
+    """
+    To Jeff:
+        The SS_Iteration function is very similiar to the get_wpathnew_rpathnew function for the TPI, 
+        but gets an iteration of the ss instead. It follows exactly like the SS documentation Kerk 
+        emailed to us and should be working, although I haven't tested it super-thoughouly. Go ahead
+        and initialize this function so it is like the TPI while-loop in the function "get_Timepath"
+
+        Something like:
+
+        while distance > tol:
+            wnew_ss, rnew_ss = SS_Iteration(params, w_start, r_start)
+            ...
+            ...
+            distance = ...
+            complex conjugate
+            oldstuff = newstuff
+
+    """
+    pass
 
 #TIMEPATH FUNCTIONS
 
@@ -977,7 +1057,7 @@ def get_initialguesses(params, assets_ss, kf_ss, w_ss, r_ss, PrintLoc):
     #Gets initial kd, n, y, r, w, and K
     kd_init = get_kd(assets_init, kf_init, Nhat_init)
     nparams = e_init, Nhat_init
-    n_init = get_n(nparams)
+    n_init = get_nss(nparams)
     Yparams = (alpha, A)
     Y_init = get_Y(Yparams, kd_init, n_init)
     r_init = get_r(alpha, Y_init[0], kd_init[0])
@@ -1054,7 +1134,7 @@ def get_foreignK_path(params, Kpath, rpath, kf_ss, PrintLoc):
     I, S, T, alpha, e, A, Nhat = params
 
     #Sums the labor productivities across cohorts to get labor supply
-    n = get_n((e, Nhat))
+    n = get_nss((e, Nhat)) #FIX THIS
 
     #Initializes kfpath and kdpath matrices
     kfPath = np.zeros((I,T))
@@ -1421,17 +1501,23 @@ def get_wpathnew_rpathnew(params, wpath, rpath, starting_assets, kd_ss, kf_ss, P
     if PrintLoc: print "Entering get_wpathnew_rpathnew"
 
     #Unpacks parameters
-    I, S, T, T_1, beta, sigma, delta, alpha, rho, chi, e, A, FirstFertilityAge, FirstDyingAge, Nhat, MortalityRates, g_A, CheckerMode = params
+    I, S, T, T_1, beta, sigma, delta, alpha, rho, chi, e, A, FirstFertilityAge, FirstDyingAge, Nhat, MortalityRates, g_A, lbar, CheckerMode = params
 
     #Calulates consumption timepath and assets timepath
     ca_params = (I, S, T, T_1, beta, sigma, delta, rho, chi, e, FirstFertilityAge, FirstDyingAge, Nhat, MortalityRates, g_A)
     c_timepath, a_timepath = get_household_timepaths(ca_params, wpath, rpath, starting_assets, PrintLoc, Print_cabqTimepaths)
+
 
     #Calculates the total amount of capital in each country
     Kpath=np.sum(a_timepath[:,:-1,:]*Nhat, axis=1)
 
     #Calculates Aggregate Consumption
     Cpath=np.sum(c_timepath, axis=1)
+
+    #Calculates the lhat for each country
+    lhatparams = (chi, rho)
+    lhat=get_lhat(lhatparams, Cpath,wpath,e)
+
 
     #After time period T, the total capital stock and total consumption is forced to be the steady state
     Kpath[:,T-S:] = np.einsum("i,t->it", kd_ss+kf_ss, np.ones(S))
@@ -1454,7 +1540,7 @@ def get_wpathnew_rpathnew(params, wpath, rpath, starting_assets, kd_ss, kf_ss, P
 
     #Gets other timepaths needed to get the new w and r paths
     nparams = (e, Nhat)
-    npath = get_n(nparams)
+    npath = get_n(nparams,lbar,lhat)
     Yparams = (alpha, A)
     Ypath = get_Y(Yparams, kdpath_with_tape, npath)
     rpath_new = get_r(alpha, Ypath[0], kdpath_with_tape[0])
@@ -1526,7 +1612,7 @@ def get_Timepath(params, wstart, rstart, starting_assets, kd_ss, kf_ss, PrintLoc
     Returns: wend, rend, Cpath, Kpath, Ypath
     """
     #Unpacks parameters
-    I, S, T, T_1, beta, sigma, delta, alpha, rho, chi, e, A, FirstFertilityAge, FirstDyingAge, Nhat, MortalityRates, g_A, tpi_tol, xi, MaxIters, CheckerMode = params
+    I, S, T, T_1, beta, sigma, delta, alpha, rho, chi, e, A, FirstFertilityAge, FirstDyingAge, Nhat, MortalityRates, g_A, lbar, tpi_tol, xi, MaxIters, CheckerMode = params
 
     #Serves as the iteration counter
     Iter = 1
@@ -1535,7 +1621,7 @@ def get_Timepath(params, wstart, rstart, starting_assets, kd_ss, kf_ss, PrintLoc
     distance = 10
 
     #Gets the parameters needed in getting a new iteration of the timepath
-    wr_params = (I, S, T, T_1, beta, sigma, delta, alpha, rho, chi, e, A, FirstFertilityAge, FirstDyingAge, Nhat, MortalityRates, g_A, CheckerMode)
+    wr_params = (I, S, T, T_1, beta, sigma, delta, alpha, rho, chi, e, A, FirstFertilityAge, FirstDyingAge, Nhat, MortalityRates, g_A, lbar, CheckerMode)
 
     #Sets the initial values of TPI
     w_old = wstart

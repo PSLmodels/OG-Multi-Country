@@ -24,15 +24,15 @@ def Multi_Country(S,I,sigma):
     delta = 1-(1-delta_ann)**(70/S) #Depreciation Rate
     alpha = .3 #Capital Share of production
     chi = 1.5 #New Parameter
-    rho = .4 #Other New Parameter
+    rho = 1.3 #Other New Parameter
 
     tpi_tol = 1e-8 #Convergence Tolerance
     demog_ss_tol = 1e-8 #Used in getting ss for population share
     xi = .9999 #Parameter used to take the convex conjugate of paths
-    MaxIters = 50000000 #Maximum number of iterations on TPI.
+    MaxIters = 10000 #Maximum number of iterations on TPI.
 
     #Program Levers
-    CalcTPI = True #Activates the calculation of Time Path Iteration
+    CalcTPI = False #Activates the calculation of Time Path Iteration
 
     PrintAges = False #Prints the different key ages in the demographics
     PrintLoc = False #Displays the current locations of the program inside key TPI functions
@@ -77,15 +77,22 @@ def Multi_Country(S,I,sigma):
     #Gets demographic data
     demog_params = (I, S, T, T_1, LeaveHouseAge, FirstFertilityAge, LastFertilityAge, FirstDyingAge, MaxImmigrantAge, agestopull, g_A, demog_ss_tol)
     demog_levers = PrintLoc, UseStaggeredAges, UseDiffDemog, DemogGraphs, CheckerMode
-    MortalityRates, Nhat_matrix, Nhat_ss = Stepfuncs.getDemographics(demog_params, demog_levers, I_all, I_touse, ADJUSTKOREAIMMIGRATION)
+
+    MortalityRates, Nhat_matrix, Nhat_ss, lbar = Stepfuncs.getDemographics(demog_params, demog_levers, I_all, I_touse, ADJUSTKOREAIMMIGRATION)
 
     #Initalizes initial guesses
     assets_guess = np.ones((I, S-1))*.1
     kf_guess = np.zeros((I))
 
+    w_ss_guess = np.ones(I)*.1
+    r_ss_guess = .5
+
     #Gets the steady state variables
-    params_ss = (I, S, beta, sigma, delta, alpha, chi, rho, e[:,:,-1], A, FirstFertilityAge, FirstDyingAge, Nhat_ss, MortalityRates[:,:,-1], g_A, PrintEulErrors, CheckerMode)
-    assets_ss, kf_ss, kd_ss, n_ss, y_ss, r_ss, w_ss, c_vec_ss = Stepfuncs.getSteadyState(params_ss, assets_guess, kf_guess)
+    params_ss = (I, S, beta, sigma, delta, alpha, chi, rho, e[:,:,-1], A,\
+                 FirstFertilityAge, FirstDyingAge, Nhat_ss, MortalityRates[:,:,-1],\
+                 g_A, lbar[-1], PrintEulErrors, CheckerMode)
+    #assets_ss, kf_ss, kd_ss, n_ss, y_ss, r_ss, w_ss, c_vec_ss = Stepfuncs.getSteadyState(params_ss, assets_guess, kf_guess)
+    Stepfuncs.getSteadyStateNEW(params_ss, w_ss_guess, r_ss_guess)
 
     if PrintSS==True: #Prints the results of the steady state, line 23 activates this
         print "assets steady state", assets_ss
@@ -106,15 +113,15 @@ def Multi_Country(S,I,sigma):
     if CalcTPI==True: #Time Path Iteration, activated by line 24
         print "Beginning TPI..."
         #Gets initial guesses for TPI
-        initialguess_params = (I, S, T, delta, alpha, e[:,:,0], A, FirstFertilityAge, FirstDyingAge, Nhat_matrix[:,:,0], MortalityRates[:,:,0], g_A)
+        initialguess_params = (I, S, T, delta, alpha, e[:,:,0], lbar, A, FirstFertilityAge, FirstDyingAge, Nhat_matrix[:,:,0], MortalityRates[:,:,0], g_A)
         assets_init, wpath_initguess, rpath_initguess = \
             Stepfuncs.get_initialguesses(initialguess_params, assets_ss, kf_ss, w_ss, r_ss, PrintLoc)
 
         #Gets timepaths for w, r, C, K, and Y
-        tp_params = (I, S, T, T_1, beta, sigma, delta, alpha, rho, chi, e, A, FirstFertilityAge, FirstDyingAge, Nhat_matrix, MortalityRates, g_A, tpi_tol, xi, MaxIters, CheckerMode)
+        tp_params = (I, S, T, T_1, beta, sigma, delta, alpha, rho, chi, e, A, FirstFertilityAge, FirstDyingAge, Nhat_matrix, MortalityRates, g_A, lbar, tpi_tol, xi, MaxIters, CheckerMode)
         wpath, rpath, Cpath, Kpath, Ypath = Stepfuncs.get_Timepath(tp_params, wpath_initguess, rpath_initguess, assets_init, kd_ss, kf_ss, PrintLoc, Print_cabqTimepaths, UseTape)
     	
         if TPIGraphs==True:
             Stepfuncs.plotTimepaths(I, S, T, sigma, wpath, rpath, Cpath, Kpath, Ypath, I_touse, SAVE, SHOW, CheckerMode)
 
-Multi_Country(80,7,4)
+Multi_Country(15,3,4)
