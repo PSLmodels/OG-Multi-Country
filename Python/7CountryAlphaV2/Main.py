@@ -5,11 +5,10 @@ import time as time
 np.set_printoptions(threshold = 3000, linewidth=2000, suppress=True)
 
 def Multi_Country(S,I,sigma):
-
+    I_dict = {"usa":0,"eu":1,"japan":2,"china":3,"india":4,"russia":5,"korea":6}
     #Parameters Zone
-    I_all = ["usa","eu","japan","china","india","russia","korea"]
     T = int(round(4*S)) #Number of time periods to convergence, based on Rick Evans' function.
-    I_touse = ["usa","eu","japan","china","india","russia","korea"]
+    I_touse = ["eu","russia","usa","korea","japan"]
 
     T_1 = S #This is like TransYear in the FORTRAN I think
 
@@ -42,7 +41,7 @@ def Multi_Country(S,I,sigma):
     CheckerMode = False #Reduces the number of prints when checking for robustness
     ADJUSTKOREAIMMIGRATION = True
 
-    DemogGraphs = False #Activates graphing graphs with demographic data and population shares
+    DemogGraphs = True #Activates graphing graphs with demographic data and population shares
     TPIGraphs = True #Activates graphing the graphs.
 
     UseStaggeredAges = True #Activates using staggered ages
@@ -56,12 +55,17 @@ def Multi_Country(S,I,sigma):
     LeaveHouseAge, FirstFertilityAge, LastFertilityAge, MaxImmigrantAge, FirstDyingAge, agestopull = Stepfuncs.getkeyages(S, PrintAges, UseStaggeredAges)
 
     if len(I_touse) < I:
-        print "WARNING: We are changing I from", I, "to", len(I_touse), "to fit the length of I_touse"
-        I = len(I_touse)	
+        print "WARNING: We are changing I from", I, "to", len(I_touse), "to fit the length of I_touse. So the countries we are using now are", I_touse
+        I = len(I_touse)
+        time.sleep(2)
+    elif len(I_touse) > I:
+        print "WARNING: We are changing I_touse from", I_touse, "to", I_touse[:I], "so there are", I, "regions"
+        I_touse = I_touse[:I]
         time.sleep(2)
 
     if UseDiffDemog:
-        A = np.ones(I)+np.cumsum(np.ones(I)*.08)-.08 #Techonological Change, used for when countries are different
+        #A = np.ones(I)+np.cumsum(np.ones(I)*.05)-.05 #Techonological Change, used for when countries are different
+        A = np.ones(I)
     else:
         A = np.ones(I) #Techonological Change, used for idential countries
 
@@ -78,21 +82,25 @@ def Multi_Country(S,I,sigma):
     demog_params = (I, S, T, T_1, LeaveHouseAge, FirstFertilityAge, LastFertilityAge, FirstDyingAge, MaxImmigrantAge, agestopull, g_A, demog_ss_tol)
     demog_levers = PrintLoc, UseStaggeredAges, UseDiffDemog, DemogGraphs, CheckerMode
 
-    MortalityRates, Nhat_matrix, Nhat_ss, lbar = Stepfuncs.getDemographics(demog_params, demog_levers, I_all, I_touse, ADJUSTKOREAIMMIGRATION)
+    MortalityRates, Nhat_matrix, Nhat_ss, lbar = Stepfuncs.getDemographics(demog_params, demog_levers, I_dict, I_touse, ADJUSTKOREAIMMIGRATION)
 
     #Initalizes initial guesses
     assets_guess = np.ones((I, S-1))*.1
     kf_guess = np.zeros((I))
-
-    w_ss_guess = np.ones(I)*.1
-    r_ss_guess = .5
 
     #Gets the steady state variables
     params_ss = (I, S, beta, sigma, delta, alpha, chi, rho, e[:,:,-1], A,\
                  FirstFertilityAge, FirstDyingAge, Nhat_ss, MortalityRates[:,:,-1],\
                  g_A, lbar[-1], PrintEulErrors, CheckerMode)
     #assets_ss, kf_ss, kd_ss, n_ss, y_ss, r_ss, w_ss, c_vec_ss = Stepfuncs.getSteadyState(params_ss, assets_guess, kf_guess)
-    Stepfuncs.getSteadyStateNEW(params_ss, w_ss_guess, r_ss_guess)
+
+    #NEW CODE BEGINS HERE
+    w_ss_guess = np.ones(I)*.1
+    r_ss_guess = .5
+    xi_ss = .9975
+    tol_ss = 1e-8
+    Stepfuncs.getSteadyStateNEW(params_ss, w_ss_guess, r_ss_guess, xi_ss, tol_ss, I_touse)
+    #NEW CODE ENDS HERE
 
     if PrintSS==True: #Prints the results of the steady state, line 23 activates this
         print "assets steady state", assets_ss
@@ -124,4 +132,4 @@ def Multi_Country(S,I,sigma):
         if TPIGraphs==True:
             Stepfuncs.plotTimepaths(I, S, T, sigma, wpath, rpath, Cpath, Kpath, Ypath, I_touse, SAVE, SHOW, CheckerMode)
 
-Multi_Country(15,3,4)
+Multi_Country(35,7,4)

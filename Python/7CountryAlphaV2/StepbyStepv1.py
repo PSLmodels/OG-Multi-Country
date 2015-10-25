@@ -1,5 +1,4 @@
 from __future__ import division
-import sys
 import csv
 import numpy as np
 import scipy as sp
@@ -68,7 +67,7 @@ def getkeyages(S, PrintAges, UseStaggeredAges):
 
     return LeaveHouseAge, FirstFertilityAge, LastFertilityAge, MaxImmigrantAge, FirstDyingAge, agestopull
 
-def get_demog_data(params, levers, I_all, I_touse, ADJUSTKOREAIMMIGRATION):
+def get_demog_data(params, levers, I_dict, I_touse, ADJUSTKOREAIMMIGRATION):
     """
     Description:
         -Imports and stores data from csv files for initial populations, fertility rates, mortality rates, and net migrants.
@@ -129,7 +128,9 @@ def get_demog_data(params, levers, I_all, I_touse, ADJUSTKOREAIMMIGRATION):
     Migrants = np.zeros((I, S, T))
     g_N = np.zeros(T)
     lbar = np.zeros(T)
-    
+
+    I_all = ["usa","eu","japan","china","india","russia","korea"]
+
     #Gathers demographic data from the csv files for each I countries in countrynames
     for i in range(I):
 
@@ -158,8 +159,7 @@ def get_demog_data(params, levers, I_all, I_touse, ADJUSTKOREAIMMIGRATION):
         if PrintLoc: print "Got demographics for", I_all[index]
 
         if ADJUSTKOREAIMMIGRATION and I_all[index] == "korea":
-
-            Migrants[index,:]/= 100
+            Migrants[i,:]/= 100
 
     #Gets initial population share
     Nhat[:,:,0] = N[:,:,0]/np.sum(N[:,:,0])
@@ -183,7 +183,7 @@ def get_demog_data(params, levers, I_all, I_touse, ADJUSTKOREAIMMIGRATION):
 
     return N, Nhat, FertilityRates, MortalityRates, Migrants, g_N, lbar
 
-def getDemographics(params, levers, I_all, I_touse, ADJUSTKOREAIMMIGRATION):
+def getDemographics(params, levers, I_dict, I_touse, ADJUSTKOREAIMMIGRATION):
     """
     Description:
         -Imports and stores data from csv files for initial populations, fertility rates, mortality rates, and net migrants. 
@@ -245,7 +245,7 @@ def getDemographics(params, levers, I_all, I_touse, ADJUSTKOREAIMMIGRATION):
 
     data_params = (I, S, T, T_1, LeaveHouseAge, FirstFertilityAge, LastFertilityAge, FirstDyingAge, MaxImmigrantAge, agestopull)
     data_levers = PrintLoc, UseStaggeredAges, DiffDemog
-    N, Nhat, FertilityRates, MortalityRates, Migrants, g_N, lbar = get_demog_data(data_params, data_levers, I_all, I_touse, ADJUSTKOREAIMMIGRATION)
+    N, Nhat, FertilityRates, MortalityRates, Migrants, g_N, lbar = get_demog_data(data_params, data_levers, I_dict, I_touse, ADJUSTKOREAIMMIGRATION)
 
     ImmigrationRates = np.zeros((I, S, T))
     #QUESTION HOW TO INTERPRET N_temp???
@@ -960,33 +960,50 @@ def SS_Iteration(params, w_ss, r_ss):
     kf_ss = np.zeros(I)
     kf_ss[1:] = (alpha*A[1:]/r_ss)**(1/(1-alpha)) * n_ss[1:] - kd_ss[1:]
     kf_ss[0] = (-np.sum(np.sum(Nhat_ss[1:,:], axis=1)*kf_ss[1:]))/np.sum(Nhat_ss[0,:])
+    K_ss_with_tape = np.clip(kd_ss + kf_ss, 0.0001, np.max(kd_ss + kf_ss))
 
-    wnew_ss = alpha*A*(kd_ss + kf_ss)**alpha * Nhat**(-alpha)
-    rnew_ss = alpha*A[0]*(kd_ss[0] + kf_ss[0])**(alpha-1)*Nhat
+    wnew_ss = alpha*A*(K_ss_with_tape)**alpha * np.sum(Nhat_ss, axis=1)**(-alpha)
+    rnew_ss = alpha*A[0]*(K_ss_with_tape[0])**(alpha-1)*np.sum(Nhat_ss[0])
 
-    return wnew_ss, rnew_ss
+    return wnew_ss, rnew_ss, cvec_ss, avec_ss, kd_ss, kf_ss
 
-def getSteadyStateNEW(params, w_start, r_start):
+def getSteadyStateNEW(params, wstart_ss, rstart_ss, xi_ss, tol, I_touse):
 
-    """
-    To Jeff:
-        The SS_Iteration function is very similiar to the get_wpathnew_rpathnew function for the TPI, 
-        but gets an iteration of the ss instead. It follows exactly like the SS documentation Kerk 
-        emailed to us and should be working, although I haven't tested it super-thoughouly. Go ahead
-        and initialize this function so it is like the TPI while-loop in the function "get_Timepath"
+    I, S, beta, sigma, delta, alpha, chi, rho, e_ss, A, \
+    FirstFertilityAge, FirstDyingAge, Nhat_ss, mortality_ss, \
+    g_A, lbar_ss, PrintEulErrors, CheckerMode = params
 
-        Something like:
+    distance = 10
+    Iter = 0
 
-        while distance > tol:
-            wnew_ss, rnew_ss = SS_Iteration(params, w_start, r_start)
-            ...
-            ...
-            distance = ...
-            complex conjugate
-            oldstuff = newstuff
+    w_old = wstart_ss
+    r_old = rstart_ss
 
-    """
-    pass
+    while distance > tol:
+        Iter+=1
+        w_new, r_new, cvec_ss, avec_ss, kd_ss, kf_ss = SS_Iteration(params, w_old, r_old)
+
+        dist_w=(np.max(np.absolute(w_old-w_new)))
+        dist_r=np.absolute(r_old-r_new)
+        distance=max([dist_w,dist_r])
+        print "Iteration", Iter, "Max Distance:", distance, "w difference:", np.absolute(w_old-w_new), "r difference:", np.absolute(dist_r)
+
+        w_old=w_old*xi_ss+(1-xi_ss)*w_new
+        r_old=r_old*xi_ss+(1-xi_ss)*r_new
+
+    for i in range(I):
+        plt.plot(range(S),cvec_ss[i,:])
+    plt.legend(I_touse[:I])
+    plt.show()
+    for i in range(I):
+        plt.plot(range(S+1),avec_ss[i,:])
+    plt.legend(I_touse[:I])
+    plt.show()
+
+    print "sum(kf) =", np.sum(kf_ss), "= 0:", np.isclose(np.sum(kf_ss), 0)
+    print "w_ss = ", w_new
+    print "rnew_ss = ", r_new
+
 
 #TIMEPATH FUNCTIONS
 
