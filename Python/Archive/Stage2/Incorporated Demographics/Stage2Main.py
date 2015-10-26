@@ -1,5 +1,5 @@
 import numpy as np
-import StepbyStepv1 as Stepfuncs
+import Stage2Functions as Stepfuncs
 import time as time
 
 np.set_printoptions(threshold = 3000, linewidth=2000, suppress=True)
@@ -111,9 +111,10 @@ def Multi_Country(S,I,sigma):
         #Gets timepaths for w, r, C, K, and Y
         tp_params = (I, S, T, T_1, beta, sigma, delta, alpha, e, A, FirstFertilityAge, FirstDyingAge, Nhat_matrix, MortalityRates, g_A, tpi_tol, xi, MaxIters)
         wpath, rpath, Cpath, Kpath, Ypath = Stepfuncs.get_Timepath(tp_params, wpath_initguess, rpath_initguess, assets_init, kd_ss, kf_ss, PrintLoc, Print_cabqTimepaths, UseTape)
-    	
+
+        print rpath
         if TPIGraphs==True:
             Stepfuncs.plotTimepaths(I, S, T, sigma, wpath, rpath, Cpath, Kpath, Ypath, I_touse, SAVE, SHOW)
 
 
-Multi_Country(20,3,2)
+Multi_Country(80,7,2)
