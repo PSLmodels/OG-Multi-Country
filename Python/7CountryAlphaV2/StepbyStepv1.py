@@ -915,7 +915,7 @@ def getSTUFF_SS(params, bq_ss, r_ss):
     FirstFertilityAge, FirstDyingAge, Nhat_ss, mortality_ss,\
     g_A, lbar_ss, PrintEulErrors, CheckerMode = params
 
-    #These 2 functions are the Euluer system for solving household decisions, see equations 3.20 and 3.23
+    #These 2 functions are the Euluer system for solving household decisions, see equations 3.19 and 3.22
     def get_lifetime_decisionsSS(params, c_1, w_ss, r_ss):
 
         I, S, beta, sigma, delta, rho, chi, bq_ss, e_ss, psi_ss, mortality_ss, g_A
@@ -945,7 +945,7 @@ def getSTUFF_SS(params, bq_ss, r_ss):
 
         return Euler
 
-    #See equation 3.26
+    #See equation 3.25
     w_ss = (alpha*A/r_ss)**(alpha/(1-alpha))*(1-alpha)*A
 
     psi_params = (chi, rho, sigma)
@@ -960,15 +960,15 @@ def getSTUFF_SS(params, bq_ss, r_ss):
     cvec_ss, avec_ss = get_lifetime_decisionsSS(household_params, opt_c1, w_ss, r_ss)
     avec_ss = avec_ss[:,:-1]
 
-    #See equation 3.21
+    #See equation 3.20
     lhat_ss = get_lhat((chi, rho), cvec_ss, w_ss, e_ss)
 
-    #See equations 3.14, 3.27, and 3.15 respectively for the 3 equations below
+    #See equations 3.14, 3.26, and 3.15 respectively for the 3 equations below
     n_ss = get_n((e_ss, Nhat_ss, lbar_ss), lhat_ss)
     kd_ss = np.sum(avec_ss*Nhat_ss, axis=1)
     y_ss = get_Y((alpha, A), kd_ss, n_ss)
 
-    #See equation 3.28
+    #See equation 3.27
     kf_ss = (alpha*A/r_ss)**(1/(1-alpha)) * n_ss - kd_ss
 
     #Taping up any values of K with negative values
@@ -1000,10 +1000,10 @@ def EuluerSystemSS(guess, I, S, beta, sigma, delta, alpha, chi, rho, e_ss, A,
     #Sums up the assets of all the dead people
     alldeadagent_assets = np.sum(avec_ss[:,FirstDyingAge:]*Mortality_ss[:,FirstDyingAge:]*Nhat_ss[:,FirstDyingAge:], axis=1)
     
-    #See equation 3.30
+    #See equation 3.29
     Euler_bq = bq_ss - alldeadagent_assets/np.sum(Nhat_ss[:,FirstFertilityAge:FirstDyingAge],axis=1)
 
-    #See equation 3.25
+    #See equation 3.24
     Euler_kf = np.sum(kf_ss)
 
     #Puts our Eulers into one equation so fsolve likes it
