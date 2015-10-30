@@ -155,13 +155,22 @@
 
 	Inheritances are partially intended bequests and are the assets of agents that die at the end of period $t$ to the survivors in that period.  Let $BQ_{it}$ denote total bequests in period $t$ for country $i$ and $bq_{ist}$ denote the bequest received by a person $s$ years old in that same country and time period.
 	\begin{align}
-		BQ_{it} & = \sum_{s=67}^S a_{ist} \rho_{ist} N_{ist} \\
-		& = \sum_{s=23}^{67} bq_{ist} (1-\rho_{ist}) N_{ist}
+		BQ_{it} & = \sum_s a_{ist} \rho_{ist} N_{ist} \\
+		& = \sum_s bq_{ist} (1-\rho_{ist}) N_{ist}
 	\end{align}
 
-	We specify a bequest distribution rule that tells what proportion of available bequest funds goes to each household within a country.  One possible simple rule would be to divide the funds up equally over all survivors.  This rule would be:
+	We specify a bequest distribution rule that tells what proportion of available bequest funds goes to each household within a country.  One possible simple rule would be to divide the funds up equally over all survivors between the ages of 23 and 67.  This rule would be:
 	\begin{align}
-		bq_{ist} = \frac{BQ_{it}}{\sum_{s=23}^{67} (1-\rho_{ist}) N_{ist}} \nonumber
+		bq_{it} = \frac{BQ_{it}}{\sum_{s=23}^{67} (1-\rho_{ist}) N_{ist}} \nonumber
+	\end{align}
+	Note that for ages 23 through 67 we have $\rho_{ist} = 0$ and this reduces to:
+	\begin{align}
+		bq_{it} = \frac{BQ_{it}}{\sum_{s=23}^{67} N_{ist}} \nonumber
+	\end{align}
+
+	More generally we could specify a share of total bequests going to each age within country as $\phi_{is}$ giving:
+	\begin{align}
+		bq_{ist} = \frac{\phi_{is} BQ_{it}}{(1-\rho_{ist})N_{ist}} \nonumber
 	\end{align}
 
 	While relative populations stabilize in the steady state, the overall population may be growing or shrinking.  Hence, all aggregate variables will need to be stationarized by dividing by the total population of a country.  To help with this, we define the growth rate of the world population as $g^N_t = \tfrac{N_{it}}{N_{t-1}}-1$.
@@ -178,14 +187,13 @@
 		\hat N_{i,s+1,t+1} & = e^{-g^N_t}\hat N_{ist} (1+m_{ist}-\rho_{ist}); \forall i, 1<s\le S \\
 		\hat k_{it} & = \sum_{s=1}^S \hat a_{ist} \hat N_{ist} - \hat k_{it}^f; \forall i \\
 		\hat n_{it} & = \sum_{s=1}^S e_{is} \hat N_{ist}; \forall i \\
-		\hat y_{it} & = \hat k_{it}^\alpha \left( A_{i} \hat n_{it} \right)^{1-\alpha} ; \forall i \\
-		r_{it} & = \alpha \frac{\hat y_{it}}{\hat k_{it}}; \forall i \\
-		w_{it} & = (1-\alpha) \frac{\hat y_{it}}{\hat n_{it}}; \forall i \\
-		\hat BQ_{it} & = \sum_{s=67}^S \hat a_{ist} \rho_{ist} \hat N_{ist} ; \forall i \\
-		\hat BQ_{it} & = \sum_{s=23}^{67} \hat bq_{ist} (1-\rho_{ist}) \hat N_{ist}	; \forall i \\
-		\hat c_{ist} & = w_{it} e_{st} + (1+r_{1t}-\delta)\hat a_{ist} + \hat{bq}_{ist} - \hat a_{i,s+1,t+1}e^{g^A} ; \forall i,s 
+		\hat y_{it} & = \hat k_{it}^\alpha \left( A_{i} \hat n_{it} \right)^{1-\alpha} ; \forall i
 	\end{align}
 	\begin{align}
+		r_{it} & = \alpha \frac{\hat y_{it}}{\hat k_{it}}; \forall i \\
+		w_{it} & = (1-\alpha) \frac{\hat y_{it}}{\hat n_{it}}; \forall i \\
+		\hat bq_{it} & = \frac{\sum_{s=67}^S \hat a_{ist} \rho_{ist} \hat N_{ist}}{\sum_{s=23}^{67} \hat N_{ist}} ; \forall i,s \\
+	    \hat c_{ist} & = w_{it} e_{st} + (1+r_{1t}-\delta)\hat a_{ist} + \hat{bq}_{ist} - \hat a_{i,s+1,t+1}e^{g^A} ; \forall i,s \\
 		& \hat c_{ist}^{-\sigma} - \beta \left(\hat c_{i,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,s \\ 
 		& r_{it} - r_{1t} = 0; \forall i>1 \\
 		& \sum_{i=1}^I \hat k^f_{it} = 0
@@ -269,8 +277,7 @@
 		\hat y_{it} & = \hat k_{it}^\alpha \left( A_{i} \hat n_{it} \right)^{1-\alpha} ; \forall i \label{eq_3ydef} \\
 		r_{it} & = \alpha \frac{\hat y_{it}}{\hat k_{it}}; \forall i \label{eq_3rdef} \\
 		\hat w_{it} & = (1-\alpha) \frac{\hat y_{it}}{\hat n_{it}}; \forall i \label{eq_3wdef}\\
-		\hat {BQ}_{it} & = \sum_{s=67}^S \hat a_{ist} \rho_{ist} \hat N_{ist} ; \forall i \label{eq_3BQ1}\\
-		\hat {BQ}_{it} & = \sum_{s=23}^{67} \hat bq_{ist} (1-\rho_{ist}) \hat N_{ist}	; \forall i \label{eq_3BQ2}\\
+		\hat bq_{it} & = \frac{\sum_{s=67}^S \hat a_{ist} \rho_{ist} \hat N_{ist}}{\sum_{s=23}^{67} \hat N_{ist}} ; \forall i,s \label{eq_3bqdef} \\
     	\hat c_{ist} & = \frac{\hat w_{it} e_{st} + (1+r_{it}-\delta)\hat a_{ist} + {\hat bq}_{ist} - \hat a_{i,s+1,t+1}e^{g^A}} {1 + \hat w_{it} e_{st} \left(\frac{\chi} {\hat w_{it} e_{st}}\right)^{\rho}}; \forall i,s \label{eq_3cdef2} \\
 		\hat \ell_{ist} & = \hat c_{ist} \left(\frac{\chi}{\hat w_{it}e_{st}}\right)^\rho ; \forall i,s \label{eq3_elldef}\\
 		\Psi_{ist} & = \left[1 + \chi \left(\frac{\chi} {\hat w_{it} e_{st}}\right)^{\rho} \right]^{\frac{1-\rho \sigma}{\rho}}; \forall i,s \label{eq_3Psidef2} \\
@@ -304,7 +311,7 @@
 		w_{it} = \left(\frac{\alpha A_i}{r{t}} \right)^{\frac{\alpha}{1-\alpha}} (1-\alpha) A_i \label{eq_3wfunc}
 	\end{equation}
 
-	With this information search over the value of $c_{is1}$ for each household to find the value that sets $a_{iS,S-s}$ (their final savings) to zero when we chain equations \eqref{eq_3Psidef2}, \eqref{eq_3Euler2} and \eqref{eq_3cdef2}.  That is, we solve for each households optimal time path of consumption and savings given the assumed history of factor prices.  Note that we will use equations \eqref{eq_3BQ1} and \eqref{eq_3BQ2} in this step.  This step requires the use of \texttt{fsolve}.
+	With this information search over the value of $c_{is1}$ for each household to find the value that sets $a_{iS,S-s}$ (their final savings) to zero when we chain equations \eqref{eq_3Psidef2}, \eqref{eq_3Euler2} and \eqref{eq_3cdef2}.  That is, we solve for each households optimal time path of consumption and savings given the assumed history of factor prices.  This step requires the use of \texttt{fsolve}.
 
 	We can then use equations \eqref{eq3_elldef} and \eqref{eq_3cond2} to get individual labor supply and total labor input.
 
@@ -327,10 +334,10 @@
 
 	Finally, we use equations \eqref{eq_3rdef} for country 1 and \eqref{eq_3wdef} for all countries to generate updated values of $\{r_t\}$ and $\{w_{it}\}$.  We then use the a convex combination of the original guesses and these new values as guesses for the next round of the iteration.
 
-	As an alternative, we can use \texttt{fsolve} to find the whole histories of $\{r_t\}$ and $\{bq_{it}\}$. that satisfy equations \eqref{eq_3cond2} and \eqref{eq_2BQcomb} for all time periods.
+	As an alternative, we can use \texttt{fsolve} to find the whole histories of $\{r_t\}$ and $\{bq_{it}\}$. that satisfy equations \eqref{eq_3cond2} and \eqref{eq_3bq2} for all time periods.
 
 	\begin{equation}
-		bq_{it} - \frac{\sum_{s=23}^{67} \hat bq_{ist} (1-\rho_{ist}) \hat N_{ist}} {\sum_{s=67}^S \hat a_{ist} \rho_{ist} \hat N_{ist}} = 0 \label{eq_2BQcomb}
+		bq_{it} - \frac{\sum_{s=67}^S \hat a_{ist} \rho_{ist} \hat N_{ist}} {\sum_{s=23}^{67} \hat N_{ist}} = 0 \label{eq_3bq2}
 	\end{equation}
 
 	With this approach we can define a function that chains equations \eqref{eq_3Psidef2}, \eqref{eq_3Euler2} and \eqref{eq_3cdef2} to generate final assets as a function of initial consumption.  We can write this as \texttt{afinal = g(cinitial,S,Omega)}, where \texttt{S} denotes the household's age, and \texttt{Omega} denotes the history of wages, interest rates and bequests over the household's lifetime.
@@ -455,17 +462,16 @@
 		\hat N_{i,s+1,t+1} & = e^{-g^N_t}\hat N_{ist} (1+m_{ist}-\rho_{ist}); \forall i, 1<s\le S \label{eq_4pop2} \\
 		g^N_t & = \sum_{i=1}^I \sum_{s=1}^S \hat N_{ist} (f_{ist}+m_{ist}-\rho_{ist}) ; \forall i\\
 		\hat N_{i,1,t+1} & = e^{-g^N_t}\sum_{s=23}^{45} \hat N_{ist} f_{ist} ; \forall i\\
-		\hat N_{i,s+1,t+1} & = e^{-g^N_t}\hat N_{ist} (1+m_{ist}-\rho_{ist}); \forall i, 1<s\le S 
-	\end{align}
-	\begin{align}
-		KID_{i,s+1,t+1} & = \sum_{r=1}^{20} f_{i,s-r,t-r}; \forall i, 1<s\le S  \\
+		\hat N_{i,s+1,t+1} & = e^{-g^N_t}\hat N_{ist} (1+m_{ist}-\rho_{ist}); \forall i, 1<s\le S \\
+				KID_{i,s+1,t+1} & = \sum_{r=1}^{20} f_{i,s-r,t-r}; \forall i, 1<s\le S  \\
 		\hat k_{it} & = \sum_{s=1}^S \hat a_{ist} \hat N_{ist} - \hat k_{it}^f; \forall i \\
 		\hat n_{it} & = \sum_{s=1}^S e_{is} (\bar \ell_t - \hat \ell_{ist}) \hat N_{ist}; \forall i \\
 		\hat y_{it} & = \hat k_{it}^\alpha \left( A_{i} \hat n_{it} \right)^{1-\alpha} ; \forall i \\
 		r_{it} & = \alpha \frac{\hat y_{it}}{\hat k_{it}}; \forall i \\
 		\hat w_{it} & = (1-\alpha) \frac{\hat y_{it}}{\hat n_{it}}; \forall i \\
-		\hat BQ_{it} & = \sum_{s=67}^S \hat a_{ist} \rho_{ist} \hat N_{ist} ; \forall i \\
-		\hat BQ_{it} & = \sum_{s=23}^{67} \hat bq_{ist} (1-\rho_{ist}) \hat N_{ist}	; \forall i \\
+		\hat bq_{it} & = \frac{\sum_{s=67}^S \hat a_{ist} \rho_{ist} \hat N_{ist}}{\sum_{s=23}^{67} \hat N_{ist}} ; \forall i,s
+	\end{align}
+	\begin{align}
 		\Gamma_{it} & = \left\{ \left[1 + \chi \left(\frac{\chi}{\hat w_{it} e_{st}}\right)^\rho\right]^{\tfrac{1-\rho \sigma}{\rho}} \right\}^{-\tfrac{1}{\sigma}}; \forall i,s \\
     	\hat c_{ist} & = \frac{\hat w_{it} e_{st} + (1+r_{it}-\delta)\hat a_{ist} + \hat{bq}_{ist} - \hat a_{i,s+1,t+1} e^{g^A}} {1 + KID_{ist}\Gamma_{it} + \left(\tfrac{\chi}{\hat w_{it}e_{st}}\right)^\rho}; \forall i,s \\
 		\Gamma_{it} & = \left\{ \left[1 + \chi \left(\frac{\chi}{\hat w_{it} e_{st}}\right)^\rho\right]^{\tfrac{1-\rho \sigma}{\rho}} \frac{\rho}{\rho-1} \right\}^{-\tfrac{1}{\sigma}}; \forall i,s \\
@@ -522,8 +528,7 @@
 		\hat w_{ijt} & = (1-\alpha_j) \frac{\hat y_{it}}{\hat n_{ijt}}; \forall i.j
 	\end{align}
 	\begin{align}
-		\hat BQ_{ijt} & = \sum_{s=67}^S \hat a_{ijst} \rho_{ijst} \hat N_{ijst} ; \forall i,j \\
-		\hat BQ_{ijt} & = \sum_{s=23}^{67} \hat bq_{ijst} (1-\rho_{ijst}) \hat N_{ijst}	; \forall i \\
+		\hat bq_{it} & = \frac{\sum_{s=67}^S \sum_j \hat a_{ijst} \rho_{ijst} \hat N_{ijst}}{\sum_{s=23}^{67} \hat N_{ijst}} ; \forall i,s \\
 		\Gamma_{ijt} & = \left\{ \left[1 + \chi \left(\frac{\chi}{\hat w_{ijt} e_{jst}}\right)^\rho\right]^{\tfrac{1-\rho \sigma}{\rho}} \right\}^{-\tfrac{1}{\sigma}}; \forall i,j,s \\
     	\hat c_{ijst} & = \frac{\hat w_{ijt} e_{jst} + (1+r_{it}-\delta)\hat a_{ijst} + \hat{bq}_{jist} - \hat a_{i,j,s+1,t+1} e^{g^A}} {1 + KID_{ist}\Gamma_{ijt} + \left(\tfrac{\chi}{\hat w_{ijt}e_{jst}}\right)^\rho}; \forall i,j,s \\
 		\Gamma_{ijt} & = \left\{ \left[1 + \chi \left(\frac{\chi}{\hat w_{ijt} e_{jst}}\right)^\rho\right]^{\tfrac{1-\rho \sigma}{\rho}} \frac{\rho}{\rho-1} \right\}^{-\tfrac{1}{\sigma}}; \forall i,j,s \\
@@ -579,8 +584,7 @@
 		\hat y_{it} & = \hat k_{it}^\alpha \prod_{j=1}^J \left( A_{i} \hat n_{ijt} \right)^{\alpha_j}; \alpha + \sum_{j=1}^J \alpha_j = 1 ; \forall i \\
 		r_{it} & = (1-\tau^K_{it})\alpha \frac{\hat y_{it}}{\hat k_{it}} + \delta \tau^K_{it}; \forall i \\
 		\hat w_{ijt} & = (1-\alpha_j) \frac{\hat y_{it}}{\hat n_{ijt}}; \forall i.j \\
-		\hat BQ_{ijt} & = \sum_{s=67}^S \hat a_{ijst} \rho_{ijst} \hat N_{ijst} ; \forall i,j \\
-		\hat BQ_{ijt} & = \sum_{s=23}^{67} \hat bq_{ijst} (1-\rho_{ijst}) \hat N_{ijst}	; \forall i \\
+		\hat bq_{it} & = \frac{\sum_{s=67}^S \sum_j \hat a_{ijst} \rho_{ijst} \hat N_{ijst}}{\sum_{s=23}^{67} \hat N_{ijst}} ; \forall i,s  \\
 	\end{align}
 	\begin{align}
 		\Gamma_{ijt} & = \left\{ \left[1 + \chi \left(\frac{\chi}{\hat w_{ijt} e_{jst}}\right)^\rho\right]^{\tfrac{1-\rho \sigma}{\rho}} \frac{\rho}{\rho-1} \right\}^{-\tfrac{1}{\sigma}}; \forall i,j,s \\
