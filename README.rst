@@ -13,20 +13,25 @@ Disclaimer
 The model is currently under development. Users should be forewarned that the model componenents could change significantly. Therefore, there is NO GUARANTEE OF ACCURACY. THE CODE SHOULD NOT CURRENTLY BE USED FOR PUBLICATIONS, JOURNAL ARTICLES, OR RESEARCH PURPOSES. Essentially, you should assume the calculations are unreliable until we finish the code re-architecture and have checked the results against other existing implementations of the tax code. The package will have released versions, which will be checked against existing code prior to release. Stay tuned for an upcoming release!
 
 
-Contributors
-============
+Current Contributors
+====================
 
-- Jeff Clawson
+- Jeff Clawson (Brigham Young University)
 
-- Richard W. Evans
+- Richard W. Evans (Brigham Young University)
 
-- Laurence J. Kotlikoff
+- James Olmstead (Brigham Young University)
 
-- James Olmstead
+- Kerk Phillips (Brigham Young University)
 
-- Kerk Phillips
+Contributors to Earlier Work
+============================
 
+- Seth Benzell (Boston University)
 
+- Laurence J. Kotlikoff (Boston University)
+
+- Keena Li (Brigham Young University)
 
 About OSPC
 ==========
