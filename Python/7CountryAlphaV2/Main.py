@@ -8,7 +8,7 @@ def Multi_Country(S,I,sigma):
     I_dict = {"usa":0,"eu":1,"japan":2,"china":3,"india":4,"russia":5,"korea":6}
     #Parameters Zone
     T = int(round(4*S)) #Number of time periods to convergence, based on Rick Evans' function.
-    I_touse = ["eu","russia","usa","korea","japan"]
+    I_touse = ["eu","russia","usa","japan","korea","china","india"]
 
     T_1 = S #This is like TransYear in the FORTRAN I think
 
@@ -39,18 +39,18 @@ def Multi_Country(S,I,sigma):
     PrintSS = False #Prints the result of the Steady State functions
     Print_cabqTimepaths = False #Prints the consumption, assets, and bequests timepath as it gets filled in for each iteration of TPI
     CheckerMode = False #Reduces the number of prints when checking for robustness
-    ADJUSTKOREAIMMIGRATION = True
 
-    DemogGraphs = True #Activates graphing graphs with demographic data and population shares
+    DemogGraphs = False #Activates graphing graphs with demographic data and population shares
     TPIGraphs = True #Activates graphing the graphs.
 
     UseStaggeredAges = True #Activates using staggered ages
     UseDiffDemog = True #Turns on different demographics for each country
     UseSSDemog = False #Activates using only steady state demographics for TPI calculation
-    UseDiffProductivities = False #Activates having e vary across cohorts
+    UseDiffProductivities = True #Activates having e vary across cohorts
     UseTape = True #Activates setting any value of kd<0 to 0.001 in TPI calculation
     SAVE = False #Saves the graphs
     SHOW = True #Shows the graphs
+    ADJUSTKOREAIMMIGRATION = True
 
     LeaveHouseAge, FirstFertilityAge, LastFertilityAge, MaxImmigrantAge, FirstDyingAge, agestopull = Stepfuncs.getkeyages(S, PrintAges, UseStaggeredAges)
 
@@ -64,15 +64,15 @@ def Multi_Country(S,I,sigma):
         time.sleep(2)
 
     if UseDiffDemog:
-        #A = np.ones(I)+np.cumsum(np.ones(I)*.05)-.05 #Techonological Change, used for when countries are different
-        A = np.ones(I)
+        A = np.ones(I)+np.cumsum(np.ones(I)*.05)-.05 #Techonological Change, used for when countries are different
+        #A = np.ones(I)
     else:
         A = np.ones(I) #Techonological Change, used for idential countries
 
     if UseDiffProductivities:
         e = np.ones((I, S, T))
-        e[:,FirstDyingAge:,:] = 0.01
-        e[:,:LeaveHouseAge,:] = 0.01
+        e[:,FirstDyingAge:,:] = 0.3
+        e[:,:LeaveHouseAge,:] = 0.3
     else:
         e = np.ones((I, S, T)) #Labor productivities
 
@@ -94,13 +94,13 @@ def Multi_Country(S,I,sigma):
                  g_A, lbar[-1], PrintEulErrors, CheckerMode)
     #assets_ss, kf_ss, kd_ss, n_ss, y_ss, r_ss, w_ss, c_vec_ss = Stepfuncs.getSteadyState(params_ss, assets_guess, kf_guess)
 
+
     #NEW CODE BEGINS HERE
-    w_ss_guess = np.ones(I)*.1
-    r_ss_guess = .5
-    xi_ss = .9975
-    tol_ss = 1e-8
-    Stepfuncs.getSteadyStateNEW(params_ss, w_ss_guess, r_ss_guess, xi_ss, tol_ss, I_touse)
+    r_ss_guess = .2
+    bq_ss_guess = np.ones(I)*.2
+    bq_ss, r_ss, w_ss, cvec_ss, avec_ss, kd_ss, kf_ss, n_ss, y_ss = Stepfuncs.getSteadyStateNEWEST(params_ss, bq_ss_guess, r_ss_guess, I_touse)
     #NEW CODE ENDS HERE
+
 
     if PrintSS==True: #Prints the results of the steady state, line 23 activates this
         print "assets steady state", assets_ss
@@ -132,4 +132,4 @@ def Multi_Country(S,I,sigma):
         if TPIGraphs==True:
             Stepfuncs.plotTimepaths(I, S, T, sigma, wpath, rpath, Cpath, Kpath, Ypath, I_touse, SAVE, SHOW, CheckerMode)
 
-Multi_Country(35,7,4)
+Multi_Country(80,7,4)
