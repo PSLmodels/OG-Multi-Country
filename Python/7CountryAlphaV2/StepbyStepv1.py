@@ -241,7 +241,7 @@ def getDemographics(params, levers, I_dict, I_touse, ADJUSTKOREAIMMIGRATION):
     """
     #Unpacks parameters
     I, S, T, T_1, LeaveHouseAge, FirstFertilityAge, LastFertilityAge, FirstDyingAge, MaxImmigrantAge, agestopull, g_A, tol = params
-    PrintLoc, UseStaggeredAges, DiffDemog, Graphs, CheckerMode= levers
+    PrintLoc, UseStaggeredAges, DiffDemog, Graphs, CheckerMode = levers
 
     data_params = (I, S, T, T_1, LeaveHouseAge, FirstFertilityAge, LastFertilityAge, FirstDyingAge, MaxImmigrantAge, agestopull)
     data_levers = PrintLoc, UseStaggeredAges, DiffDemog
@@ -297,7 +297,7 @@ def getDemographics(params, levers, I_dict, I_touse, ADJUSTKOREAIMMIGRATION):
     if Graphs:
         ages = FirstFertilityAge, LastFertilityAge, FirstDyingAge, MaxImmigrantAge
         datasets = FertilityRates, MortalityRates, ImmigrationRates, Nhat
-        plotDemographics(ages, datasets, I, S, T, I_touse, T_touse="default", compare_across="T")
+        plotDemographics(ages, datasets, I, S, T, I_touse, T_touse = [0,1,2,3,20], compare_across="T", data_year=0)
     
     #Gets labor endowment per household. For now it grows at a constant rate g_A
     lbar[:T] = np.cumsum(np.ones(T)*g_A)
@@ -309,10 +309,11 @@ def getDemographics(params, levers, I_dict, I_touse, ADJUSTKOREAIMMIGRATION):
 
     return MortalityRates, Nhat[:,:,:T], Nhat_ss, lbar
 
-def plotDemographics(ages, datasets, I, S, T, I_touse, T_touse = None, compare_across = "T"):
+def plotDemographics(ages, datasets, I, S, T, I_touse, T_touse = None, compare_across = "T", data_year = 0):
 
     FirstFertilityAge, LastFertilityAge, FirstDyingAge, MaxImmigrantAge = ages
     FertilityRates, MortalityRates, ImmigrationRates, Nhat = datasets
+
 
     if T_touse is None or T_touse == "default":
         T_touse = [0, S//4, S//2, S, T]
@@ -320,7 +321,7 @@ def plotDemographics(ages, datasets, I, S, T, I_touse, T_touse = None, compare_a
     def firstPlot():
         plt.subplot(231)
         for i in range(I):
-            plt.plot(range(FirstDyingAge, S-1), MortalityRates[i,FirstDyingAge:-1,0])
+            plt.plot(range(FirstDyingAge, S-1), MortalityRates[i,FirstDyingAge:-1,data_year])
         plt.title("Mortality Rates", fontsize=14)
         plt.xlabel('Age')
         plt.ylabel('Mortality Rate')
@@ -328,7 +329,7 @@ def plotDemographics(ages, datasets, I, S, T, I_touse, T_touse = None, compare_a
 
         plt.subplot(232)
         for i in range(I):
-            plt.plot(range(FirstFertilityAge,LastFertilityAge+1), FertilityRates[i,FirstFertilityAge:LastFertilityAge+1,0])
+            plt.plot(range(FirstFertilityAge,LastFertilityAge+1), FertilityRates[i,FirstFertilityAge:LastFertilityAge+1,data_year])
         plt.legend(I_touse, prop={'size':11}, loc="upper right")
         plt.title("Fertility Rates", fontsize=14)
         plt.xlabel('Age')
@@ -337,14 +338,14 @@ def plotDemographics(ages, datasets, I, S, T, I_touse, T_touse = None, compare_a
 
         plt.subplot(233)
         for i in range(I):
-            plt.plot(range(MaxImmigrantAge), ImmigrationRates[i,:MaxImmigrantAge,0])
+            plt.plot(range(MaxImmigrantAge), ImmigrationRates[i,:MaxImmigrantAge,data_year])
         plt.title("Immigration Rates", fontsize=14)
         plt.xlabel('Age')
         plt.ylabel('Immigration Rate')
 
         plt.subplot(234)
         for i in range(I):
-            plt.plot(range(S), Nhat[i,:,0])
+            plt.plot(range(S), Nhat[i,:,data_year])
         plt.xlabel('Age')
         plt.ylabel('Population Share')
         plt.title("Initial Population Shares", fontsize=14)
@@ -907,15 +908,17 @@ def getSteadyState(params, assets_init, kf_init):
 
     return assets_ss, kf_ss, kd_ss, n_ss, Y_ss, r_ss, w_ss, c_vec_ss
 
-def SS_Iteration(params, w_ss, r_ss):
+#NEW SS FUNCTIONS
+def getSTUFF_SS(params, bq_ss, r_ss):
 
-    I, S, beta, sigma, delta, alpha, chi, rho, e_ss, A, \
-    FirstFertilityAge, FirstDyingAge, Nhat_ss, mortality_ss, \
+    I, S, beta, sigma, delta, alpha, chi, rho, e_ss, A,\
+    FirstFertilityAge, FirstDyingAge, Nhat_ss, mortality_ss,\
     g_A, lbar_ss, PrintEulErrors, CheckerMode = params
 
+    #These 2 functions are the Euluer system for solving household decisions, see equations 3.19 and 3.22
     def get_lifetime_decisionsSS(params, c_1, w_ss, r_ss):
 
-        I, S, beta, sigma, delta, rho, chi, e_ss, psi_ss, mortality_ss, g_A
+        I, S, beta, sigma, delta, rho, chi, bq_ss, e_ss, psi_ss, mortality_ss, g_A
 
         cvec_ss = np.zeros((I,S))
         avec_ss = np.zeros((I,S+1))
@@ -923,7 +926,7 @@ def SS_Iteration(params, w_ss, r_ss):
 
         for s in range(S-1):
             cvec_ss[:,s+1] = (beta * (1-mortality_ss[:,s]) * (1 + r_ss - delta)*psi_ss[:,s+1]/psi_ss[:,s])**(1/sigma) * cvec_ss[:,s]*np.exp(-g_A)
-            avec_ss[:,s+1] = (w_ss*e_ss[:,s] + (1 + r_ss - delta)*avec_ss[:,s] - cvec_ss[:,s]*(1+w_ss*e_ss[:,s]*(chi/(w_ss*e_ss[:,s])**rho)))*np.exp(-g_A)
+            avec_ss[:,s+1] = (w_ss*e_ss[:,s] + (1 + r_ss - delta)*avec_ss[:,s] + bq_ss[:,s] - cvec_ss[:,s]*(1+w_ss*e_ss[:,s]*(chi/(w_ss*e_ss[:,s])**rho)))*np.exp(-g_A)
     
         #Solves for assets in the year after the agent dies
         avec_ss[:,s+2] = (w_ss*e_ss[:,s+1] + (1 + r_ss - delta)*avec_ss[:,s+1] - cvec_ss[:,s+1]*(1+w_ss*e_ss[:,s+1]*(chi/(w_ss*e_ss[:,s+1])**rho)))*np.exp(-g_A)
@@ -942,68 +945,120 @@ def SS_Iteration(params, w_ss, r_ss):
 
         return Euler
 
+    #See equation 3.25
+    w_ss = (alpha*A/r_ss)**(alpha/(1-alpha))*(1-alpha)*A
+
     psi_params = (chi, rho, sigma)
     psi_ss = get_Psi(psi_params, w_ss, e_ss)
 
+    #Getting initial guess for household decisions
     c1_guess = np.ones(I)*.02
-    household_params = I, S, beta, sigma, delta, rho, chi, e_ss, psi_ss, mortality_ss, g_A
+    household_params = I, S, beta, sigma, delta, rho, chi, bq_ss, e_ss, psi_ss, mortality_ss, g_A
 
+    #Gets household decisions using an fsolve
     opt_c1 = opt.fsolve(householdEuler_SS, c1_guess, args = (w_ss, r_ss, household_params))
     cvec_ss, avec_ss = get_lifetime_decisionsSS(household_params, opt_c1, w_ss, r_ss)
+    avec_ss = avec_ss[:,:-1]
 
+    #See equation 3.20
     lhat_ss = get_lhat((chi, rho), cvec_ss, w_ss, e_ss)
 
+    #See equations 3.14, 3.26, and 3.15 respectively for the 3 equations below
     n_ss = get_n((e_ss, Nhat_ss, lbar_ss), lhat_ss)
+    kd_ss = np.sum(avec_ss*Nhat_ss, axis=1)
+    y_ss = get_Y((alpha, A), kd_ss, n_ss)
 
-    kd_ss = np.sum(avec_ss, axis=1)
+    #See equation 3.27
+    kf_ss = (alpha*A/r_ss)**(1/(1-alpha)) * n_ss - kd_ss
 
-    kf_ss = np.zeros(I)
-    kf_ss[1:] = (alpha*A[1:]/r_ss)**(1/(1-alpha)) * n_ss[1:] - kd_ss[1:]
-    kf_ss[0] = (-np.sum(np.sum(Nhat_ss[1:,:], axis=1)*kf_ss[1:]))/np.sum(Nhat_ss[0,:])
+    #Taping up any values of K with negative values
     K_ss_with_tape = np.clip(kd_ss + kf_ss, 0.0001, np.max(kd_ss + kf_ss))
 
-    wnew_ss = alpha*A*(K_ss_with_tape)**alpha * np.sum(Nhat_ss, axis=1)**(-alpha)
-    rnew_ss = alpha*A[0]*(K_ss_with_tape[0])**(alpha-1)*np.sum(Nhat_ss[0])
+    return w_ss, cvec_ss, avec_ss, kd_ss, kf_ss, n_ss, y_ss
 
-    return wnew_ss, rnew_ss, cvec_ss, avec_ss, kd_ss, kf_ss
+#THIS IS THE FUNCTION THAT WE PUT INTO THE FSOLVE
+def EuluerSystemSS(guess, I, S, beta, sigma, delta, alpha, chi, rho, e_ss, A,
+    FirstFertilityAge, FirstDyingAge, Nhat_ss, Mortality_ss,\
+    g_A, lbar_ss, PrintEulErrors, CheckerMode):
 
-def getSteadyStateNEW(params, wstart_ss, rstart_ss, xi_ss, tol, I_touse):
 
-    I, S, beta, sigma, delta, alpha, chi, rho, e_ss, A, \
-    FirstFertilityAge, FirstDyingAge, Nhat_ss, mortality_ss, \
+    params = (I, S, beta, sigma, delta, alpha, chi, rho, e_ss, A,\
+             FirstFertilityAge, FirstDyingAge, Nhat_ss, Mortality_ss,\
+             g_A, lbar_ss, PrintEulErrors, CheckerMode)
+
+    #Breaks apart the current guess
+    bq_ss = guess[:-1]
+    r_ss = guess[-1]
+
+    #Takes bq_ss and makes it into a vector for bequest distribution
+    bqvec_ss = np.zeros((I,S))
+    bqvec_ss[:,FirstFertilityAge:FirstDyingAge] = np.einsum("i,s->is", bq_ss, np.ones(FirstDyingAge-FirstFertilityAge))
+
+    #Uses the ss values of bqvec_ss and our global r to get other stuff from the getSTUFF_SS function
+    w_ss, cvec_ss, avec_ss, kd_ss, kf_ss, n_ss, y_ss = getSTUFF_SS(params, bqvec_ss, r_ss)
+
+    #Sums up the assets of all the dead people
+    alldeadagent_assets = np.sum(avec_ss[:,FirstDyingAge:]*Mortality_ss[:,FirstDyingAge:]*Nhat_ss[:,FirstDyingAge:], axis=1)
+    
+    #See equation 3.29
+    Euler_bq = bq_ss - alldeadagent_assets/np.sum(Nhat_ss[:,FirstFertilityAge:FirstDyingAge],axis=1)
+
+    #See equation 3.24
+    Euler_kf = np.sum(kf_ss)
+
+    #Puts our Eulers into one equation so fsolve likes it
+    Euler_all = np.append(Euler_bq, Euler_kf)
+
+    if PrintEulErrors: print "Euler Errors:", Euler_all
+
+    return Euler_all
+
+def getSteadyStateNEWEST(params, bqstart_ss, rstart_ss, I_touse):
+
+    I, S, beta, sigma, delta, alpha, chi, rho, e_ss, A,\
+    FirstFertilityAge, FirstDyingAge, Nhat_ss, mortality_ss,\
     g_A, lbar_ss, PrintEulErrors, CheckerMode = params
 
-    distance = 10
-    Iter = 0
+    #Prepares our initial guesses as a single matrix for the fsolve
+    guess = np.append(bqstart_ss, rstart_ss)
 
-    w_old = wstart_ss
-    r_old = rstart_ss
+    #The fsolve
+    ss = opt.fsolve(EuluerSystemSS, guess, args=params)
 
-    while distance > tol:
-        Iter+=1
-        w_new, r_new, cvec_ss, avec_ss, kd_ss, kf_ss = SS_Iteration(params, w_old, r_old)
+    #Takes apart the matrix that the fsolve yields
+    bq_ss = ss[:-1] #bq_ss is the portion of the total bequests each eligible agent will receive (the same across all eligible generations)
+    r_ss = ss[-1] #Global intrest rate. Done are the days we need to have a vector of r in the steady state
 
-        dist_w=(np.max(np.absolute(w_old-w_new)))
-        dist_r=np.absolute(r_old-r_new)
-        distance=max([dist_w,dist_r])
-        print "Iteration", Iter, "Max Distance:", distance, "w difference:", np.absolute(w_old-w_new), "r difference:", np.absolute(dist_r)
+    #Takes bq_ss and makes it into a vector for bequest distribution
+    bqvec_ss = np.zeros((I,S))
+    bqvec_ss[:,FirstFertilityAge:FirstDyingAge] = np.einsum("i,s->is", bq_ss, np.ones(FirstDyingAge-FirstFertilityAge))
 
-        w_old=w_old*xi_ss+(1-xi_ss)*w_new
-        r_old=r_old*xi_ss+(1-xi_ss)*r_new
+    #Uses the ss values of bqvec_ss and our global r to get other stuff in the steady state
+    w_ss, cvec_ss, avec_ss, kd_ss, kf_ss, n_ss, y_ss = getSTUFF_SS(params, bqvec_ss, r_ss)
 
     for i in range(I):
         plt.plot(range(S),cvec_ss[i,:])
+    plt.title("Consumption")
     plt.legend(I_touse[:I])
-    plt.show()
+    #plt.show()
     for i in range(I):
-        plt.plot(range(S+1),avec_ss[i,:])
+        plt.plot(range(S),avec_ss[i,:])
+    plt.title("Assets")
     plt.legend(I_touse[:I])
-    plt.show()
+    #plt.show()
+    for i in range(I):
+        plt.plot(range(S),bqvec_ss[i,:])
+    plt.title("Bequests")
+    plt.legend(I_touse[:I])
+    #plt.show()
 
+    alldeadagent_assets = np.sum(avec_ss[:,FirstDyingAge:]*mortality_ss[:,FirstDyingAge:]*Nhat_ss[:,FirstDyingAge:], axis=1)
+    print "\n\nSTEADY STATE FOUND!"
     print "sum(kf) =", np.sum(kf_ss), "= 0:", np.isclose(np.sum(kf_ss), 0)
-    print "w_ss = ", w_new
-    print "rnew_ss = ", r_new
+    print "Euler_bq =", bq_ss - alldeadagent_assets/np.sum(Nhat_ss[:,FirstFertilityAge:FirstDyingAge],axis=1), "= 0:", np.isclose(bq_ss - alldeadagent_assets/np.sum(Nhat_ss[:,FirstFertilityAge:FirstDyingAge],axis=1), 0) 
+    print "\n"
 
+    return bq_ss, r_ss, w_ss, cvec_ss, avec_ss, kd_ss, kf_ss, n_ss, y_ss
 
 #TIMEPATH FUNCTIONS
 
@@ -1089,18 +1144,6 @@ def get_initialguesses(params, assets_ss, kf_ss, w_ss, r_ss, PrintLoc):
     bb = -2 * (r_init-r_ss)/(T-S-1)
     aa = -bb / (2*(T-S-1))
     rpath_guess[:T-S] = aa * np.arange(0,T-S)**2 + bb*np.arange(0,T-S) + cc
-    """
-    rpath_guess[:T-S] = np.array([0.71478844,  0.64002819,  0.59426796,  0.56472265,  0.54495788,  0.53192275,  0.52450368,\
-                                  0.5179574,   0.51274531,  0.50871851,  0.50447231,  0.49995494,  0.49633367,  0.49459149,\
-                                  0.49850222,  0.50427543,  0.51247218,  0.52111765,  0.52587392,  0.51859613,  0.46863391,\
-                                  0.47859965,  0.4874162,   0.49575407,  0.50320705,  0.50863949,  0.50957934,  0.4978336,\
-                                  0.49161017,  0.49136887,  0.49538024,  0.5001406,   0.50487951,  0.50750681,  0.5041324,\
-                                  0.49951,     0.49625146,  0.49530012,  0.49569111,  0.49794382,  0.50052927,  0.50281578,\
-                                  0.50244582,  0.50050301,  0.49854235,  0.4973308,   0.49733431,  0.49840319,  0.50004724,
-                                  0.50110635,  0.49923804,  0.49963461,  0.50080544,  0.50201592,  0.50251829,  0.50219168,\
-                                  0.50133411,  0.50042015,  0.49990343,  0.50003811,  0.500709,    0.50148499,  0.50193644,\
-                                  0.50187234,  0.50138822,  0.50077331,  0.50035979,  0.50035065,  0.50071056,  0.50120764])
-    """
     rpath_guess[T-S:] = r_ss
 
     #Gets initial guess for wage rate path. This is set up to be parabolic.
