@@ -197,4 +197,3 @@ def plotDemographics(ages, datasets, I, S, T, I_touse, T_touse = None, compare_a
 
     firstPlot()
     secondPlot()
-

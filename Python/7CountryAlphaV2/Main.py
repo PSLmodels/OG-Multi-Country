@@ -36,7 +36,7 @@ def Multi_Country(S,I,sigma):
     PrintAges = False #Prints the different key ages in the demographics
     PrintLoc = False #Displays the current locations of the program inside key TPI functions
     PrintEulErrors = False #Prints the euler errors in each attempt of calculating the steady state
-    PrintSS = False #Prints the result of the Steady State functions
+    PrintSS = True #Prints the result of the Steady State functions
     Print_cabqTimepaths = False #Prints the consumption, assets, and bequests timepath as it gets filled in for each iteration of TPI
     CheckerMode = False #Reduces the number of prints when checking for robustness
 
@@ -101,16 +101,15 @@ def Multi_Country(S,I,sigma):
     bq_ss, r_ss, w_ss, cvec_ss, avec_ss, kd_ss, kf_ss, n_ss, y_ss = Stepfuncs.getSteadyStateNEWEST(params_ss, bq_ss_guess, r_ss_guess, I_touse)
     #NEW CODE ENDS HERE
 
-
     if PrintSS==True: #Prints the results of the steady state, line 23 activates this
-        print "assets steady state", assets_ss
+        print "assets steady state", avec_ss
         print "kf steady state", kf_ss
         print "kd steady state", kd_ss
         print "n steady state",n_ss
         print "y steady state", y_ss
         print "r steady state",r_ss
         print "w steady state", w_ss
-        print "c_vec_ss steady state",c_vec_ss
+        print "c_vec_ss steady state",cvec_ss
 
     if UseSSDemog == True:
         print "NOTE: USING SS DEMOGRAPHICS FOR TIMEPATH\n"
@@ -132,4 +131,4 @@ def Multi_Country(S,I,sigma):
         if TPIGraphs==True:
             Stepfuncs.plotTimepaths(I, S, T, sigma, wpath, rpath, Cpath, Kpath, Ypath, I_touse, SAVE, SHOW, CheckerMode)
 
-Multi_Country(80,7,4)
+Multi_Country(20,2,4)

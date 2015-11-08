@@ -1477,10 +1477,10 @@ def get_household_timepaths(params, wpath, rpath, starting_assets, PrintLoc, Pri
 
         if Print_cabqTimepaths:
             print "Consumption"
-            print np.round(np.transpose(c_timepath[0,:,:p+2]), decimals=3)
+            print np.round(np.transpose(c_matrix[0,:,:p+2]), decimals=3)
             print "c_guess", np.round(c_guess[0], decimals=3)
             print "Assets"
-            print np.round(np.transpose(a_timepath[0,:,:p+2]), decimals=3)
+            print np.round(np.transpose(a_matrix[0,:,:p+2]), decimals=3)
             print "Bequests"
             print np.round(np.transpose(bq_timepath[0,:,:p+2]), decimals=3)
             print "agent_bq", np.round(agent_bq[0,:], decimals=3)
