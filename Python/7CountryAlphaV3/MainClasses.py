@@ -394,12 +394,11 @@ class OLG(object):
             print "w steady state", self.w_ss
             print "c_vec_ss steady state", self.cvec_ss
 
-
     #TIMEPATH-ITERATION
 
     def set_initial_values(self, r_init, bq_init, a_init):
-    	self.r_init = r_init
-    	self.bq_init = bq_init
+        self.r_init = r_init
+        self.bq_init = bq_init
         self.a_init = a_init
 
     def get_initialguesses(self):

@@ -282,13 +282,13 @@ def getDemographics(params, levers, I_dict, I_touse, ADJUSTKOREAIMMIGRATION):
     pop_old = N[:,:,-1]
     pop_new = N[:,:,-1]
 
-    iter = 0
+    iteration = 0
 
     while np.max(np.abs(Nhat[:,:,-1] - Nhat[:,:,-2])) > tol:
         pop_new[:,0] = np.sum((pop_old[:,:]*FertilityRates[:,:,-1]),axis=1)
         pop_new[:,1:] = pop_old[:,:-1]*(1+ImmigrationRates[:,:-1,-1]-MortalityRates[:,:-1,-1])
         Nhat = np.dstack((Nhat,pop_new/np.sum(pop_new)))
-        iter+=1
+        iteration+=1
 
     if PrintLoc: print "The SS Population Share converged in", iter, "years beyond year T"
 
@@ -302,7 +302,6 @@ def getDemographics(params, levers, I_dict, I_touse, ADJUSTKOREAIMMIGRATION):
     #Gets labor endowment per household. For now it grows at a constant rate g_A
     lbar[:T] = np.cumsum(np.ones(T)*g_A)
     lbar[T-S:] = np.ones(S)
-
 
     if CheckerMode==False:
         print "\nDemographics obtained!"
@@ -957,6 +956,7 @@ def getSTUFF_SS(params, bq_ss, r_ss):
 
     #Gets household decisions using an fsolve
     opt_c1 = opt.fsolve(householdEuler_SS, c1_guess, args = (w_ss, r_ss, household_params))
+
     cvec_ss, avec_ss = get_lifetime_decisionsSS(household_params, opt_c1, w_ss, r_ss)
     avec_ss = avec_ss[:,:-1]
 
@@ -965,6 +965,7 @@ def getSTUFF_SS(params, bq_ss, r_ss):
 
     #See equations 3.14, 3.26, and 3.15 respectively for the 3 equations below
     n_ss = get_n((e_ss, Nhat_ss, lbar_ss), lhat_ss)
+    #print n_ss
     kd_ss = np.sum(avec_ss*Nhat_ss, axis=1)
     y_ss = get_Y((alpha, A), kd_ss, n_ss)
 
@@ -1040,17 +1041,17 @@ def getSteadyStateNEWEST(params, bqstart_ss, rstart_ss, I_touse):
         plt.plot(range(S),cvec_ss[i,:])
     plt.title("Consumption")
     plt.legend(I_touse[:I])
-    #plt.show()
+    plt.show()
     for i in range(I):
         plt.plot(range(S),avec_ss[i,:])
     plt.title("Assets")
     plt.legend(I_touse[:I])
-    #plt.show()
+    plt.show()
     for i in range(I):
         plt.plot(range(S),bqvec_ss[i,:])
     plt.title("Bequests")
     plt.legend(I_touse[:I])
-    #plt.show()
+    plt.show()
 
     alldeadagent_assets = np.sum(avec_ss[:,FirstDyingAge:]*mortality_ss[:,FirstDyingAge:]*Nhat_ss[:,FirstDyingAge:], axis=1)
     print "\n\nSTEADY STATE FOUND!"
@@ -1416,7 +1417,7 @@ def get_household_timepaths(params, wpath, rpath, starting_assets, PrintLoc, Pri
         print "Bequests"
         print np.round(np.transpose(bq_timepath[0,:,:2]), decimals=3)
 
-    #Loops through each diagonal for S+T periods 
+    #Loops through each diagonal for T periods 
     for j in range(1,T):
 
         if j < S:

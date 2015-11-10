@@ -1,3 +1,4 @@
+from __future__ import division
 import numpy as np
 import StepbyStepv1 as Stepfuncs
 import time as time
@@ -19,8 +20,8 @@ def Multi_Country(S,I,sigma):
 
     beta_ann=.95 #Starting future consumption discount rate
     delta_ann=.08 #Starting depreciation rate
-    beta = beta_ann**(70/S) #Future consumption discount rate
-    delta = 1-(1-delta_ann)**(70/S) #Depreciation Rate
+    beta = beta_ann**(70./S) #Future consumption discount rate
+    delta = 1-(1-delta_ann)**(70./S) #Depreciation Rate
     alpha = .3 #Capital Share of production
     chi = 1.5 #New Parameter
     rho = 1.3 #Other New Parameter
@@ -46,7 +47,7 @@ def Multi_Country(S,I,sigma):
     UseStaggeredAges = True #Activates using staggered ages
     UseDiffDemog = True #Turns on different demographics for each country
     UseSSDemog = False #Activates using only steady state demographics for TPI calculation
-    UseDiffProductivities = True #Activates having e vary across cohorts
+    UseDiffProductivities = False #Activates having e vary across cohorts
     UseTape = True #Activates setting any value of kd<0 to 0.001 in TPI calculation
     SAVE = False #Saves the graphs
     SHOW = True #Shows the graphs
