@@ -1,6 +1,10 @@
 import time
 import numpy as np
 import AuxiliaryClass as AUX
+from scipy.sparse import spdiags as spdiags
+import scipy.sparse as sparse
+
+np.set_printoptions(threshold = 3000, linewidth=2000, suppress=True)
 
 def Multi_Country(S,I,sigma):
 
@@ -28,12 +32,12 @@ def Multi_Country(S,I,sigma):
     MaxIters = 10000 #Maximum number of iterations on TPI.
 
     #Program Levers
-    CalcTPI = False #Activates the calculation of Time Path Iteration
+    CalcTPI = True #Activates the calculation of Time Path Iteration
 
     PrintAges = False #Prints the different key ages in the demographics
     PrintLoc = False #Displays the current locations of the program inside key TPI functions
     PrintEulErrors = False #Prints the euler errors in each attempt of calculating the steady state
-    PrintSS = True #Prints the result of the Steady State functions
+    PrintSS = False #Prints the result of the Steady State functions
     Print_cabqTimepaths = False #Prints the consumption, assets, and bequests timepath as it gets filled in for each iteration of TPI
 
     CheckerMode = False #Reduces the number of prints when checking for robustness, use in conjunction with RobustChecker.py
@@ -44,7 +48,7 @@ def Multi_Country(S,I,sigma):
     UseStaggeredAges = True #Activates using staggered ages
     UseDiffDemog = True #Turns on different demographics for each country
     UseSSDemog = False #Activates using only steady state demographics for TPI calculation
-    UseDiffProductivities = True #Activates having e vary across cohorts
+    UseDiffProductivities = False #Activates having e vary across cohorts
     UseTape = True #Activates setting any value of kd<0 to 0.001 in TPI calculation
     SAVE = False #Saves the graphs
     SHOW = True #Shows the graphs
@@ -97,12 +101,16 @@ def Multi_Country(S,I,sigma):
 
 
     #Timepath Iteration
-
+    
+    r_init = Model.r_ss*.9
+    bq_init = Model.bq_ss*.85
+    a_init = Model.avec_ss*.85
+    Model.set_initial_values(r_init, bq_init, a_init)
+    Model.Timepath()
 
     return None
 
 
 #Input parameters for S, I and sigma here then execute this file to
 #run the model.
-Multi_Country(20,2,2)
-
+Multi_Country(16,2,4)

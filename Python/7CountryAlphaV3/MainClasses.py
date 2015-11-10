@@ -18,30 +18,42 @@ class OLG(object):
     def __init__(self, countries, HH_Params, Firm_Params, Lever_Params, Tol_Params, SS_Params, TPI_Params):
         #PARAMETER SET UP
 
+        #Lever Parameters
+        (self.CalcTPI,self.PrintAges,self.PrintLoc,self.EulErrors,self.PrintSS,self.Print_cabqTimepaths,self.CheckerMode,\
+                self.DemogGraphs,self.TPIGraphs,self.UseStaggeredAges,self.UseDiffDemog,self.UseSSDemog,\
+                self.UseDiffProductivities, self.UseTape,self.SAVE,self.SHOW,self.ADJUSTKOREAIMMIGRATION) = Lever_Params
+
         #HH Parameters
-        (self.S, self.I, self.beta_annual,self.sigma)=HH_Params
+        (self.S, self.I, self.beta_annual, self.sigma) = HH_Params
         
         self.beta=self.beta_annual**(70/self.S)
         self.T = int(round(4*self.S))
 
-        self.T_1=self.S
+        self.T_1 = self.S
 
         if self.S > 50:
             self.T_1=50
 
         #Demographics Parameters
 
+        self.LeaveHouseAge, self.FirstFertilityAge, self.LastFertilityAge, self.MaxImmigrantAge, self.FirstDyingAge,\
+                self.agestopull = demog.getkeyages(self.S,self.PrintAges,self.UseStaggeredAges)
+
         self.I_dict, self.I_touse = countries
 
+        self.f_range=self.LastFertilityAge+1-self.FirstFertilityAge
+        self.N=np.zeros((self.I,self.S,self.T))
+        self.Nhat=np.zeros((self.I,self.S,self.T))
+        self.all_FertilityRates = np.zeros((self.I, self.S, self.f_range+self.T))
+        self.FertilityRates = np.zeros((self.I, self.S, self.T))
+        self.MortalityRates = np.zeros((self.I, self.S, self.T))
+        self.Migrants = np.zeros((self.I, self.S, self.T))
+        self.g_N = np.zeros(self.T)
+        self.lbar = np.zeros(self.T)
         
         #Firm Parameters
-        (self.alpha,self.delta_annual,self.chi,self.rho, self.g_A)= Firm_Params
-        self.delta=1-(1-self.delta_annual)**(70/self.S)
-
-        #Lever Parameters
-        (self.CalcTPI,self.PrintAges,self.PrintLoc,self.EulErrors,self.PrintSS,self.Print_cabqTimepaths,self.CheckerMode,\
-                self.DemogGraphs,self.TPIGraphs,self.UseStaggeredAges,self.UseDiffDemog,self.UseSSDemog,\
-                self.UseDiffProductivities,self.UseTape,self.SAVE,self.SHOW,self.ADJUSTKOREAIMMIGRATION) = Lever_Params
+        (self.alpha, self.delta_annual, self.chi, self.rho, self.g_A) = Firm_Params
+        self.delta = 1-(1-self.delta_annual)**(70/self.S)
 
         #Tolerance Parameters
 
@@ -52,12 +64,10 @@ class OLG(object):
         #Timepath Iteration Parameters
         #(self.tpi_tol, self.xi, self.MaxIters) = TPI_Params
 
-        self.LeaveHouseAge, self.FirstFertilityAge, self.LastFertilityAge, self.MaxImmigrantAge, self.FirstDyingAge,\
-                self.agestopull = demog.getkeyages(self.S,self.PrintAges,self.UseStaggeredAges)
 
         if self.UseDiffDemog:
             self.A = np.ones(self.I)+np.cumsum(np.ones(self.I)*.05)-.05 #Techonological Change, used for when countries are different
-            #A = np.ones(I)
+
         else:
             self.A = self.np.ones(I) #Techonological Change, used for idential countries
 
@@ -71,18 +81,6 @@ class OLG(object):
     #DEMOGRAPHICS SET-UP
 
     def Import_Data(self):
-
-        self.f_range=self.LastFertilityAge+1-self.FirstFertilityAge
-
-
-        self.N=np.zeros((self.I,self.S,self.T))
-        self.Nhat=np.zeros((self.I,self.S,self.T))
-        self.all_FertilityRates = np.zeros((self.I, self.S, self.f_range+self.T))
-        self.FertilityRates = np.zeros((self.I, self.S, self.T))
-        self.MortalityRates = np.zeros((self.I, self.S, self.T))
-        self.Migrants = np.zeros((self.I, self.S, self.T))
-        self.g_N = np.zeros(self.T)
-        self.lbar = np.zeros(self.T)
 
         I_all = ["usa", "eu", "japan", "china", "india", "russia", "korea"]
 
@@ -222,10 +220,6 @@ class OLG(object):
         self.lbar_ss=self.lbar[-1]
 
 
-
-
-
-
     #STEADY STATE
 
     def get_Psi(self, w, e):
@@ -276,12 +270,9 @@ class OLG(object):
 
         return Y
 
-
     def GetSSComponents(self, bq_ss, r_ss):
 
         def get_lifetime_decisionsSS(c_1, w_ss, r_ss):
-
-            #print self.I
 
             cvec_ss = np.zeros((self.I,self.S))
             avec_ss = np.zeros((self.I,self.S+1))
@@ -335,7 +326,6 @@ class OLG(object):
 
         return w_ss, cvec_ss, avec_ss, kd_ss, kf_ss, n_ss, y_ss
 
-
     def EulerSystemSS(self,guess):
 
         bq_ss = guess[:-1]
@@ -356,14 +346,11 @@ class OLG(object):
 
         Euler_kf = np.sum(kf_ss)
 
-
         Euler_all = np.append(Euler_bq, Euler_kf)
-
 
         if self.EulErrors: print "Euler Errors:", Euler_all
 
         return Euler_all
-
 
     def SteadyState(self, rss_guess, bqss_guess):
 
@@ -388,10 +375,13 @@ class OLG(object):
         alldeadagent_assets = np.sum(self.avec_ss[:,self.FirstDyingAge:]*self.Mortality_ss[:,self.FirstDyingAge:]*\
                 self.Nhat_ss[:,self.FirstDyingAge:], axis=1)
 
+        print "sum(kf) =", np.sum(self.kf_ss), "= 0:", np.isclose(np.sum(self.kf_ss), 0)
+        print "Euler_bq =", self.bq_ss - alldeadagent_assets/np.sum(self.Nhat_ss[:,self.FirstFertilityAge:self.FirstDyingAge],axis=1), "= 0:", np.isclose(self.bq_ss - alldeadagent_assets/np.sum(self.Nhat_ss[:,self.FirstFertilityAge:self.FirstDyingAge],axis=1), 0) 
+        print "\n"
+
         print "Euler_bq", self.bq_ss - alldeadagent_assets/np.sum(self.Nhat_ss[:,self.FirstFertilityAge:self.FirstDyingAge],axis=1)
 
         print np.isclose(alldeadagent_assets/np.sum(self.Nhat_ss[:,self.FirstFertilityAge:self.FirstDyingAge],axis=1),0)
-
 
 
         if self.PrintSS:
@@ -404,14 +394,157 @@ class OLG(object):
             print "w steady state", self.w_ss
             print "c_vec_ss steady state", self.cvec_ss
 
-
-
-
-
-
-
-
     #TIMEPATH-ITERATION
+
+    def set_initial_values(self, r_init, bq_init, a_init):
+        self.r_init = r_init
+        self.bq_init = bq_init
+        self.a_init = a_init
+
+    def get_initialguesses(self):
+        rpath_guess = np.zeros(self.T)
+        bqpath_guess = np.zeros((self.I,self.T))
+
+        cc = self.r_init
+        bb = -2 * (self.r_init-self.r_ss)/(self.T-self.S-1)
+        aa = -bb / (2*(self.T-self.S-1))
+        rpath_guess[:self.T-self.S] = aa * np.arange(0,self.T-self.S)**2 + bb*np.arange(0,self.T-self.S) + cc
+        rpath_guess[self.T-self.S:] = self.r_ss
+
+        for i in range(self.I):
+            bqpath_guess[i,:self.T-self.S] = np.linspace(self.bq_init[i], self.bq_ss[i], self.T-self.S)
+
+        bqpath_guess[:,self.T-self.S:] = np.outer(self.bq_ss,np.ones(self.S))
+
+
+        return rpath_guess, bqpath_guess 
+
+    def GetTPIComponents(self, bqvec_path, r_path):
+
+        def get_lifetime_decisionsTPI(c_1, w_life, r_life, mort_life, e_life, psi_life, bq_life, a_current, age):
+
+            decisions = self.S - age -1
+            cvec_path = np.zeros((self.I,decisions+1))
+            avec_path = np.zeros((self.I,decisions+2))
+            cvec_path[:,0] = c_1
+            avec_path[:,0] = a_current
+
+            for s in range(decisions):
+                cvec_path[:,s+1] = (self.beta * (1-mort_life[:,s]) * (1 + r_path[s+1] - self.delta)\
+                                   * psi_life[:,s+1]/psi_life[:,s])**(1/self.sigma) * cvec_path[:,s]*np.exp(-self.g_A)
+
+                avec_path[:,s+1] = (w_life[:,s]*e_life[:,s] + (1 + r_life[s] - self.delta)*avec_path[:,s] + \
+                        bq_life[:,s] - cvec_path[:,s]*(1+w_life[:,s]*e_life[:,s]*\
+                        (self.chi/(w_life[:,s]*e_life[:,s])**self.rho)))*np.exp(-self.g_A)
+
+            avec_path[:,s+2] = (w_life[:,s+1]*e_life[:,s+1] + (1 + r_life[s+1] - self.delta)*avec_path[:,s+1] \
+                    - cvec_path[:,s+1]*(1+w_life[:,s+1]*e_life[:,s+1]*(self.chi/(w_path[:,s+1]*e_life[:,s+1])\
+                    **self.rho)))*np.exp(-self.g_A)
+
+            return cvec_path, avec_path
+
+        def householdEuler_TPI(c_1, w_path, r_path, psi, bq_chunk):
+
+            cguess_alive = np.expand_dims(c_1[:self.I*self.S],axis=1).reshape((self.I,self.S))
+            cguess_future = np.expand_dims(c_1[self.I*self.S:],axis=1).reshape((self.I,self.T))
+
+            c_matrix = np.zeros((self.I,self.S,self.T))
+            a_matrix = np.zeros((self.I,self.S+1,self.T))
+
+            c_matrix[:,self.S-1,0] = (w_path[:,0]*self.e[:,self.S-1,0] + (1 + r_path[0] - self.delta)*self.a_init[:,self.S-1])\
+            /(1+w_path[:,0]*self.e[:,self.S-1,0]*(self.chi/(w_path[:,0]*self.e[:,self.S-1,0]))**self.rho)
+
+            for age in range(self.S-1):
+                p = self.S-age #Remaining decisions
+
+                w_life = w_path[:,:p]
+                r_life = r_path[:p+1]
+                mort_life = np.diagonal(self.MortalityRates[:,age:,age:], axis1=1, axis2=2)
+                e_life = np.diagonal(self.e[:,age:,:p+1], axis1=1, axis2=2)
+                psi_life = np.diagonal(psi[:,age:,:p+2], axis1=1, axis2=2)
+                bq_life = np.diagonal(bq_chunk[:,age:,:p+1], axis1=1, axis2=2)
+                a_current = self.a_init[:,age]
+                cpath_indiv, apath_indiv = get_lifetime_decisionsTPI(cguess_alive[:,age], w_life, r_life, mort_life, e_life, psi_life, bq_life, a_current, age)
+            
+                for i in xrange(self.I):
+                    np.fill_diagonal(c_matrix[i,age:,:], cpath_indiv[i,:])
+                    np.fill_diagonal(a_matrix[i,age:,:], apath_indiv[i,:])
+
+                if self.Print_cabqTimepaths:
+                    print "Consumption"
+                    print np.round(np.transpose(c_matrix[0,:,:p+2]), decimals=3)
+                    #print "c_guess", np.round(c_guess[0], decimals=3)
+                    print "Assets"
+                    print np.round(np.transpose(a_matrix[0,:,:p+2]), decimals=3)
+                    #print "Bequests"
+                    #print np.round(np.transpose(bq_timepath[0,:,:p+2]), decimals=3)
+                    #print "agent_bq", np.round(agent_bq[0,:], decimals=3)
+            
+            Euler = np.ravel(a_path[:,-1])
+
+            if np.any(cpath<0):
+                print "WARNING! The fsolve for initial optimal consumption guessed a negative number"
+                Euler = np.ones(Euler.shape[0])*9999.
+
+            return Euler
+
+        w_path = np.einsum("it,i->it",np.einsum("i,t->it",self.alpha*self.A,1/r_path)**(self.alpha/(1-self.alpha)),(1-self.alpha)*self.A)
+
+        psi = self.get_Psi(w_path,self.e)
+
+        cpathguess = np.ones((self.I,self.T+self.S))*.02
+
+        opt_c1path = opt.fsolve(householdEuler_TPI, cpathguess, args = (w_path, r_path, psi, bqvec_path))
+
+        cvec_path, avec_path = get_lifetime_decisionsSS(opt_c1,w_path,r_path)
+        avec_path = avec_path[:,:-1]
+
+        lhat_path = self.get_lhat(cvec_path, w_path, self.e_path)
+
+        n_path = self.get_n(lhat_path)
+        kd_path = np.sum(avec_path*self.Nhat_path,axis=1)
+        y_path = self.get_Y(kd_path,n_path)
+
+        kf_path = (self.alpha*self.A/r_path)**(1/(1-self.alpha)) * n_path-kd_path
+
+        K_path_with_tape = np.clip(kd_path + kf_path, .0001, np.max(kd_path + kf_path))
+
+        return w_path, cvec_path, avec_path, kd_path, kf_path, n_path, y_path
+
+    def EulerSystemTPI(self, guess):
+
+        guess = np.expand_dims(guess, axis=1).reshape((self.I+1,self.T))
+        r_path = guess[0,:]
+        bq_path = guess[1:,:]
+
+        bqvec_path = np.zeros((self.I,self.S,self.T))
+        bqvec_path[:,self.FirstFertilityAge:self.FirstDyingAge,:] = np.einsum("it,s->ist", bq_path, \
+                np.ones(self.FirstDyingAge-self.FirstFertilityAge))
+
+        w_path, cvec_path, avec_path, kd_path, kf_path, n_path, y_path = self.GetTPIComponents(bqvec_path, r_path)
+
+
+        alldeadagent_assets = np.sum(avec_path[:,self.FirstDyingAge:]*\
+                self.Mortality_path[:,self.FirstDyingAge:]*self.Nhat_path[:,self.FirstDyingAge:], axis=1)
+
+        Euler_bq = bq_path - alldeadagent_assets/np.sum(self.Nhat_path[:,self.FirstFertilityAge:self.FirstDyingAge],\
+                axis=1)
+
+        Euler_kf = np.sum(kf_path)
+
+        Euler_all = np.append(Euler_bq, Euler_kf)
+
+        if self.EulErrors: print "Euler Errors:", Euler_all
+
+        return Euler_all
+
+    def Timepath(self):
+        
+        rpath_guess, bqpath_guess = self.get_initialguesses()
+
+        guess = np.append(rpath_guess, bqpath_guess)
+
+        paths = opt.fsolve(self.EulerSystemTPI, guess)
 
 
 
@@ -445,7 +578,7 @@ def Multi_Country(S,I,sigma):
     PrintLoc = False #Displays the current locations of the program inside key TPI functions
     PrintEulErrors = False #Prints the euler errors in each attempt of calculating the steady state
     PrintSS = True #Prints the result of the Steady State functions
-    Print_cabqTimepaths = False #Prints the consumption, assets, and bequests timepath as it gets filled in for each iteration of TPI
+    Print_cabqTimepaths = True #Prints the consumption, assets, and bequests timepath as it gets filled in for each iteration of TPI
     CheckerMode = False #Reduces the number of prints when checking for robustness
 
     DemogGraphs = False #Activates graphing graphs with demographic data and population shares
@@ -475,9 +608,9 @@ def Multi_Country(S,I,sigma):
 
     Country_Roster= (I_dict, I_touse)
 
-    HH_params = (S,I,beta_ann,sigma)#,nvec)
+    HH_params = (S,I,beta_ann,sigma)
 
-    Firm_Params = ( alpha, delta_ann, chi, rho, g_A)
+    Firm_Params = (alpha, delta_ann, chi, rho, g_A)
 
     Tolerances = (tpi_tol, demog_ss_tol)
 
@@ -486,7 +619,6 @@ def Multi_Country(S,I,sigma):
 
     TPI_Params = ()
     SS_Params = ()
-
 
 
     ##WHERE THE MAGIC HAPPENS ##
@@ -505,11 +637,15 @@ def Multi_Country(S,I,sigma):
     bq_ss_guess = np.ones(I)*.2
     Model.SteadyState(r_ss_guess, bq_ss_guess)
 
-
     #Timepath Iteration
+    r_init = Model.r_ss*.9
+    bq_init = Model.bq_ss*.85
+    a_init = Model.avec_ss*.85
+    Model.set_initial_values(r_init, bq_init, a_init)
+    #Model.Timepath()
 
-    return None
+    pass
 
 
-Multi_Country(20,2,2)
+Multi_Country(20,2,4)
 
