@@ -20,7 +20,7 @@ def Multi_Country(S,I,sigma):
     #Parameters Zone
     g_A = 0.015 #Technical growth rate
     beta_ann=.95 #Annual discount rate
-    delta_ann=.08 #Annual depreciation rate    
+    delta_ann=.08 #Annual depreciation rate
     alpha = .3 #Capital Share of production
     chi = 1.5 #Preference for lesiure
     rho = 1.3 #Other New Parameter
@@ -36,7 +36,7 @@ def Multi_Country(S,I,sigma):
 
     PrintAges = False #Prints the different key ages in the demographics
     PrintLoc = False #Displays the current locations of the program inside key TPI functions
-    PrintEulErrors = False #Prints the euler errors in each attempt of calculating the steady state
+    PrintEulErrors = True #Prints the euler errors in each attempt of calculating the steady state
     PrintSS = False #Prints the result of the Steady State functions
     Print_cabqTimepaths = False #Prints the consumption, assets, and bequests timepath as it gets filled in for each iteration of TPI
 
@@ -63,7 +63,6 @@ def Multi_Country(S,I,sigma):
         print "WARNING: We are changing I_touse from", I_touse, "to", I_touse[:I], "so there are", I, "regions"
         I_touse = I_touse[:I]
         time.sleep(2)
-
 
 
     ##INPUTS INTO THE CLASS###
@@ -114,3 +113,5 @@ def Multi_Country(S,I,sigma):
 #Input parameters for S, I and sigma here then execute this file to
 #run the model.
 Multi_Country(16,2,4)
+
+
