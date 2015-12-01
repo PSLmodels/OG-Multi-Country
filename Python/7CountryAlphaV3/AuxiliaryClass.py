@@ -71,20 +71,25 @@ class OLG(object):
         #PARAMETER SET UP
 
         #HH Parameters
-        (self.S, self.I, beta_annual,self.sigma)=HH_Params
+        (self.S, self.I, beta_annual,self.sigma) = HH_Params
         
         self.beta=beta_annual**(70/self.S)
 
         self.T = int(round(4*self.S))
 
-        self.T_1=self.S
+        self.T_1 = self.S
 
         if self.S > 50:
-            self.T_1=50
+            self.T_1 = 50
 
         #Demographics Parameters
 
         self.I_dict, self.I_touse = countries
+        self.Nhat = np.ones((self.I, self.S, self.T))
+        self.Nhat_ss = np.ones((self.I, self.S))
+        self.MortalityRates = np.zeros((self.I, self.S, self.T+self.S))
+        self.Mortality_ss = np.zeros((self.I, self.S))
+
 
         
         #Firm Parameters
@@ -93,7 +98,7 @@ class OLG(object):
 
         #Lever Parameters
         (self.CalcTPI,self.PrintAges,self.PrintLoc,self.EulErrors,self.PrintSS,self.Print_cabqTimepaths,self.CheckerMode,\
-                self.DemogGraphs,self.TPIGraphs,self.UseStaggeredAges,self.UseDiffDemog,self.UseSSDemog,\
+                self.DemogGraphs,self.TPIGraphs,self.UseStaggeredAges,self.UseDiffDemog, self.UseSSDemog,\
                 self.UseDiffProductivities,self.UseTape,self.SAVE,self.SHOW,self.ADJUSTKOREAIMMIGRATION) = Lever_Params
 
         #Tolerance Parameters
@@ -111,7 +116,7 @@ class OLG(object):
             self.A = np.ones(self.I)+np.cumsum(np.ones(self.I)*.05)-.05 #Techonological Change, used for when countries are different
 
         else:
-            self.A = self.np.ones(I) #Techonological Change, used for idential countries
+            self.A = np.ones(self.I) #Techonological Change, used for idential countries
 
         if self.UseDiffProductivities:
             self.e = np.ones((self.I, self.S, self.T+self.S))
@@ -120,7 +125,20 @@ class OLG(object):
         else:
             self.e = np.ones((self.I, self.S, self.T+self.S)) #Labor productivities
 
+        self.e_ss=self.e[:,:,-1]
+
+        self.lbar = np.cumsum(np.ones(self.T+self.S)*self.g_A)
+        self.lbar[self.T:] = np.ones(self.S)
+        self.lbar[:self.T] = np.ones(self.T)
+        self.lbar_ss=self.lbar[-1]
+
         self.Timepath_counter = 1
+
+
+        self.rpathlist = np.empty((1,self.T+self.S))
+
+
+
 
     #DEMOGRAPHICS SET-UP
 
@@ -285,19 +303,10 @@ class OLG(object):
 
         if self.PrintLoc: print "The SS Population Share converged in", iter, "years beyond year T"
 
-        if self.DemogGraphs:
-            ages = self.FirstFertilityAge, self.LastFertilityAge, self.FirstDyingAge, \
-                    self.MaxImmigrantAge
-            datasets = self.FertilityRates, self.MortalityRates, self.ImmigrationRates, self.Nhat
-            demog.plotDemographics(ages, datasets, self.I, self.S, self.T, self.I_touse, T_touse = [0,1,2,3,20]\
-                    , compare_across="T", data_year=0)
 
         if self.CheckerMode==False:
             print "\nDemographics obtained!"
 
-        self.lbar = np.cumsum(np.ones(self.T+self.S)*self.g_A)
-
-        self.lbar[self.T:] = np.ones(self.S)
 
         self.Nhat_ss = self.Nhat[:,:,-1]
         self.Nhat = self.Nhat[:,:,:self.T]
@@ -305,13 +314,22 @@ class OLG(object):
         #Imposing the ss for years after self.T
         self.Nhat = np.dstack((  self.Nhat[:,:,:self.T], np.einsum("is,t->ist",self.Nhat_ss,np.ones(self.S))  ))
 
-        self.e_ss=self.e[:,:,-1]
-
         self.Mortality_ss=self.MortalityRates[:,:,-1]
         #Imposing the ss for years after self.T
         self.MortalityRates = np.dstack((  self.MortalityRates[:,:,:self.T], np.einsum("is,t->ist",self.Mortality_ss,np.ones(self.S))  ))        
 
-        self.lbar_ss=self.lbar[-1]
+        if self.UseSSDemog == True:
+            self.Nhat = np.einsum("is,t->ist",self.Nhat_ss,np.ones(self.T+self.S))
+            self.MortalityRates = np.einsum("is,t->ist",self.Mortality_ss,np.ones(self.T+self.S))
+
+        #print np.sum(np.sum(self.Nhat,axis=0),axis=0)
+        if self.DemogGraphs:
+            ages = self.FirstFertilityAge, self.LastFertilityAge, self.FirstDyingAge, \
+                    self.MaxImmigrantAge
+            datasets = self.FertilityRates, self.MortalityRates, self.ImmigrationRates, self.Nhat
+            demog.plotDemographics(ages, datasets, self.I, self.S, self.T, self.I_touse, T_touse = [0,1,2,3,20]\
+                    , compare_across="T", data_year=0)
+
 
     #STEADY STATE
 
@@ -333,16 +351,19 @@ class OLG(object):
 
 
         if e.ndim == 2:
-            denom = np.einsum("i,is->is",w,e)
-            denom = (self.chi/denom)**self.rho
+            we =  np.einsum("i,is->is",w,e)
 
         elif e.ndim == 3:
-            denom = np.einsum("it, ist -> ist", w, e)
-            denom = (self.chi/denom)**self.rho
+            we = np.einsum("it, ist -> ist", w, e)
 
-        psi = (1+self.chi*denom)**((1-self.rho*(self.sigma))/self.rho)
+        part1 = (self.chi/we)**self.rho
+        part1new = (self.chi/we)**(self.rho-1)
 
-        return psi
+        psi = (1+self.chi*part1)**((1-self.rho*(self.sigma))/self.rho)
+        psinew = (1+self.chi*part1new)**((1-self.rho*(self.sigma))/(self.rho-1))
+        print "Using the new formula for psi"
+
+        return psinew
 
     def get_lhat(self,c,w,e):
 
@@ -386,6 +407,7 @@ class OLG(object):
         if lhat.ndim == 2:
             n = np.sum(self.e_ss*(self.lbar_ss-lhat)*self.Nhat_ss,axis=1)
         elif lhat.ndim == 3:
+            #print self.lbar[:self.T], lhat[0,:,:]
             n = np.sum(self.e[:,:,:self.T]*(self.lbar[:self.T]-lhat)*self.Nhat[:,:,:self.T],axis=1)
 
         return n
@@ -459,7 +481,10 @@ class OLG(object):
             avec_ss[:,s+2] = (w_ss*self.e_ss[:,s+1] + (1 + r_ss - self.delta)*avec_ss[:,s+1] \
                     - cvec_ss[:,s+1]*(1+w_ss*self.e_ss[:,s+1]*(self.chi/(w_ss*self.e_ss[:,s+1])\
                     **self.rho)))*np.exp(-self.g_A)
+
             return cvec_ss, avec_ss
+
+
 
         def householdEuler_SS(c_1, w_ss, r_ss):
             """
@@ -509,7 +534,7 @@ class OLG(object):
 
         K_ss_with_tape = np.clip(kd_ss + kf_ss, .0001, np.max(kd_ss + kf_ss))
 
-        return w_ss, cvec_ss, avec_ss, kd_ss, kf_ss, n_ss, y_ss
+        return w_ss, cvec_ss, avec_ss, kd_ss, kf_ss, n_ss, y_ss, lhat_ss
 
     def EulerSystemSS(self,guess):
         """
@@ -534,7 +559,7 @@ class OLG(object):
         bqvec_ss[:,self.FirstFertilityAge:self.FirstDyingAge] = np.einsum("i,s->is", bq_ss, \
                 np.ones(self.FirstDyingAge-self.FirstFertilityAge))
 
-        w_ss, cvec_ss, avec_ss, kd_ss, kf_ss, n_ss, y_ss = self.GetSSComponents(bqvec_ss, r_ss)
+        w_ss, cvec_ss, avec_ss, kd_ss, kf_ss, n_ss, y_ss, lhat_ss = self.GetSSComponents(bqvec_ss, r_ss)
 
 
         alldeadagent_assets = np.sum(avec_ss[:,self.FirstDyingAge:]*\
@@ -578,7 +603,7 @@ class OLG(object):
         self.bqvec_ss[:,self.FirstFertilityAge:self.FirstDyingAge] = np.einsum("i,s->is",self.bq_ss,\
                 np.ones(self.FirstDyingAge-self.FirstFertilityAge))
 
-        self.w_ss, self.cvec_ss, self.avec_ss, self.kd_ss, self.kf_ss, self.n_ss, self.y_ss \
+        self.w_ss, self.cvec_ss, self.avec_ss, self.kd_ss, self.kf_ss, self.n_ss, self.y_ss, self.lhat_ss \
                 = self.GetSSComponents(self.bqvec_ss,self.r_ss)
 
         
@@ -619,7 +644,6 @@ class OLG(object):
             print "w steady state", self.w_ss
             print "c_vec_ss steady state", self.cvec_ss
 
-
     #TIMEPATH-ITERATION
 
     def set_initial_values(self, r_init, bq_init, a_init):
@@ -628,6 +652,38 @@ class OLG(object):
         self.a_init = a_init
 
     def get_initialguesses(self):
+
+        def get_weights(x_vec):
+            wvec = []
+            for xj in x_vec:
+                wj = 1
+                for xk in x_vec:
+                    if xk != xj:
+                        wj *= 1./(xj-xk)
+
+                wvec += [wj]
+
+            return np.array(wvec)
+
+        def p(x, x_points, y_points, w):
+            numerator_sum = 0.0
+            denomonator_sum = 0.0
+
+            for j in range(len(x_points)):
+                numerator_sum += w[j]/(x-x_points[j])*y_points[j]
+                denomonator_sum += w[j]/(x-x_points[j])
+
+            return numerator_sum/denomonator_sum
+
+        x = np.linspace(-.00001,self.T+.00001,self.T)
+        midpoint1 = self.r_ss*1.05
+        midpoint2 = self.r_ss*1.0125
+        midpoint3 = self.r_ss*1.0125
+        x_points = np.array([0,self.S/2,self.S,(self.S+self.T/2),self.T])
+        y_points = np.array([self.r_init,midpoint1,midpoint2,midpoint3,self.r_ss])
+        something = p(x,x_points, y_points, get_weights(x_points))
+        #plt.plot(something)
+        #plt.show()
         rpath_guess = np.zeros(self.T)
         bqpath_guess = np.zeros((self.I,self.T))
 
@@ -635,15 +691,12 @@ class OLG(object):
         bb = -2 * (self.r_init-self.r_ss)/(self.T-1)
         aa = -bb / (2*(self.T-1))
         rpath_guess[:self.T] = aa * np.arange(0,self.T)**2 + bb*np.arange(0,self.T) + cc
-        #rpath_guess[self.T:] = self.r_ss
+        #rpath_guess = something
 
         for i in range(self.I):
             bqpath_guess[i,:self.T] = np.linspace(self.bq_init[i], self.bq_ss[i], self.T)
 
-        #bqpath_guess[:,self.T:] = np.outer(self.bq_ss,np.ones(self.S))
-
-
-        return rpath_guess, bqpath_guess 
+        return rpath_guess, bqpath_guess
 
     def GetTPIComponents(self, bqvec_path, r_path):
 
@@ -659,7 +712,6 @@ class OLG(object):
             #print cvec_path.shape, avec_path.shape, w_life.shape, r_life.shape, mort_life.shape, e_life.shape, psi_life.shape, bq_life.shape, a_current.shape
             
             for s in range(decisions):
-                
                 cvec_path[:,s+1] = (self.beta * (1-mort_life[:,s]) * (1 + r_path[s+1] - self.delta)\
                                    * psi_life[:,s+1]/psi_life[:,s])**(1/self.sigma) * cvec_path[:,s]*np.exp(-self.g_A)
 
@@ -686,19 +738,17 @@ class OLG(object):
 
         def get_c_a_matrices(w_path, r_path, psi, bqvec_path):
 
-            c1_guess = np.ones(self.I)*.02
-
-            #cguess_alive = np.expand_dims(c_1[:self.I*self.S],axis=1).reshape((self.I,self.S))
-            #cguess_future = np.expand_dims(c_1[self.I*self.S:],axis=1).reshape((self.I,self.T))
-
             c_matrix = np.zeros((self.I,self.S,self.T+self.S))
             a_matrix = np.zeros((self.I,self.S+1,self.T+self.S))
             a_matrix[:,:-1,0] = self.a_init
 
-            c_matrix[:,self.S-1,0] = (w_path[:,0]*self.e[:,self.S-1,0] + (1 + r_path[0] - self.delta)*self.a_init[:,self.S-1])\
+            c_matrix[:,self.S-1,0] = (w_path[:,0]*self.e[:,self.S-1,0] + (1 + r_path[0] - self.delta)*self.a_init[:,self.S-1] + bqvec_path[:,self.S-1,0])\
             /(1+w_path[:,0]*self.e[:,self.S-1,0]*(self.chi/(w_path[:,0]*self.e[:,self.S-1,0]))**self.rho)
 
             for age in range(self.S-2,0,-1):
+                
+                c1_guess = (c_matrix[:,age+1,0]*(psi[:,age,0]/psi[:,age+1,1])\
+                    /((self.beta*(1+r_path[0]-self.delta))**(1/self.sigma)))/np.exp(self.g_A)
                 
                 p = self.S-age #Remaining decisions
 
@@ -719,6 +769,9 @@ class OLG(object):
                     np.fill_diagonal(a_matrix[i,age:,:], apath_indiv[i,:])
 
             for t in range(self.T):
+
+                c1_guess = c_matrix[:,0,t-1]
+
                 age = 0
                 w_life = w_path[:,t:t+self.S+1]
                 r_life = r_path[t:t+self.S+1]
@@ -759,14 +812,14 @@ class OLG(object):
         lhat_path = self.get_lhat(c_matrix, w_path[:,:self.T], self.e[:,:,:self.T])
 
         n_path = self.get_n(lhat_path)
+
         kd_path = np.sum(a_matrix*self.Nhat[:,:,:self.T],axis=1)
+
         y_path = self.get_Y(kd_path,n_path)
 
         kf_path = np.outer(self.alpha*self.A, 1/r_path[:self.T])**(1/(1-self.alpha)) * n_path-kd_path
 
-        K_path_with_tape = np.clip(kd_path + kf_path, .0001, np.max(kd_path + kf_path))
-
-        return w_path, c_matrix, a_matrix, kd_path, kf_path, n_path, y_path
+        return w_path, c_matrix, a_matrix, kd_path, kf_path, n_path, y_path, lhat_path
 
     def EulerSystemTPI(self, guess):
 
@@ -780,7 +833,7 @@ class OLG(object):
         bqvec_path[:,self.FirstFertilityAge:self.FirstDyingAge,:] = np.einsum("it,s->ist", bq_path, \
                 np.ones(self.FirstDyingAge-self.FirstFertilityAge))
 
-        w_path, c_matrix, a_matrix, kd_path, kf_path, n_path, y_path = self.GetTPIComponents(bqvec_path, r_path)
+        w_path, c_matrix, a_matrix, kd_path, kf_path, n_path, y_path, lhat_path = self.GetTPIComponents(bqvec_path, r_path)
 
         alldeadagent_assets = np.sum(a_matrix[:,self.FirstDyingAge:,:]*\
                 self.MortalityRates[:,self.FirstDyingAge:,:self.T]*self.Nhat[:,self.FirstDyingAge:,:self.T], axis=1)
@@ -792,8 +845,74 @@ class OLG(object):
 
         Euler_all = np.append(Euler_bq, Euler_kf)
 
-        if self.EulErrors: print "Iteration:", self.Timepath_counter, "Min Euler:", np.min(np.absolute(Euler_all)), "Mean Euler:", np.mean(np.absolute(Euler_all)), "Max Euler:", np.max(np.absolute(Euler_all))
+        def plot_iteration():
+
+            title = str("S = " + str(self.S) + ", T = " + str(self.T))
+            plt.suptitle(title)
+
+            plt.subplot(331)
+            for i in range(self.I):
+                plt.plot(range(self.S+self.T), r_path)
+            plt.title(str("r_path "+"iteration: "+str(self.Timepath_counter)))
+            plt.legend(self.I_touse)
+
+            plt.subplot(332)
+            for i in range(self.I):
+                plt.plot(range(self.S+self.T), bq_path[i,:])
+            plt.title(str("bqvec_path "+"iteration: "+str(self.Timepath_counter)))
+
+
+            plt.subplot(333)
+            for i in range(self.I):
+                plt.plot(range(self.S+self.T), w_path[i,:])
+            plt.title(str("w_path "+"iteration: "+str(self.Timepath_counter)))
+
+
+            plt.subplot(334)
+            for i in range(self.I):
+                plt.plot( range(self.S+self.T), np.hstack((np.sum(c_matrix[i,:,:],axis=0),np.ones(self.S)*np.sum(self.cvec_ss[i,:]))) )
+            plt.title(str("C_path "+"iteration: "+str(self.Timepath_counter)))
+
+            plt.subplot(335)
+            for i in range(self.I):
+                plt.plot( range(self.S+self.T), np.hstack((np.sum(lhat_path[i,:,:],axis=0),np.ones(self.S)*np.sum(self.lhat_ss[i,:]))) )
+            plt.title(str("Lhat_path "+"iteration: "+str(self.Timepath_counter)))
+
+            plt.subplot(336)
+            for i in range(self.I):
+                plt.plot(range(self.S+self.T), np.hstack((n_path[i,:],np.ones(self.S)*self.n_ss[i])))
+            plt.title(str("n_path "+"iteration: "+str(self.Timepath_counter)))
+
+            plt.subplot(337)
+            for i in range(self.I):
+                plt.plot(range(self.S+self.T), np.hstack((kd_path[i,:],np.ones(self.S)*self.kd_ss[i])) )
+            plt.title(str("kd_path "+"iteration: "+str(self.Timepath_counter)))
+            
+            plt.subplot(338)
+            for i in range(self.I):
+                plt.plot(range(self.S+self.T), np.hstack((kf_path[i,:],np.ones(self.S)*self.kf_ss[i])))
+            plt.title(str("kf_path "+"iteration: "+str(self.Timepath_counter)))
+
+            plt.subplot(339)
+            for i in range(self.I):
+                plt.plot(range(self.S+self.T), np.hstack((kf_path[i,:]+kd_path[i,:],np.ones(self.S)*(self.kf_ss[i]+self.kd_ss[i]))))
+            plt.title(str("K_path "+"iteration: "+str(self.Timepath_counter)))
+
+
+            plt.show()
+
+        if self.EulErrors: 
+            print "Iteration:", self.Timepath_counter, "Min Euler:", np.min(np.absolute(Euler_all)), "Mean Euler:", np.mean(np.absolute(Euler_all)), "Max Euler_bq:", np.max(np.absolute(Euler_bq)), "Max Euler_kf", np.max(np.absolute(Euler_kf))
+
+        iterations_to_plot = set([1,100])
+
+        if self.Timepath_counter in iterations_to_plot:
+            plot_iteration()
+
+        self.rpathlist = np.vstack((self.rpathlist, r_path))
+        
         self.Timepath_counter += 1
+        
         return Euler_all
 
     def Timepath(self):
