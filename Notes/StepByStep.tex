@@ -241,14 +241,13 @@
 	\begin{align}
 	    & \lambda_{i,s+j,t+j} = \nonumber \\
 		& - \beta^j \left( {c_{i,s+j,t+j}}^{\frac{\rho-1}{\rho}} + \chi \left[\left(\frac{\chi} {w_{i,t+j} e_{s+j,t+j}}\right)^{\rho} c_{i,s+j,t+j}\right]^{\frac{\rho-1}{\rho}}\right)^{\frac{1-\rho \sigma}{\rho-1}} {c_{i,s+j,t+j}}^{-1/\rho} \nonumber \\
-		& - \beta^j \left( {c_{i,s+j,t+j}}^{\frac{\rho-1}{\rho}} \left[1 + \chi \left(\frac{\chi} {w_{i,t+j} e_{s+j,t+j}}\right)^{\rho} \right]^{\frac{\rho-1}{\rho}}\right)^{\frac{1-\rho \sigma}{\rho-1}} {c_{i,s+j,t+j}}^{-1/\rho} \nonumber \\
-		& - \beta^j {c_{i,s+j,t+j}}^{\frac{1-\rho \sigma}{\rho}} \left[1 + \chi \left(\frac{\chi} {w_{i,t+j} e_{s+j,t+j}}\right)^{\rho} \right]^{\frac{1-\rho \sigma}{\rho}} {c_{i,s+j,t+j}}^{-1/\rho} \nonumber \\
-		& - \beta^j \left[1 + \chi \left(\frac{\chi} {w_{i,t+j} e_{s+j,t+j}}\right)^{\rho} \right]^{\frac{1-\rho \sigma}{\rho}} {c_{i,s+j,t+j}}^{-\sigma} \label{eq_3temp1}
+		& - \beta^j \left( {c_{i,s+j,t+j}}^{\frac{\rho-1}{\rho}} \left[1 + \chi \left(\frac{\chi} {w_{i,t+j} e_{s+j,t+j}}\right)^{\rho-1} \right]\right)^{\frac{1-\rho \sigma}{\rho-1}} {c_{i,s+j,t+j}}^{-1/\rho} \nonumber \\
+		& - \beta^j \left[1 + \chi \left(\frac{\chi} {w_{i,t+j} e_{s+j,t+j}}\right)^{\rho-1} \right]^{\frac{1-\rho \sigma}{\rho-1}} {c_{i,s+j,t+j}}^{-\sigma} \label{eq_3temp1}
 	\end{align}
 
 	Define $\Psi_{i,s+j,t+j}$.
 	\begin{align}
-        \Psi_{i,s+j,t+j} & \equiv \left[1 + \chi \left(\frac{\chi} {w_{i,t+j} e_{s+j,t+j}}\right)^{\rho} \right]^{\frac{1-\rho \sigma}{\rho}} \label{eq_3Psidef}
+        \Psi_{i,s+j,t+j} & \equiv \left[1 + \chi \left(\frac{\chi} {w_{i,t+j} e_{s+j,t+j}}\right)^{\rho-1} \right]^{\frac{1-\rho \sigma}{\rho-1}} \label{eq_3Psidef}
 	\end{align}	
 
 	Now substitute \eqref{eq_3temp1} and \eqref{eq_3Psidef} into \eqref{eq_3foc3}.
@@ -273,15 +272,15 @@
 	\end{align}
 	\begin{align}
 		\hat k_{it} & = \sum_{s=1}^S \hat a_{ist} \hat N_{ist} - \hat k_{it}^f; \forall i \label{eq_3kdef}\\
-		\hat n_{it} & = \sum_{s=1}^S e_{is} (\bar \ell_t - \hat \ell_{ist}) \hat N_{ist}; \forall i \label{eq_3cond2} \\
+		\hat n_{it} & = \sum_{s=1}^S e_{is} (\bar \ell - \hat \ell_{ist}) \hat N_{ist}; \forall i \label{eq_3cond2} \\
 		\hat y_{it} & = \hat k_{it}^\alpha \left( A_{i} \hat n_{it} \right)^{1-\alpha} ; \forall i \label{eq_3ydef} \\
 		r_{it} & = \alpha \frac{\hat y_{it}}{\hat k_{it}}; \forall i \label{eq_3rdef} \\
-		\hat w_{it} & = (1-\alpha) \frac{\hat y_{it}}{\hat n_{it}}; \forall i \label{eq_3wdef}\\
+		w_{it} & = (1-\alpha) \frac{\hat y_{it}}{\hat n_{it}}; \forall i \label{eq_3wdef}\\
 		\hat bq_{it} & = \frac{\sum_{s=67}^S \hat a_{ist} \rho_{ist} \hat N_{ist}}{\sum_{s=23}^{67} \hat N_{ist}} ; \forall i,s \label{eq_3bqdef} \\
-    	\hat c_{ist} & = \frac{\hat w_{it} e_{st} + (1+r_{it}-\delta)\hat a_{ist} + {\hat bq}_{ist} - \hat a_{i,s+1,t+1}e^{g^A}} {1 + \hat w_{it} e_{st} \left(\frac{\chi} {\hat w_{it} e_{st}}\right)^{\rho}}; \forall i,s \label{eq_3cdef2} \\
-		\hat \ell_{ist} & = \hat c_{ist} \left(\frac{\chi}{\hat w_{it}e_{st}}\right)^\rho ; \forall i,s \label{eq3_elldef}\\
-		\Psi_{ist} & = \left[1 + \chi \left(\frac{\chi} {\hat w_{it} e_{st}}\right)^{\rho} \right]^{\frac{1-\rho \sigma}{\rho}}; \forall i,s \label{eq_3Psidef2} \\
-		\Psi_{ist} \hat c_{ist}^{-\sigma} & = \beta (1-\rho_{i,s+1,t+1}) \Psi_{i,s+1,t+1} \left(\hat c_e{ist}e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta); \forall i,s \label{eq_3Euler2} \\
+    	\hat c_{ist} & = \frac{w_{it} e_{st} + (1+r_{it}-\delta)\hat a_{ist} + {\hat bq}_{ist} - \hat a_{i,s+1,t+1}e^{g^A}} {1 + w_{it} e_{st} \left(\frac{\chi} {w_{it} e_{st}}\right)^{\rho}}; \forall i,s \label{eq_3cdef2} \\
+		\hat \ell_{ist} & = \hat c_{ist} \left(\frac{\chi}{w_{it}e_{st}}\right)^\rho ; \forall i,s \label{eq3_elldef}\\
+		\Psi_{ist} & = \left[1 + \chi \left(\frac{\chi} {w_{it} e_{st}}\right)^{\rho-1} \right]^{\frac{1-\rho \sigma}{\rho-1}}; \forall i,s \label{eq_3Psidef2} \\
+		\Psi_{ist} \hat c_{ist}^{-\sigma} & = \beta (1-\rho_{i,s+1,t+1}) \Psi_{i,s+1,t+1} \left(\hat c_{ist}e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta); \forall i,s \label{eq_3Euler2} \\
 		& r_{it} - r_{1t} = 0; \forall i>1 \label{eq_3requal}\\
 		& \sum_{i=1}^I \hat k^f_{it} = 0 \label{eq_3cond3}
 	\end{align}
@@ -429,19 +428,16 @@
 	Substitute \eqref{eq_4lamdef} and \eqref{eq_4elldef} into \eqref{eq_4foc1}.
 	\begin{align}
 		& \beta^j \left\{ {c_{i,s+j,t+j}}^{1-1/\rho} + \chi \left[c_{i,s+j,t+j} \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^\rho\right]^{1-1/\rho}\right\}^{\tfrac{{1-\sigma}}{1-1/\rho}-1} \left(1-\tfrac{1}{\rho}\right)^{-1} {c_{i,s+j,t+j}}^{-1/\rho}  \nonumber \\ = &  \beta^j {c^K_{i,s+j,t+j}}^{-\sigma} \nonumber \\
-		& \left\{ {c_{i,s+j,t+j}}^{1-1/\rho} \left[1 + \chi \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^\rho\right]^{1-1/\rho}\right\}^{\tfrac{1-\rho \sigma}{\rho-1}}  {c_{i,s+j,t+j}}^{-1/\rho}  \nonumber \\ = &  \left(1-\tfrac{1}{\rho}\right) {c^K_{i,s+j,t+j}}^{-\sigma} \nonumber \\
-		& \left[1 + \chi \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^\rho\right]^{\left[(1-1/\rho)
-		\tfrac{1-\rho \sigma}{\rho-1}\right]}  {c_{i,s+j,t+j}}^{\left[(1-1/\rho) \tfrac{1-\rho\sigma}{\rho-1}-1/\rho\right]}  \nonumber \\ = &  \left(1-\tfrac{1}{\rho}\right) {c^K_{i,s+j,t+j}}^{-\sigma} \nonumber \\
-		& \left[1 + \chi \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^\rho\right]^{\tfrac{1-\rho \sigma}{\rho}}  {c_{i,s+j,t+j}}^{-\sigma} = \left(1-\tfrac{1}{\rho}\right) {c^K_{i,s+j,t+j}}^{-\sigma} \nonumber \\
-		& c^K_{i,s+j,t+j} = c_{i,s+j,t+j} \left\{ \left[1 + \chi \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^\rho\right]^{\tfrac{1-\rho \sigma}{\rho}} \frac{\rho}{\rho-1} \right\}^{-\tfrac{1}{\sigma}} \nonumber
+		& \left\{ {c_{i,s+j,t+j}}^{1-1/\rho} \left[1 + \chi \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^{\rho-1}\right]\right\}^{\tfrac{1-\rho \sigma}{\rho-1}}  {c_{i,s+j,t+j}}^{-1/\rho}  \nonumber \\ = &  \left(1-\tfrac{1}{\rho}\right) {c^K_{i,s+j,t+j}}^{-\sigma} \nonumber \\
+		& \left[1 + \chi \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^{\rho-1}\right]^{\tfrac{1-\rho \sigma}{\rho-1}}  {c_{i,s+j,t+j}}^{\left[(1-1/\rho) \tfrac{1-\rho\sigma}{\rho-1}-1/\rho\right]}  \nonumber \\ = &  \left(1-\tfrac{1}{\rho}\right) {c^K_{i,s+j,t+j}}^{-\sigma} \nonumber \\
+		& \left[1 + \chi \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^{\rho-1}\right]^{\tfrac{1-\rho \sigma}{\rho-1}}  {c_{i,s+j,t+j}}^{-\sigma} = \left(1-\tfrac{1}{\rho}\right) {c^K_{i,s+j,t+j}}^{-\sigma} \nonumber \\
+		& c^K_{i,s+j,t+j} = c_{i,s+j,t+j} \left\{ \left[1 + \chi \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^{\rho-1}\right]^{\tfrac{1-\rho \sigma}{\rho-1}} \frac{\rho}{\rho-1} \right\}^{-\tfrac{1}{\sigma}} \nonumber
 	\end{align}
 
 	We rewrite this, more conveniently, as:
 	\begin{align}
        & c^K_{i,s+j,t+j} = c_{i,s+j,t+j} \Gamma_{i,t+j} \label{eq_4cKdef} \\
-       & \Gamma_{i,t+j} \equiv \left\{ \left[1 + \chi \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^\rho\right]^{\tfrac{1-\rho \sigma}{\rho}} \right\}^{-\tfrac{1}{\sigma}} \label{eq_4Gamdef} \\
-       & c^K_{i,s+j,t+j} = c_{i,s+j,t+j} \Gamma_{i,t+j} \label{eq_3cKdef} \\
-       & \Gamma_{i,t+j} \equiv \left\{ \left[1 + \chi \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^\rho\right]^{\tfrac{1-\rho \sigma}{\rho}} \frac{\rho}{\rho-1} \right\}^{-\tfrac{1}{\sigma}} \label{eq_3Gamdef}
+       & \Gamma_{i,t+j} \equiv \left\{ \left[1 + \chi \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^{\rho-1}\right]^{\tfrac{1-\rho \sigma}{\rho-1}} \frac{\rho}{\rho-1} \right\}^{-\tfrac{1}{\sigma}} \label{eq_4Gamdef}
 	\end{align}
 
 	Substituting \eqref{eq_4elldef}, \eqref{eq_4cKdef} and \eqref{eq_4Gamdef}, into the budget constraint, \eqref{eq_4bc},  gives:
@@ -465,18 +461,16 @@
 		\hat N_{i,s+1,t+1} & = e^{-g^N_t}\hat N_{ist} (1+m_{ist}-\rho_{ist}); \forall i, 1<s\le S \\
 				KID_{i,s+1,t+1} & = \sum_{r=1}^{20} f_{i,s-r,t-r}; \forall i, 1<s\le S  \\
 		\hat k_{it} & = \sum_{s=1}^S \hat a_{ist} \hat N_{ist} - \hat k_{it}^f; \forall i \\
-		\hat n_{it} & = \sum_{s=1}^S e_{is} (\bar \ell_t - \hat \ell_{ist}) \hat N_{ist}; \forall i \\
+		\hat n_{it} & = \sum_{s=1}^S e_{is} (\bar \ell - \hat \ell_{ist}) \hat N_{ist}; \forall i \\
 		\hat y_{it} & = \hat k_{it}^\alpha \left( A_{i} \hat n_{it} \right)^{1-\alpha} ; \forall i \\
 		r_{it} & = \alpha \frac{\hat y_{it}}{\hat k_{it}}; \forall i \\
-		\hat w_{it} & = (1-\alpha) \frac{\hat y_{it}}{\hat n_{it}}; \forall i \\
+		w_{it} & = (1-\alpha) \frac{\hat y_{it}}{\hat n_{it}}; \forall i \\
 		\hat bq_{it} & = \frac{\sum_{s=67}^S \hat a_{ist} \rho_{ist} \hat N_{ist}}{\sum_{s=23}^{67} \hat N_{ist}} ; \forall i,s
 	\end{align}
 	\begin{align}
-		\Gamma_{it} & = \left\{ \left[1 + \chi \left(\frac{\chi}{\hat w_{it} e_{st}}\right)^\rho\right]^{\tfrac{1-\rho \sigma}{\rho}} \right\}^{-\tfrac{1}{\sigma}}; \forall i,s \\
-    	\hat c_{ist} & = \frac{\hat w_{it} e_{st} + (1+r_{it}-\delta)\hat a_{ist} + \hat{bq}_{ist} - \hat a_{i,s+1,t+1} e^{g^A}} {1 + KID_{ist}\Gamma_{it} + \left(\tfrac{\chi}{\hat w_{it}e_{st}}\right)^\rho}; \forall i,s \\
-		\Gamma_{it} & = \left\{ \left[1 + \chi \left(\frac{\chi}{\hat w_{it} e_{st}}\right)^\rho\right]^{\tfrac{1-\rho \sigma}{\rho}} \frac{\rho}{\rho-1} \right\}^{-\tfrac{1}{\sigma}}; \forall i,s \\
-    	\hat c_{ist} & = \frac{\hat w_{it} e_{st} \bar \ell_t + (1+r_{it}-\delta)\hat a_{ist} - \hat a_{i,s+1,t+1} e^{g^A}} {1 + KID_{ist}\Gamma_{it} + \left(\tfrac{\chi}{\hat w_{it}e_{st}}\right)^\rho}; \forall i,s \\
-		\hat \ell_{ist} & = \hat c_{ist} \left(\frac{\chi}{\hat w_{it}e_{st}}\right)^\rho ; \forall i,s \\
+		\Gamma_{it} & = \left\{ \left[1 + \chi \left(\frac{\chi}{w_{it} e_{st}}\right)^{\rho-1}\right]^{\tfrac{1-\rho \sigma}{\rho-1}} \frac{\rho}{\rho-1} \right\}^{-\tfrac{1}{\sigma}}; \forall i,s \\
+    	\hat c_{ist} & = \frac{w_{it} e_{st} \bar \ell + (1+r_{it}-\delta)\hat a_{ist} - \hat a_{i,s+1,t+1} e^{g^A}} {1 + KID_{ist}\Gamma_{it} + \left(\tfrac{\chi}{w_{it}e_{st}}\right)^\rho}; \forall i,s \\
+		\hat \ell_{ist} & = \hat c_{ist} \left(\frac{\chi}{w_{it}e_{st}}\right)^\rho ; \forall i,s \\
 		\hat c^K_{ist} & = \hat c_{ist} \Gamma_{it}; \forall i,s \\
 		& \left({\hat c^K_{ist}}\right)^{-\sigma} - \beta \left(\hat c^K_{i,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,s \\
 		& r_{it} - r_{1t} = 0; \forall i>1 \\
@@ -522,18 +516,16 @@
 		\hat N_{i,j,s+1,t+1} & = e^{-g^N_t}\hat N_{ijst} (1+m_{ijst}-\rho_{ijst}); \forall i, 1<s\le S \\
 		KID_{i,j,s+1,t+1} & = \sum_{r=1}^{20} f_{i,j,s-r,t-r}; \forall i, 1<s\le S \\
 		\hat k_{it} & = \sum_{j=1}^J \sum_{s=1}^S \hat a_{ijst} \hat N_{ijst} - \hat k_{it}^f; \forall i \\
-		\hat n_{ijt} & = \sum_{s=1}^S e_{ijs} (\bar \ell_t - \hat \ell_{ijst} ) \hat N_{ijst}; \forall i,j \\
+		\hat n_{ijt} & = \sum_{s=1}^S e_{ijs} (\bar \ell - \hat \ell_{ijst} ) \hat N_{ijst}; \forall i,j \\
 		\hat y_{it} & = \hat k_{it}^\alpha \prod_{j=1}^J \left( A_{i} \hat n_{ijt} \right)^{\alpha_j}; \alpha + \sum_{j=1}^J \alpha_j = 1 ; \forall i \\
 		r_{it} & = \alpha \frac{\hat y_{it}}{\hat k_{it}}; \forall i \\
-		\hat w_{ijt} & = (1-\alpha_j) \frac{\hat y_{it}}{\hat n_{ijt}}; \forall i.j
+		w_{ijt} & = (1-\alpha_j) \frac{\hat y_{it}}{\hat n_{ijt}}; \forall i.j
 	\end{align}
 	\begin{align}
 		\hat bq_{it} & = \frac{\sum_{s=67}^S \sum_j \hat a_{ijst} \rho_{ijst} \hat N_{ijst}}{\sum_{s=23}^{67} \hat N_{ijst}} ; \forall i,s \\
-		\Gamma_{ijt} & = \left\{ \left[1 + \chi \left(\frac{\chi}{\hat w_{ijt} e_{jst}}\right)^\rho\right]^{\tfrac{1-\rho \sigma}{\rho}} \right\}^{-\tfrac{1}{\sigma}}; \forall i,j,s \\
-    	\hat c_{ijst} & = \frac{\hat w_{ijt} e_{jst} + (1+r_{it}-\delta)\hat a_{ijst} + \hat{bq}_{jist} - \hat a_{i,j,s+1,t+1} e^{g^A}} {1 + KID_{ist}\Gamma_{ijt} + \left(\tfrac{\chi}{\hat w_{ijt}e_{jst}}\right)^\rho}; \forall i,j,s \\
-		\Gamma_{ijt} & = \left\{ \left[1 + \chi \left(\frac{\chi}{\hat w_{ijt} e_{jst}}\right)^\rho\right]^{\tfrac{1-\rho \sigma}{\rho}} \frac{\rho}{\rho-1} \right\}^{-\tfrac{1}{\sigma}}; \forall i,j,s \\
-    	\hat c_{ijst} & = \frac{\hat w_{ijt} e_{jst} \bar \ell_t + (1+r_{it}-\delta)\hat a_{ijst} - \hat a_{i,j,s+1,t+1} e^{g^A}} {1 + KID_{ist}\Gamma_{ijt} + \left(\tfrac{\chi}{\hat w_{ijt}e_{jst}}\right)^\rho}; \forall i,j,s \\
-		\hat \ell_{ijst} & = \hat c_{ijst} \left(\frac{\chi}{\hat w_{ijt}e_{jst}}\right)^\rho ; \forall i,j,s \\
+		\Gamma_{ijt} & = \left\{ \left[1 + \chi \left(\frac{\chi}{w_{ijt} e_{jst}}\right)^{\rho-1}\right]^{\tfrac{1-\rho \sigma}{\rho-1}} \right\}^{-\tfrac{1}{\sigma}}; \forall i,j,s \\
+    	\hat c_{ijst} & = \frac{w_{ijt} e_{jst} + (1+r_{it}-\delta)\hat a_{ijst} + \hat{bq}_{jist} - \hat a_{i,j,s+1,t+1} e^{g^A}} {1 + KID_{ist}\Gamma_{ijt} + \left(\tfrac{\chi}{w_{ijt}e_{jst}}\right)^\rho}; \forall i,j,s \\
+		\hat \ell_{ijst} & = \hat c_{ijst} \left(\frac{\chi}{w_{ijt}e_{jst}}\right)^\rho ; \forall i,j,s \\
 		\hat c^K_{ijst} & = \hat c_{ijst} \Gamma_{ijt}; \forall i,j,s \\
 		& \left({\hat c^K_{ijst}}\right)^{-\sigma} - \beta \left(\hat c^K_{i,j,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,j,s \\
 		& r_{it} - r_{1t} = 0; \forall i>1 \\
@@ -580,18 +572,17 @@
 		\hat N_{i,j,s+1,t+1} & = e^{-g^N_t}\hat N_{ijst} (1+m_{ijst}-\rho_{ijst}); \forall i, 1<s\le S \\
 		KID_{i,j,s+1,t+1} & = \sum_{r=1}^{20} f_{i,j,s-r,t-r}; \forall i, 1<s\le S \\
 	    \hat k_{it} & = \sum_{j=1}^J \sum_{s=1}^S \hat a_{ijst} \hat N_{ijst} - \hat k_{it}^f; \forall i \\
-		\hat n_{ijt} & = \sum_{s=1}^S e_{ijs} (\bar \ell_t - \hat \ell_{ijst}) \hat N_{ijst}; \forall i,j \\
+		\hat n_{ijt} & = \sum_{s=1}^S e_{ijs} (\bar \ell - \hat \ell_{ijst}) \hat N_{ijst}; \forall i,j \\
 		\hat y_{it} & = \hat k_{it}^\alpha \prod_{j=1}^J \left( A_{i} \hat n_{ijt} \right)^{\alpha_j}; \alpha + \sum_{j=1}^J \alpha_j = 1 ; \forall i \\
 		r_{it} & = (1-\tau^K_{it})\alpha \frac{\hat y_{it}}{\hat k_{it}} + \delta \tau^K_{it}; \forall i \\
-		\hat w_{ijt} & = (1-\alpha_j) \frac{\hat y_{it}}{\hat n_{ijt}}; \forall i.j \\
+		w_{ijt} & = (1-\alpha_j) \frac{\hat y_{it}}{\hat n_{ijt}}; \forall i.j \\
 		\hat bq_{it} & = \frac{\sum_{s=67}^S \sum_j \hat a_{ijst} \rho_{ijst} \hat N_{ijst}}{\sum_{s=23}^{67} \hat N_{ijst}} ; \forall i,s  \\
 	\end{align}
 	\begin{align}
-		\Gamma_{ijt} & = \left\{ \left[1 + \chi \left(\frac{\chi}{\hat w_{ijt} e_{jst}}\right)^\rho\right]^{\tfrac{1-\rho \sigma}{\rho}} \frac{\rho}{\rho-1} \right\}^{-\tfrac{1}{\sigma}}; \forall i,j,s \\
-		\hat T^L_{it} & = \tau^K_{it} (\hat y_{it} - \hat w_{it}\hat n_{it} - \delta \hat k_{it}); \forall i \\
-    	\hat c_{ijst} & = \frac{\hat w_{ijt} e_{jst} + (1+r_{it}-\delta)\hat a_{ijst} + \hat{bq}_{ijst} - \hat a_{i,j,s+1,t+1} e^{g^A} + \hat T^L_{it}} {1 + KID_{ist}\Gamma_{ijt} + \left(\tfrac{\chi}{\hat w_{ijt}e_{jst}}\right)^\rho}; \forall i,s \\
-    	\hat c_{ijst} & = \frac{\hat w_{ijt} e_{jst} \bar \ell_t + (1+r_{it}-\delta)\hat a_{ijst} - \hat a_{i,j,s+1,t+1} e^{g^A} + \hat T^L_{it}} {1 + KID_{ist}\Gamma_{ijt} + \left(\tfrac{\chi}{\hat w_{ijt}e_{jst}}\right)^\rho}; \forall i,s \\
-		\hat \ell_{ijst} & = \hat c_{ijst} \left(\frac{\chi}{\hat w_{ijt}e_{jst}}\right)^\rho ; \forall i,j,s \\
+		\Gamma_{ijt} & = \left\{ \left[1 + \chi \left(\frac{\chi}{w_{ijt} e_{jst}}\right)^{\rho-1}\right]^{\tfrac{1-\rho \sigma}{\rho-1}} \frac{\rho}{\rho-1} \right\}^{-\tfrac{1}{\sigma}}; \forall i,j,s \\
+		\hat T^L_{it} & = \tau^K_{it} (\hat y_{it} - w_{it}\hat n_{it} - \delta \hat k_{it}); \forall i \\
+    	\hat c_{ijst} & = \frac{w_{ijt} e_{jst} + (1+r_{it}-\delta)\hat a_{ijst} + \hat{bq}_{ijst} - \hat a_{i,j,s+1,t+1} e^{g^A} + \hat T^L_{it}} {1 + KID_{ist}\Gamma_{ijt} + \left(\tfrac{\chi}{w_{ijt}e_{jst}}\right)^\rho}; \forall i,s \\
+		\hat \ell_{ijst} & = \hat c_{ijst} \left(\frac{\chi}{w_{ijt}e_{jst}}\right)^\rho ; \forall i,j,s \\
 		\hat c^K_{ijst} & = \hat c_{ijst} \Gamma_{ijt}; \forall i,j,s
 	\end{align}
 	\begin{align}
