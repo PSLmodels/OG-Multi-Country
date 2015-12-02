@@ -42,12 +42,12 @@ def Multi_Country(S,I,sigma):
 
     CheckerMode = False #Reduces the number of prints when checking for robustness, use in conjunction with RobustChecker.py
 
-    DemogGraphs = False #Activates graphing graphs with demographic data and population shares
+    DemogGraphs = True #Activates graphing graphs with demographic data and population shares
     TPIGraphs = False #Activates graphing the graphs.
 
     UseStaggeredAges = True #Activates using staggered ages
     UseDiffDemog = True #Turns on different demographics for each country
-    UseSSDemog = False #Activates using only steady state demographics for TPI calculation
+    UseSSDemog = True #Activates using only steady state demographics for TPI calculation
     UseDiffProductivities = False #Activates having e vary across cohorts
     UseTape = True #Activates setting any value of kd<0 to 0.001 in TPI calculation
     SAVE = False #Saves the graphs
@@ -67,7 +67,7 @@ def Multi_Country(S,I,sigma):
 
     ##INPUTS INTO THE CLASS###
 
-    Country_Roster= (I_dict, I_touse)
+    Country_Roster = (I_dict, I_touse)
 
     HH_params = (S,I,beta_ann,sigma)
 
@@ -101,17 +101,15 @@ def Multi_Country(S,I,sigma):
 
     #Timepath Iteration
     
-    r_init = Model.r_ss*.9
-    bq_init = Model.bq_ss*.85
-    a_init = Model.avec_ss*.85
+    r_init = Model.r_ss
+    bq_init = Model.bq_ss
+    a_init = Model.avec_ss*1
     Model.set_initial_values(r_init, bq_init, a_init)
     Model.Timepath()
 
-    return None
+    pass
 
 
 #Input parameters for S, I and sigma here then execute this file to
 #run the model.
-Multi_Country(16,2,4)
-
-
+Multi_Country(20,3,4)

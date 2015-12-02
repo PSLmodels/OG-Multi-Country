@@ -123,10 +123,6 @@ def plotDemographics(ages, datasets, I, S, T, I_touse, T_touse = None, compare_a
         plt.xlabel('Year')
         plt.ylabel('Total Population Share')
 
-
-        #plt.tight_layout()
-        #figManager = plt.get_current_fig_manager()
-        #figManager.window.showMaximized()
         plt.show()
 
     def secondPlot():
