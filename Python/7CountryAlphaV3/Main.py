@@ -37,19 +37,26 @@ def Multi_Country(S,I,sigma):
     PrintAges = False #Prints the different key ages in the demographics
     PrintLoc = False #Displays the current locations of the program inside key TPI functions
     PrintEulErrors = True #Prints the euler errors in each attempt of calculating the steady state
-    PrintSS = False #Prints the result of the Steady State functions
+    PrintSS = True #Prints the result of the Steady State functions
     Print_cabqTimepaths = False #Prints the consumption, assets, and bequests timepath as it gets filled in for each iteration of TPI
 
     CheckerMode = False #Reduces the number of prints when checking for robustness, use in conjunction with RobustChecker.py
 
-    DemogGraphs = True #Activates graphing graphs with demographic data and population shares
-    TPIGraphs = False #Activates graphing the graphs.
+    DemogGraphs = False #Activates graphing graphs with demographic data and population shares
+    TPIGraphs = False #Activates showing the final graphs
+
+    IterGraphs = True
+    IterationsToShow = set([]) #List the iteration numbers you wish to observe, IterGraphs must be ON
 
     UseStaggeredAges = True #Activates using staggered ages
     UseDiffDemog = True #Turns on different demographics for each country
     UseSSDemog = True #Activates using only steady state demographics for TPI calculation
+    ShowSSGraphs = False
     UseDiffProductivities = False #Activates having e vary across cohorts
     UseTape = True #Activates setting any value of kd<0 to 0.001 in TPI calculation
+
+    CalcTPI = True
+
     SAVE = False #Saves the graphs
     SHOW = True #Shows the graphs
     ADJUSTKOREAIMMIGRATION = True #Adjusts demograhpics to correct for oddities in Korea's data.
@@ -75,8 +82,10 @@ def Multi_Country(S,I,sigma):
 
     Tolerances = (tpi_tol, demog_ss_tol)
 
-    Levers = (CalcTPI, PrintAges,PrintLoc,PrintEulErrors,PrintSS,Print_cabqTimepaths,CheckerMode,DemogGraphs,TPIGraphs,\
+    Levers = (CalcTPI, PrintAges,PrintLoc,PrintEulErrors,PrintSS,ShowSSGraphs,Print_cabqTimepaths,CheckerMode,DemogGraphs,IterGraphs,TPIGraphs,\
             UseStaggeredAges,UseDiffDemog,UseSSDemog,UseDiffProductivities,UseTape,SAVE,SHOW,ADJUSTKOREAIMMIGRATION)
+
+    Sets = (IterationsToShow)
 
     TPI_Params = (xi,MaxIters)
 
@@ -84,7 +93,7 @@ def Multi_Country(S,I,sigma):
 
     ##WHERE THE MAGIC HAPPENS ##
 
-    Model = AUX.OLG(Country_Roster,HH_params,Firm_Params,Levers, Tolerances, TPI_Params)
+    Model = AUX.OLG(Country_Roster,HH_params,Firm_Params,Levers, Sets, Tolerances, TPI_Params)
 
     #Demographics
     Model.Import_Data()
@@ -101,11 +110,12 @@ def Multi_Country(S,I,sigma):
 
     #Timepath Iteration
     
-    r_init = Model.r_ss
-    bq_init = Model.bq_ss
-    a_init = Model.avec_ss*1
+    r_init = Model.r_ss*.98
+    bq_init = Model.bq_ss*.98
+    a_init = Model.avec_ss*.98
     Model.set_initial_values(r_init, bq_init, a_init)
-    Model.Timepath()
+    if CalcTPI: Model.Timepath()
+    if TPIGraphs: Model.plotTimepaths()
 
     pass
 
