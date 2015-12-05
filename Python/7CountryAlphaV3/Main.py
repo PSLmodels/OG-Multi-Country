@@ -43,22 +43,21 @@ def Multi_Country(S,I,sigma):
     CheckerMode = False #Reduces the number of prints when checking for robustness, use in conjunction with RobustChecker.py
 
     DemogGraphs = False #Activates graphing graphs with demographic data and population shares
+
     TPIGraphs = False #Activates showing the final graphs
 
-    IterGraphs = True
-    IterationsToShow = set([]) #List the iteration numbers you wish to observe, IterGraphs must be ON
+    iterations = set([384,385])
 
     UseStaggeredAges = True #Activates using staggered ages
     UseDiffDemog = True #Turns on different demographics for each country
     UseSSDemog = True #Activates using only steady state demographics for TPI calculation
     ShowSSGraphs = False
+
     UseDiffProductivities = False #Activates having e vary across cohorts
     UseTape = True #Activates setting any value of kd<0 to 0.001 in TPI calculation
 
     CalcTPI = True
 
-    SAVE = False #Saves the graphs
-    SHOW = True #Shows the graphs
     ADJUSTKOREAIMMIGRATION = True #Adjusts demograhpics to correct for oddities in Korea's data.
 
     #Adjusts the country list if we are using less than 7 Countries
@@ -66,6 +65,7 @@ def Multi_Country(S,I,sigma):
         print "WARNING: We are changing I from", I, "to", len(I_touse), "to fit the length of I_touse. So the countries we are using now are", I_touse
         I = len(I_touse)
         time.sleep(2)
+
     elif len(I_touse) > I:
         print "WARNING: We are changing I_touse from", I_touse, "to", I_touse[:I], "so there are", I, "regions"
         I_touse = I_touse[:I]
@@ -82,18 +82,14 @@ def Multi_Country(S,I,sigma):
 
     Tolerances = (tpi_tol, demog_ss_tol)
 
-    Levers = (CalcTPI, PrintAges,PrintLoc,PrintEulErrors,PrintSS,ShowSSGraphs,Print_cabqTimepaths,CheckerMode,DemogGraphs,IterGraphs,TPIGraphs,\
-            UseStaggeredAges,UseDiffDemog,UseSSDemog,UseDiffProductivities,UseTape,SAVE,SHOW,ADJUSTKOREAIMMIGRATION)
-
-    Sets = (IterationsToShow)
+    Levers = (CalcTPI, PrintAges,PrintLoc,PrintEulErrors,PrintSS,ShowSSGraphs,Print_cabqTimepaths,CheckerMode,DemogGraphs,TPIGraphs,\
+            UseStaggeredAges,UseDiffDemog,UseSSDemog,UseDiffProductivities,UseTape,ADJUSTKOREAIMMIGRATION)
 
     TPI_Params = (xi,MaxIters)
 
-
-
     ##WHERE THE MAGIC HAPPENS ##
 
-    Model = AUX.OLG(Country_Roster,HH_params,Firm_Params,Levers, Sets, Tolerances, TPI_Params)
+    Model = AUX.OLG(Country_Roster,HH_params,Firm_Params,Levers, Tolerances, TPI_Params)
 
     #Demographics
     Model.Import_Data()
@@ -107,19 +103,19 @@ def Multi_Country(S,I,sigma):
     bq_ss_guess = np.ones(I)*.2
     Model.SteadyState(r_ss_guess, bq_ss_guess)
 
-
     #Timepath Iteration
     
-    r_init = Model.r_ss*.98
+
+    r_init = Model.r_ss*1.02
     bq_init = Model.bq_ss*.98
     a_init = Model.avec_ss*.98
     Model.set_initial_values(r_init, bq_init, a_init)
-    if CalcTPI: Model.Timepath()
-    if TPIGraphs: Model.plotTimepaths()
+
+    if CalcTPI: Model.Timepath(to_plot = iterations)
 
     pass
 
 
 #Input parameters for S, I and sigma here then execute this file to
 #run the model.
-Multi_Country(20,3,4)
+Multi_Country(18,2,4)
