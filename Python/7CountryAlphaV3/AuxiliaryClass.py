@@ -738,12 +738,18 @@ class OLG(object):
                     np.fill_diagonal(c_matrix[i,age:,:], cpath_indiv[i,:])
                     np.fill_diagonal(a_matrix[i,age:,:], apath_indiv[i,:])
 
+                if self.Print_cabqTimepaths:
+                    print "Consumption for year", t
+                    print np.round(np.transpose(c_matrix[0,:,:self.T]), decimals=3)
+                    print "Assets for year", t
+                    print np.round(np.transpose(a_matrix[0,:,:self.T]), decimals=3)
+
             for t in range(self.T):
 
                 c1_guess = c_matrix[:,0,t-1]
 
                 age = 0
-                w_life = w_path[:,t:t+self.S+1]
+                w_life = w_path[:,t:t+self.S]
                 r_life = r_path[t:t+self.S+1]
                 mort_life = np.diagonal(self.MortalityRates[:,:,t:t+self.S+1], axis1=1, axis2=2)
                 e_life = np.diagonal(self.e[:,:,t:t+self.S+1], axis1=1, axis2=2)
@@ -765,7 +771,27 @@ class OLG(object):
                     print "Assets for year", t
                     print np.round(np.transpose(a_matrix[0,:,:self.T]), decimals=3)
     
-            if self.EulErrors: print "Euler Household satisfied:", np.isclose(np.max(np.absolute(a_matrix[:,-1,:])), 0)
+            we = np.einsum("it,ist->ist",w_path[:,:self.T-1],self.e[:,:-1,:self.T-1])
+
+            Chained_C_Condition = psi[:,:-1,:self.T-1]*c_matrix[:,:-1,:self.T-1]**(-self.sigma)\
+                                  - self.beta*(1-self.MortalityRates[:,:-1,:self.T-1])*psi[:,1:,1:self.T]\
+                                  *(c_matrix[:,1:,1:self.T]*np.exp(self.g_A))**(-self.sigma)*(1+r_path[1:self.T]-self.delta)
+            
+            Modified_Budget_Constraint = c_matrix[:,:-1,:self.T-1]\
+                                         -  (we + (1+r_path[:self.T-1]-self.delta)*a_matrix[:,:-2,:self.T-1] + bqvec_path[:,:-1,:self.T-1]\
+                                         - a_matrix[:,1:-1,1:self.T]*np.exp(self.g_A))\
+                                         /(1 + we*(self.chi/we)**self.rho)
+
+            Household_Euler = a_matrix[:,-1,:]
+
+            
+            if self.EulErrors:
+                print "\nEuler Household satisfied:", np.isclose(np.max(np.absolute(Household_Euler)), 0)
+                print "Equation 3.22 satisfied:", np.isclose(np.max(np.absolute(Chained_C_Condition)), 0)
+                print "Equation 3.19 satisfied:", np.isclose(np.max(np.absolute(Modified_Budget_Constraint)), 0)
+
+                print np.round(np.transpose(100000*Chained_C_Condition[0,:,:self.T]), decimals=4)
+
 
             return c_matrix[:,:,:self.T], a_matrix[:,:-1,:self.T]
 
@@ -826,7 +852,7 @@ class OLG(object):
     def Timepath(self, to_plot = set([])):
         
         self.IterationsToShow = to_plot
-
+        self.testlist = []
         rpath_guess, bqpath_guess = self.get_initialguesses()
 
         guess = np.append(rpath_guess, bqpath_guess)
@@ -851,7 +877,7 @@ class OLG(object):
         title = str("S = " + str(self.S) + ", T = " + str(self.T))
         plt.suptitle(title)
 
-        plt.subplot(331)
+        ax = plt.subplot(331)
         for i in range(self.I):
             plt.plot(range(self.S+self.T), r_path)
         plt.title(str("r_path "+"iteration: "+str(self.Timepath_counter)))
@@ -897,10 +923,12 @@ class OLG(object):
             plt.plot(range(self.S+self.T), np.hstack((kf_path[i,:]+kd_path[i,:],np.ones(self.S)*(self.kf_ss[i]+self.kd_ss[i]))))
         plt.title(str("K_path "+"iteration: "+str(self.Timepath_counter)))
 
-        if SAVE: 
+
+        if SAVE:
             name= "OLGresult_"+str(self.I)+"_"+str(self.S)+"_"+str(self.sigma)+".png"
             plt.savefig(name)
             plt.cla()
+
         else:
             plt.show()
 
