@@ -37,21 +37,27 @@ def Multi_Country(S,I,sigma):
     PrintAges = False #Prints the different key ages in the demographics
     PrintLoc = False #Displays the current locations of the program inside key TPI functions
     PrintEulErrors = True #Prints the euler errors in each attempt of calculating the steady state
-    PrintSS = False #Prints the result of the Steady State functions
+    PrintSS = True #Prints the result of the Steady State functions
     Print_cabqTimepaths = False #Prints the consumption, assets, and bequests timepath as it gets filled in for each iteration of TPI
 
     CheckerMode = False #Reduces the number of prints when checking for robustness, use in conjunction with RobustChecker.py
 
     DemogGraphs = False #Activates graphing graphs with demographic data and population shares
-    TPIGraphs = False #Activates graphing the graphs.
+
+    TPIGraphs = False #Activates showing the final graphs
+
+    iterations = set([219,220])
 
     UseStaggeredAges = True #Activates using staggered ages
     UseDiffDemog = True #Turns on different demographics for each country
-    UseSSDemog = False #Activates using only steady state demographics for TPI calculation
+    UseSSDemog = True #Activates using only steady state demographics for TPI calculation
+    ShowSSGraphs = False
+
     UseDiffProductivities = False #Activates having e vary across cohorts
     UseTape = True #Activates setting any value of kd<0 to 0.001 in TPI calculation
-    SAVE = False #Saves the graphs
-    SHOW = True #Shows the graphs
+
+    CalcTPI = True
+
     ADJUSTKOREAIMMIGRATION = True #Adjusts demograhpics to correct for oddities in Korea's data.
 
     #Adjusts the country list if we are using less than 7 Countries
@@ -59,6 +65,7 @@ def Multi_Country(S,I,sigma):
         print "WARNING: We are changing I from", I, "to", len(I_touse), "to fit the length of I_touse. So the countries we are using now are", I_touse
         I = len(I_touse)
         time.sleep(2)
+
     elif len(I_touse) > I:
         print "WARNING: We are changing I_touse from", I_touse, "to", I_touse[:I], "so there are", I, "regions"
         I_touse = I_touse[:I]
@@ -75,12 +82,10 @@ def Multi_Country(S,I,sigma):
 
     Tolerances = (tpi_tol, demog_ss_tol)
 
-    Levers = (CalcTPI, PrintAges,PrintLoc,PrintEulErrors,PrintSS,Print_cabqTimepaths,CheckerMode,DemogGraphs,TPIGraphs,\
-            UseStaggeredAges,UseDiffDemog,UseSSDemog,UseDiffProductivities,UseTape,SAVE,SHOW,ADJUSTKOREAIMMIGRATION)
+    Levers = (CalcTPI, PrintAges,PrintLoc,PrintEulErrors,PrintSS,ShowSSGraphs,Print_cabqTimepaths,CheckerMode,DemogGraphs,TPIGraphs,\
+            UseStaggeredAges,UseDiffDemog,UseSSDemog,UseDiffProductivities,UseTape,ADJUSTKOREAIMMIGRATION)
 
     TPI_Params = (xi,MaxIters)
-
-
 
     ##WHERE THE MAGIC HAPPENS ##
 
@@ -100,12 +105,15 @@ def Multi_Country(S,I,sigma):
 
     #Timepath Iteration
     
-    r_init = Model.r_ss*1
-    bq_init = Model.bq_ss*1
-    a_init = Model.avec_ss*1
+
+    r_init = Model.r_ss*.98
+    bq_init = Model.bq_ss*.98
+    a_init = Model.avec_ss*.98
     Model.set_initial_values(r_init, bq_init, a_init)
-    Model.Timepath()
-    
+
+    if CalcTPI: Model.Timepath(to_plot = iterations)
+    #if TPIGraphs: Model.plotTimepaths()
+
     pass
 
 

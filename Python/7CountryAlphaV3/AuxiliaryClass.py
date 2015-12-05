@@ -91,15 +91,16 @@ class OLG(object):
         self.Mortality_ss = np.zeros((self.I, self.S))
 
 
-        
         #Firm Parameters
         (self.alpha,delta_annual,self.chi,self.rho, self.g_A)= Firm_Params
         self.delta=1-(1-delta_annual)**(70/self.S)
 
         #Lever Parameters
-        (self.CalcTPI,self.PrintAges,self.PrintLoc,self.EulErrors,self.PrintSS,self.Print_cabqTimepaths,self.CheckerMode,\
+        (self.CalcTPI,self.PrintAges,self.PrintLoc,self.EulErrors,self.PrintSS,self.ShowSSGraphs,self.Print_cabqTimepaths,self.CheckerMode,\
                 self.DemogGraphs,self.TPIGraphs,self.UseStaggeredAges,self.UseDiffDemog, self.UseSSDemog,\
-                self.UseDiffProductivities,self.UseTape,self.SAVE,self.SHOW,self.ADJUSTKOREAIMMIGRATION) = Lever_Params
+                self.UseDiffProductivities,self.UseTape,self.ADJUSTKOREAIMMIGRATION) = Lever_Params
+
+        self.IterationsToShow = set([])
 
         #Tolerance Parameters
 
@@ -320,7 +321,6 @@ class OLG(object):
             self.Nhat = np.einsum("is,t->ist",self.Nhat_ss,np.ones(self.T+self.S))
             self.MortalityRates = np.einsum("is,t->ist",self.Mortality_ss,np.ones(self.T+self.S))
 
-        #print np.sum(np.sum(self.Nhat,axis=0),axis=0)
         if self.DemogGraphs:
             ages = self.FirstFertilityAge, self.LastFertilityAge, self.FirstDyingAge, \
                     self.MaxImmigrantAge
@@ -613,21 +613,22 @@ class OLG(object):
         print "-Euler for r satisfied:", np.isclose(Euler_kf, 0), "\n\n"
 
         if self.PrintSS:
-            for i in range(self.I):
-                plt.plot(range(self.S),self.cvec_ss[i,:])
-            plt.title("Consumption")
-            plt.legend(self.I_touse[:self.I])
-            plt.show()
-            for i in range(self.I):
-                plt.plot(range(self.S),self.avec_ss[i,:])
-            plt.title("Assets")
-            plt.legend(self.I_touse[:self.I])
-            plt.show()
-            for i in range(self.I):
-                plt.plot(range(self.S),self.bqvec_ss[i,:])
-            plt.title("Bequests")
-            plt.legend(self.I_touse[:self.I])
-            plt.show()
+            if self.ShowSSGraphs:
+                for i in range(self.I):
+                    plt.plot(range(self.S),self.cvec_ss[i,:])
+                plt.title("Consumption")
+                plt.legend(self.I_touse[:self.I])
+                plt.show()
+                for i in range(self.I):
+                    plt.plot(range(self.S),self.avec_ss[i,:])
+                plt.title("Assets")
+                plt.legend(self.I_touse[:self.I])
+                plt.show()
+                for i in range(self.I):
+                    plt.plot(range(self.S),self.bqvec_ss[i,:])
+                plt.title("Bequests")
+                plt.legend(self.I_touse[:self.I])
+                plt.show()
 
             print "assets steady state:", self.avec_ss
             print "kf steady state", self.kf_ss
@@ -646,7 +647,6 @@ class OLG(object):
         print self.cvec_ss[:,:-1] - \
         (we + (1+self.r_ss-self.delta)*self.avec_ss[:,:-1] + self.bqvec_ss[:,:-1] - self.avec_ss[:,1:]*np.exp(self.g_A)) / \
         (1 + we*(self.chi/we)**self.rho)
-
 
     #TIMEPATH-ITERATION
 
@@ -682,16 +682,16 @@ class OLG(object):
 
             for s in range(decisions):
 
-                cvec_path[:,s+1] = (self.beta * (1-mort_life[:,s]) * (1 + r_path[s+1] - self.delta)\
-                                   * psi_life[:,s+1]/psi_life[:,s])**(1/self.sigma) * cvec_path[:,s]*np.exp(-self.g_A)
+                cvec_path[:,s+1] = ((self.beta * (1-mort_life[:,s]) * (1 + r_path[s+1] - self.delta)\
+                                   * psi_life[:,s+1])/psi_life[:,s])**(1/self.sigma) * cvec_path[:,s]*np.exp(-self.g_A)
 
                 avec_path[:,s+1] = (w_life[:,s]*e_life[:,s] + (1 + r_life[s] - self.delta)*avec_path[:,s] + \
                         bq_life[:,s] - cvec_path[:,s]*(1+w_life[:,s]*e_life[:,s]*\
                         (self.chi/(w_life[:,s]*e_life[:,s]))**self.rho))*np.exp(-self.g_A)
 
-                avec_path[:,s+2] = (w_life[:,s+1]*e_life[:,s+1] + (1 + r_life[s+1] - self.delta)*avec_path[:,s+1] \
-                        - cvec_path[:,s+1]*(1+w_life[:,s+1]*e_life[:,s+1]*(self.chi/(w_path[:,s+1]*e_life[:,s+1]))\
-                        **self.rho))*np.exp(-self.g_A)
+            avec_path[:,s+2] = (w_life[:,s+1]*e_life[:,s+1] + (1 + r_life[s+1] - self.delta)*avec_path[:,s+1] \
+                    - cvec_path[:,s+1]*(1+w_life[:,s+1]*e_life[:,s+1]*(self.chi/(w_path[:,s+1]*e_life[:,s+1]))\
+                    **self.rho))*np.exp(-self.g_A)
 
             return cvec_path, avec_path
 
@@ -711,20 +711,9 @@ class OLG(object):
             c_matrix = np.zeros((self.I,self.S,self.T+self.S))
             a_matrix = np.zeros((self.I,self.S+1,self.T+self.S))
             a_matrix[:,:-1,0] = self.a_init
-            
-            c_matrix[:,self.S-1,0] = (w_path[:,0]*self.e[:,self.S-1,0] + (1 + r_path[0] - self.delta)*self.a_init[:,self.S-1])\
-            /(1+w_path[:,0]*self.e[:,self.S-1,0]*(self.chi/(w_path[:,0]*self.e[:,self.S-1,0]))**self.rho)
-            #print self.a_init[:,self.S-1], "HERE"
-            """
-            print c_matrix[0,self.S-1,0]
-            test = (self.w_ss*self.e_ss[:,0] + (1 + self.r_ss - self.delta)*self.avec_ss[:,self.S-1])\
-            /(1+self.w_ss*self.e_ss[:,0]*(self.chi/(self.w_ss*self.e_ss[:,0]))**self.rho)
-            print test[0]
-            print self.cvec_ss[0,-1]
-            """
-            #c1_guess = np.ones(I)*.212
-            #yeaaaaas = opt.fsolve(optc1_Euler_TPI, c1_guess, args = (w_path[:,0], r_path[0], self.MortalityRates[:,self.S-1,0], self.e[:,self.S-1,0], 0, self.avec_ss[:,self.S-1], self.S-1))            
 
+            c_matrix[:,self.S-1,0] = (w_path[:,0]*self.e[:,self.S-1,0] + (1 + r_path[0] - self.delta)*self.a_init[:,self.S-1] + bqvec_path[:,self.S-1,0])\
+            /(1+w_path[:,0]*self.e[:,self.S-1,0]*(self.chi/(w_path[:,0]*self.e[:,self.S-1,0]))**(self.rho))
 
             for age in range(self.S-2,0,-1):
                 
@@ -773,14 +762,10 @@ class OLG(object):
                 if self.Print_cabqTimepaths:
                     print "Consumption for year", t
                     print np.round(np.transpose(c_matrix[0,:,:self.T]), decimals=3)
-                    #print "c_guess", np.round(c_guess[0], decimals=3)
                     print "Assets for year", t
                     print np.round(np.transpose(a_matrix[0,:,:self.T]), decimals=3)
-                    #print "Bequests"
-                    #print np.round(np.transpose(bq_timepath[0,:,:p+2]), decimals=3)
-                    #print "agent_bq", np.round(agent_bq[0,:], decimals=3)
-
-            print "Euler Household satisfied:", np.isclose(np.max(np.absolute(a_matrix[:,-1,:])), 0)
+    
+            if self.EulErrors: print "Euler Household satisfied:", np.isclose(np.max(np.absolute(a_matrix[:,-1,:])), 0)
 
             return c_matrix[:,:,:self.T], a_matrix[:,:-1,:self.T]
 
@@ -829,10 +814,8 @@ class OLG(object):
         if self.EulErrors: 
             print "Iteration:", self.Timepath_counter, "Min Euler:", np.min(np.absolute(Euler_all)), "Mean Euler:", np.mean(np.absolute(Euler_all)), "Max Euler_bq:", np.max(np.absolute(Euler_bq)), "Max Euler_kf", np.max(np.absolute(Euler_kf))
 
-        iterations_to_plot = set([1,600])
-
-        if self.Timepath_counter in iterations_to_plot:
-            self.plot_iteration(r_path, bq_path, w_path, c_matrix, lhat_path, n_path, kd_path, kf_path)
+        if self.Timepath_counter in self.IterationsToShow:
+            self.plot_timepaths(r_path, bq_path, w_path, c_matrix, lhat_path, n_path, kd_path, kf_path)
 
         self.rpathlist = np.vstack((self.rpathlist, r_path))
         
@@ -840,23 +823,30 @@ class OLG(object):
         
         return Euler_all
 
-    def Timepath(self):
+    def Timepath(self, to_plot = set([])):
         
+        self.IterationsToShow = to_plot
+
         rpath_guess, bqpath_guess = self.get_initialguesses()
 
-        print rpath_guess.shape, bqpath_guess.shape
         guess = np.append(rpath_guess, bqpath_guess)
 
         paths = opt.fsolve(self.EulerSystemTPI, guess, xtol=1e-4)
 
-        print rpath_guess.shape, bqpath_guess.shape
-        print paths.shape
+        paths = np.expand_dims(paths, axis=1).reshape((self.I+1,self.T))
+        r_path = paths[0,:]
+        self.r_path = np.hstack((r_path, np.ones(self.S)*self.r_ss))
+        bq_path = paths[1:,:]
+        self.bq_path = np.column_stack(( bq_path,  np.outer(self.bq_ss,np.ones(self.S)) ))
+        self.bqvec_path = np.zeros((self.I,self.S,self.T+self.S))
+        self.bqvec_path[:,self.FirstFertilityAge:self.FirstDyingAge,:] = np.einsum("it,s->ist", self.bq_path, \
+                np.ones(self.FirstDyingAge-self.FirstFertilityAge))
 
-        w_path, c_matrix, a_matrix, kd_path, kf_path, n_path, y_path, lhat_path = self.GetTPIComponents(bqvec_path, r_path)
+        self.w_path, self.c_matrix, self.a_matrix, self.kd_path, self.kf_path, self.n_path, self.y_path, self.lhat_path = self.GetTPIComponents(self.bqvec_path, self.r_path)
 
-        self.plot_iteration(r_path, bq_path, w_path, c_matrix, lhat_path, n_path, kd_path, kf_path)
+        self.plot_timepaths(self.r_path, self.bq_path, self.w_path, self.c_matrix, self.lhat_path, self.n_path, self.kd_path, self.kf_path, SAVE=True)
 
-    def plot_iteration(self, r_path, bq_path, w_path, c_matrix, lhat_path, n_path, kd_path, kf_path):
+    def plot_timepaths(self, r_path, bq_path, w_path, c_matrix, lhat_path, n_path, kd_path, kf_path, SAVE=False):
 
         title = str("S = " + str(self.S) + ", T = " + str(self.T))
         plt.suptitle(title)
@@ -867,18 +857,15 @@ class OLG(object):
         plt.title(str("r_path "+"iteration: "+str(self.Timepath_counter)))
         plt.legend(self.I_touse)
 
-
         plt.subplot(332)
         for i in range(self.I):
             plt.plot(range(self.S+self.T), bq_path[i,:])
         plt.title(str("bqvec_path "+"iteration: "+str(self.Timepath_counter)))
 
-
         plt.subplot(333)
         for i in range(self.I):
             plt.plot(range(self.S+self.T), w_path[i,:])
         plt.title(str("w_path "+"iteration: "+str(self.Timepath_counter)))
-
 
         plt.subplot(334)
         for i in range(self.I):
@@ -910,8 +897,12 @@ class OLG(object):
             plt.plot(range(self.S+self.T), np.hstack((kf_path[i,:]+kd_path[i,:],np.ones(self.S)*(self.kf_ss[i]+self.kd_ss[i]))))
         plt.title(str("K_path "+"iteration: "+str(self.Timepath_counter)))
 
-
-        plt.show()
+        if SAVE: 
+            name= "OLGresult_"+str(self.I)+"_"+str(self.S)+"_"+str(self.sigma)+".png"
+            plt.savefig(name)
+            plt.cla()
+        else:
+            plt.show()
 
     def GETMAGICINDICESTOUSELATER(self):
 
@@ -934,4 +925,6 @@ class OLG(object):
 
         z[:,s_indices,t_indices] = a.reshape((I,S*T))
         b = z[:,s_indices,t_indices].reshape(I,S,T)
+
+
 
