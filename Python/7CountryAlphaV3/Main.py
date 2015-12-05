@@ -98,12 +98,11 @@ def Multi_Country(S,I,sigma):
     bq_ss_guess = np.ones(I)*.2
     Model.SteadyState(r_ss_guess, bq_ss_guess)
 
-    Model.checkSSEulers()
     #Timepath Iteration
     
-    r_init = Model.r_ss*.98
-    bq_init = Model.bq_ss*.98
-    a_init = Model.avec_ss*.98
+    r_init = Model.r_ss*1
+    bq_init = Model.bq_ss*1
+    a_init = Model.avec_ss*1
     Model.set_initial_values(r_init, bq_init, a_init)
     Model.Timepath()
     

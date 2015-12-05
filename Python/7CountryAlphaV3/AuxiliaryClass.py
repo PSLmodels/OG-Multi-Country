@@ -354,14 +354,11 @@ class OLG(object):
         elif e.ndim == 3:
             we = np.einsum("it, ist -> ist", w, e)
 
-        part1 = (self.chi/we)**self.rho
-        part1new = (self.chi/we)**(self.rho-1)
+        part1 = (self.chi/we)**(self.rho-1)
 
-        psi = (1+self.chi*part1)**((1-self.rho*(self.sigma))/self.rho)
-        psinew = (1+self.chi*part1new)**((1-self.rho*(self.sigma))/(self.rho-1))
-        print "Using the new formula for psi"
+        psi = (1+self.chi*part1)**((1-self.rho*(self.sigma))/(self.rho-1))
 
-        return psinew
+        return psi
 
     def get_lhat(self,c,w,e):
 
@@ -405,7 +402,6 @@ class OLG(object):
         if lhat.ndim == 2:
             n = np.sum(self.e_ss*(self.lbar_ss-lhat)*self.Nhat_ss,axis=1)
         elif lhat.ndim == 3:
-            #print self.lbar[:self.T], lhat[0,:,:]
             n = np.sum(self.e[:,:,:self.T]*(self.lbar[:self.T]-lhat)*self.Nhat[:,:,:self.T],axis=1)
 
         return n
@@ -615,8 +611,6 @@ class OLG(object):
         print "\n\nSTEADY STATE FOUND!"
         print "-Euler for bq satisfied:", np.isclose(np.max(np.absolute(Euler_bq)), 0)
         print "-Euler for r satisfied:", np.isclose(Euler_kf, 0), "\n\n"
-        print Euler_bq
-        print Euler_kf
 
         if self.PrintSS:
             for i in range(self.I):
@@ -663,37 +657,6 @@ class OLG(object):
 
     def get_initialguesses(self):
 
-        def get_weights(x_vec):
-            wvec = []
-            for xj in x_vec:
-                wj = 1
-                for xk in x_vec:
-                    if xk != xj:
-                        wj *= 1./(xj-xk)
-
-                wvec += [wj]
-
-            return np.array(wvec)
-
-        def p(x, x_points, y_points, w):
-            numerator_sum = 0.0
-            denomonator_sum = 0.0
-
-            for j in range(len(x_points)):
-                numerator_sum += w[j]/(x-x_points[j])*y_points[j]
-                denomonator_sum += w[j]/(x-x_points[j])
-
-            return numerator_sum/denomonator_sum
-
-        x = np.linspace(-.00001,self.T+.00001,self.T)
-        midpoint1 = self.r_ss*1.05
-        midpoint2 = self.r_ss*1.0125
-        midpoint3 = self.r_ss*1.0125
-        x_points = np.array([0,self.S/2,self.S,(self.S+self.T/2),self.T])
-        y_points = np.array([self.r_init,midpoint1,midpoint2,midpoint3,self.r_ss])
-        something = p(x,x_points, y_points, get_weights(x_points))
-        #plt.plot(something)
-        #plt.show()
         rpath_guess = np.zeros(self.T)
         bqpath_guess = np.zeros((self.I,self.T))
 
@@ -701,7 +664,6 @@ class OLG(object):
         bb = -2 * (self.r_init-self.r_ss)/(self.T-1)
         aa = -bb / (2*(self.T-1))
         rpath_guess[:self.T] = aa * np.arange(0,self.T)**2 + bb*np.arange(0,self.T) + cc
-        #rpath_guess = something
 
         for i in range(self.I):
             bqpath_guess[i,:self.T] = np.linspace(self.bq_init[i], self.bq_ss[i], self.T)
@@ -864,69 +826,13 @@ class OLG(object):
 
         Euler_all = np.append(Euler_bq, Euler_kf)
 
-        def plot_iteration():
-
-            title = str("S = " + str(self.S) + ", T = " + str(self.T))
-            plt.suptitle(title)
-
-            plt.subplot(331)
-            for i in range(self.I):
-                plt.plot(range(self.S+self.T), r_path)
-            plt.title(str("r_path "+"iteration: "+str(self.Timepath_counter)))
-            plt.legend(self.I_touse)
-
-            plt.subplot(332)
-            for i in range(self.I):
-                plt.plot(range(self.S+self.T), bq_path[i,:])
-            plt.title(str("bqvec_path "+"iteration: "+str(self.Timepath_counter)))
-
-
-            plt.subplot(333)
-            for i in range(self.I):
-                plt.plot(range(self.S+self.T), w_path[i,:])
-            plt.title(str("w_path "+"iteration: "+str(self.Timepath_counter)))
-
-
-            plt.subplot(334)
-            for i in range(self.I):
-                plt.plot( range(self.S+self.T), np.hstack((np.sum(c_matrix[i,:,:],axis=0),np.ones(self.S)*np.sum(self.cvec_ss[i,:]))) )
-            plt.title(str("C_path "+"iteration: "+str(self.Timepath_counter)))
-
-            plt.subplot(335)
-            for i in range(self.I):
-                plt.plot( range(self.S+self.T), np.hstack((np.sum(lhat_path[i,:,:],axis=0),np.ones(self.S)*np.sum(self.lhat_ss[i,:]))) )
-            plt.title(str("Lhat_path "+"iteration: "+str(self.Timepath_counter)))
-
-            plt.subplot(336)
-            for i in range(self.I):
-                plt.plot(range(self.S+self.T), np.hstack((n_path[i,:],np.ones(self.S)*self.n_ss[i])))
-            plt.title(str("n_path "+"iteration: "+str(self.Timepath_counter)))
-
-            plt.subplot(337)
-            for i in range(self.I):
-                plt.plot(range(self.S+self.T), np.hstack((kd_path[i,:],np.ones(self.S)*self.kd_ss[i])) )
-            plt.title(str("kd_path "+"iteration: "+str(self.Timepath_counter)))
-            
-            plt.subplot(338)
-            for i in range(self.I):
-                plt.plot(range(self.S+self.T), np.hstack((kf_path[i,:],np.ones(self.S)*self.kf_ss[i])))
-            plt.title(str("kf_path "+"iteration: "+str(self.Timepath_counter)))
-
-            plt.subplot(339)
-            for i in range(self.I):
-                plt.plot(range(self.S+self.T), np.hstack((kf_path[i,:]+kd_path[i,:],np.ones(self.S)*(self.kf_ss[i]+self.kd_ss[i]))))
-            plt.title(str("K_path "+"iteration: "+str(self.Timepath_counter)))
-
-
-            plt.show()
-
         if self.EulErrors: 
             print "Iteration:", self.Timepath_counter, "Min Euler:", np.min(np.absolute(Euler_all)), "Mean Euler:", np.mean(np.absolute(Euler_all)), "Max Euler_bq:", np.max(np.absolute(Euler_bq)), "Max Euler_kf", np.max(np.absolute(Euler_kf))
 
-        iterations_to_plot = set([1,100])
+        iterations_to_plot = set([1,600])
 
         if self.Timepath_counter in iterations_to_plot:
-            plot_iteration()
+            self.plot_iteration(r_path, bq_path, w_path, c_matrix, lhat_path, n_path, kd_path, kf_path)
 
         self.rpathlist = np.vstack((self.rpathlist, r_path))
         
@@ -938,6 +844,7 @@ class OLG(object):
         
         rpath_guess, bqpath_guess = self.get_initialguesses()
 
+        print rpath_guess.shape, bqpath_guess.shape
         guess = np.append(rpath_guess, bqpath_guess)
 
         paths = opt.fsolve(self.EulerSystemTPI, guess, xtol=1e-4)
@@ -945,6 +852,66 @@ class OLG(object):
         print rpath_guess.shape, bqpath_guess.shape
         print paths.shape
 
+        w_path, c_matrix, a_matrix, kd_path, kf_path, n_path, y_path, lhat_path = self.GetTPIComponents(bqvec_path, r_path)
+
+        self.plot_iteration(r_path, bq_path, w_path, c_matrix, lhat_path, n_path, kd_path, kf_path)
+
+    def plot_iteration(self, r_path, bq_path, w_path, c_matrix, lhat_path, n_path, kd_path, kf_path):
+
+        title = str("S = " + str(self.S) + ", T = " + str(self.T))
+        plt.suptitle(title)
+
+        plt.subplot(331)
+        for i in range(self.I):
+            plt.plot(range(self.S+self.T), r_path)
+        plt.title(str("r_path "+"iteration: "+str(self.Timepath_counter)))
+        plt.legend(self.I_touse)
+
+
+        plt.subplot(332)
+        for i in range(self.I):
+            plt.plot(range(self.S+self.T), bq_path[i,:])
+        plt.title(str("bqvec_path "+"iteration: "+str(self.Timepath_counter)))
+
+
+        plt.subplot(333)
+        for i in range(self.I):
+            plt.plot(range(self.S+self.T), w_path[i,:])
+        plt.title(str("w_path "+"iteration: "+str(self.Timepath_counter)))
+
+
+        plt.subplot(334)
+        for i in range(self.I):
+            plt.plot( range(self.S+self.T), np.hstack((np.sum(c_matrix[i,:,:],axis=0),np.ones(self.S)*np.sum(self.cvec_ss[i,:]))) )
+        plt.title(str("C_path "+"iteration: "+str(self.Timepath_counter)))
+
+        plt.subplot(335)
+        for i in range(self.I):
+            plt.plot( range(self.S+self.T), np.hstack((np.sum(lhat_path[i,:,:],axis=0),np.ones(self.S)*np.sum(self.lhat_ss[i,:]))) )
+        plt.title(str("Lhat_path "+"iteration: "+str(self.Timepath_counter)))
+
+        plt.subplot(336)
+        for i in range(self.I):
+            plt.plot(range(self.S+self.T), np.hstack((n_path[i,:],np.ones(self.S)*self.n_ss[i])))
+        plt.title(str("n_path "+"iteration: "+str(self.Timepath_counter)))
+
+        plt.subplot(337)
+        for i in range(self.I):
+            plt.plot(range(self.S+self.T), np.hstack((kd_path[i,:],np.ones(self.S)*self.kd_ss[i])) )
+        plt.title(str("kd_path "+"iteration: "+str(self.Timepath_counter)))
+        
+        plt.subplot(338)
+        for i in range(self.I):
+            plt.plot(range(self.S+self.T), np.hstack((kf_path[i,:],np.ones(self.S)*self.kf_ss[i])))
+        plt.title(str("kf_path "+"iteration: "+str(self.Timepath_counter)))
+
+        plt.subplot(339)
+        for i in range(self.I):
+            plt.plot(range(self.S+self.T), np.hstack((kf_path[i,:]+kd_path[i,:],np.ones(self.S)*(self.kf_ss[i]+self.kd_ss[i]))))
+        plt.title(str("K_path "+"iteration: "+str(self.Timepath_counter)))
+
+
+        plt.show()
 
     def GETMAGICINDICESTOUSELATER(self):
 
