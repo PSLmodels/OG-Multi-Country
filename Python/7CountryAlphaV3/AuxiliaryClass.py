@@ -138,8 +138,6 @@ class OLG(object):
         self.rpathlist = np.empty((1,self.T+self.S))
 
 
-
-
     #DEMOGRAPHICS SET-UP
 
     def Import_Data(self):
@@ -476,14 +474,13 @@ class OLG(object):
 
                 avec_ss[:,s+1] = (w_ss*self.e_ss[:,s] + (1 + r_ss - self.delta)*avec_ss[:,s] + \
                         bq_ss[:,s] - cvec_ss[:,s]*(1+w_ss*self.e_ss[:,s]*\
-                        (self.chi/(w_ss*self.e_ss[:,s])**self.rho)))*np.exp(-self.g_A)
+                        (self.chi/(w_ss*self.e_ss[:,s]))**self.rho))*np.exp(-self.g_A)
 
             avec_ss[:,s+2] = (w_ss*self.e_ss[:,s+1] + (1 + r_ss - self.delta)*avec_ss[:,s+1] \
-                    - cvec_ss[:,s+1]*(1+w_ss*self.e_ss[:,s+1]*(self.chi/(w_ss*self.e_ss[:,s+1])\
-                    **self.rho)))*np.exp(-self.g_A)
+                    - cvec_ss[:,s+1]*(1+w_ss*self.e_ss[:,s+1]*(self.chi/(w_ss*self.e_ss[:,s+1]))\
+                    **self.rho))*np.exp(-self.g_A)
 
             return cvec_ss, avec_ss
-
 
 
         def householdEuler_SS(c_1, w_ss, r_ss):
@@ -521,6 +518,7 @@ class OLG(object):
         opt_c1 = opt.fsolve(householdEuler_SS, c1_guess, args = (w_ss, r_ss))
 
         cvec_ss, avec_ss = get_lifetime_decisionsSS(opt_c1,w_ss,r_ss)
+
         avec_ss = avec_ss[:,:-1]
 
         lhat_ss = self.get_lhat(cvec_ss, w_ss, self.e_ss)
@@ -617,6 +615,8 @@ class OLG(object):
         print "\n\nSTEADY STATE FOUND!"
         print "-Euler for bq satisfied:", np.isclose(np.max(np.absolute(Euler_bq)), 0)
         print "-Euler for r satisfied:", np.isclose(Euler_kf, 0), "\n\n"
+        print Euler_bq
+        print Euler_kf
 
         if self.PrintSS:
             for i in range(self.I):
@@ -643,6 +643,16 @@ class OLG(object):
             print "r steady state", self.r_ss
             print "w steady state", self.w_ss
             print "c_vec_ss steady state", self.cvec_ss
+
+    def checkSSEulers(self):
+        we = np.einsum("i,is->is",self.w_ss,self.e_ss[:,:-1])
+
+        print self.psi_ss[:,:-1]*self.cvec_ss[:,:-1]**(-self.sigma) - self.beta*(1-self.Mortality_ss[:,:-1])*self.psi_ss[:,1:]*(self.cvec_ss[:,1:]*np.exp(self.g_A))**(-self.sigma)*(1+self.r_ss-self.delta)
+        
+        print self.cvec_ss[:,:-1] - \
+        (we + (1+self.r_ss-self.delta)*self.avec_ss[:,:-1] + self.bqvec_ss[:,:-1] - self.avec_ss[:,1:]*np.exp(self.g_A)) / \
+        (1 + we*(self.chi/we)**self.rho)
+
 
     #TIMEPATH-ITERATION
 
@@ -700,32 +710,30 @@ class OLG(object):
 
     def GetTPIComponents(self, bqvec_path, r_path):
 
-        def get_lifetime_decisionsTPI(c_1, w_life, r_life, mort_life, e_life, psi_life, bq_life, a_current, age):
-
+        def get_lifetime_decisionsTPI(c_1, w_life, r_life, mort_life, e_life, psi_life, bq_life, a_current, age,lastguy =True):
+            
             decisions = self.S - age -1
             cvec_path = np.zeros((self.I,decisions+1))
             avec_path = np.zeros((self.I,decisions+2))
             cvec_path[:,0] = c_1
             avec_path[:,0] = a_current
 
-            #print "age", age, "decisions", decisions, range(decisions)
-            #print cvec_path.shape, avec_path.shape, w_life.shape, r_life.shape, mort_life.shape, e_life.shape, psi_life.shape, bq_life.shape, a_current.shape
-            
             for s in range(decisions):
+
                 cvec_path[:,s+1] = (self.beta * (1-mort_life[:,s]) * (1 + r_path[s+1] - self.delta)\
                                    * psi_life[:,s+1]/psi_life[:,s])**(1/self.sigma) * cvec_path[:,s]*np.exp(-self.g_A)
 
                 avec_path[:,s+1] = (w_life[:,s]*e_life[:,s] + (1 + r_life[s] - self.delta)*avec_path[:,s] + \
                         bq_life[:,s] - cvec_path[:,s]*(1+w_life[:,s]*e_life[:,s]*\
-                        (self.chi/(w_life[:,s]*e_life[:,s])**self.rho)))*np.exp(-self.g_A)
+                        (self.chi/(w_life[:,s]*e_life[:,s]))**self.rho))*np.exp(-self.g_A)
 
-            avec_path[:,s+2] = (w_life[:,s+1]*e_life[:,s+1] + (1 + r_life[s+1] - self.delta)*avec_path[:,s+1] \
-                    - cvec_path[:,s+1]*(1+w_life[:,s+1]*e_life[:,s+1]*(self.chi/(w_path[:,s+1]*e_life[:,s+1])\
-                    **self.rho)))*np.exp(-self.g_A)
+                avec_path[:,s+2] = (w_life[:,s+1]*e_life[:,s+1] + (1 + r_life[s+1] - self.delta)*avec_path[:,s+1] \
+                        - cvec_path[:,s+1]*(1+w_life[:,s+1]*e_life[:,s+1]*(self.chi/(w_path[:,s+1]*e_life[:,s+1]))\
+                        **self.rho))*np.exp(-self.g_A)
 
             return cvec_path, avec_path
 
-        def optc1_Euler_TPI(c1_guess, w_life, r_life, mort_life, e_life, psi_life, bq_life, a_current, age):
+        def optc1_Euler_TPI(c1_guess, w_life, r_life, mort_life, e_life, psi_life, bq_life, a_current, age,lastguy = True):
 
             cpath_indiv, apath_indiv = get_lifetime_decisionsTPI(c1_guess, w_life, r_life, mort_life, e_life, psi_life, bq_life, a_current, age)
             Euler = np.ravel(apath_indiv[:,-1])
@@ -741,9 +749,20 @@ class OLG(object):
             c_matrix = np.zeros((self.I,self.S,self.T+self.S))
             a_matrix = np.zeros((self.I,self.S+1,self.T+self.S))
             a_matrix[:,:-1,0] = self.a_init
-
-            c_matrix[:,self.S-1,0] = (w_path[:,0]*self.e[:,self.S-1,0] + (1 + r_path[0] - self.delta)*self.a_init[:,self.S-1] + bqvec_path[:,self.S-1,0])\
+            
+            c_matrix[:,self.S-1,0] = (w_path[:,0]*self.e[:,self.S-1,0] + (1 + r_path[0] - self.delta)*self.a_init[:,self.S-1])\
             /(1+w_path[:,0]*self.e[:,self.S-1,0]*(self.chi/(w_path[:,0]*self.e[:,self.S-1,0]))**self.rho)
+            #print self.a_init[:,self.S-1], "HERE"
+            """
+            print c_matrix[0,self.S-1,0]
+            test = (self.w_ss*self.e_ss[:,0] + (1 + self.r_ss - self.delta)*self.avec_ss[:,self.S-1])\
+            /(1+self.w_ss*self.e_ss[:,0]*(self.chi/(self.w_ss*self.e_ss[:,0]))**self.rho)
+            print test[0]
+            print self.cvec_ss[0,-1]
+            """
+            #c1_guess = np.ones(I)*.212
+            #yeaaaaas = opt.fsolve(optc1_Euler_TPI, c1_guess, args = (w_path[:,0], r_path[0], self.MortalityRates[:,self.S-1,0], self.e[:,self.S-1,0], 0, self.avec_ss[:,self.S-1], self.S-1))            
+
 
             for age in range(self.S-2,0,-1):
                 
@@ -921,7 +940,11 @@ class OLG(object):
 
         guess = np.append(rpath_guess, bqpath_guess)
 
-        paths = opt.fsolve(self.EulerSystemTPI, guess)
+        paths = opt.fsolve(self.EulerSystemTPI, guess, xtol=1e-4)
+
+        print rpath_guess.shape, bqpath_guess.shape
+        print paths.shape
+
 
     def GETMAGICINDICESTOUSELATER(self):
 
