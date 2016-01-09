@@ -98,7 +98,7 @@ class OLG(object):
         #Lever Parameters
         (self.CalcTPI,self.PrintAges,self.PrintLoc,self.EulErrors,self.PrintSS,self.ShowSSGraphs,self.Print_cabqTimepaths,self.CheckerMode,\
                 self.DemogGraphs,self.TPIGraphs,self.UseStaggeredAges,self.UseDiffDemog, self.UseSSDemog,\
-                self.UseDiffProductivities,self.UseTape,self.ADJUSTKOREAIMMIGRATION, self.VectorizeHouseholdSolver) = Lever_Params
+                self.UseDiffProductivities,self.UseTape,self.ADJUSTKOREAIMMIGRATION, self.VectorizeHouseholdSolver, self.PinInitialValues) = Lever_Params
 
         self.IterationsToShow = set([])
 
@@ -440,7 +440,6 @@ class OLG(object):
         Outputs:
 
         """
-
 
         def get_lifetime_decisionsSS(c_1, w_ss, r_ss):
             """
@@ -938,10 +937,22 @@ class OLG(object):
 
     def EulerSystemTPI(self, guess):
 
-        guess = np.expand_dims(guess, axis=1).reshape((self.I+1,self.T))
-        r_path = guess[0,:]
+        if self.PinInitialValues:
+            guess = np.expand_dims(guess, axis=1).reshape((self.I+1,self.T-1))
+            r_path = np.zeros(self.T)
+            r_path[0] = self.r_init
+            r_path[1:] = guess[0,:]
+
+            bq_path = np.zeros((self.I,self.T))
+            bq_path[:,0] = self.bq_init
+            bq_path[:,1:] = guess[1:,:]
+
+        else:
+            guess = np.expand_dims(guess, axis=1).reshape((self.I+1,self.T))
+            r_path = guess[0,:]
+            bq_path = guess[1:,:]
+
         r_path = np.hstack((r_path, np.ones(self.S)*self.r_ss))
-        bq_path = guess[1:,:]
         bq_path = np.column_stack((  bq_path,   np.outer(self.bq_ss,np.ones(self.S))  ))
 
         bqvec_path = np.zeros((self.I,self.S,self.T+self.S))
@@ -958,32 +969,51 @@ class OLG(object):
 
         Euler_kf = np.sum(kf_path,axis=0)
 
-        Euler_all = np.append(Euler_bq, Euler_kf)
+        if self.PinInitialValues:
+            Euler_all = np.append(Euler_bq[:,1:], Euler_kf[1:])
+        else:
+            Euler_all = np.append(Euler_bq, Euler_kf)
 
         if self.EulErrors: 
             print "Iteration:", self.Timepath_counter, "Min Euler:", np.min(np.absolute(Euler_all)), "Mean Euler:", np.mean(np.absolute(Euler_all)), "Max Euler_bq:", np.max(np.absolute(Euler_bq)), "Max Euler_kf", np.max(np.absolute(Euler_kf))
 
         if self.Timepath_counter in self.IterationsToShow:
             self.plot_timepaths(r_path, bq_path, w_path, c_matrix, lhat_path, n_path, kd_path, kf_path, SAVE=False)
-        
+
         self.Timepath_counter += 1
         
         return Euler_all
 
-    def Timepath(self, to_plot = set([])):
+    def Timepath_fsolve(self, to_plot = set([])):
         
         self.IterationsToShow = to_plot
 
         rpath_guess, bqpath_guess = self.get_initialguesses()
 
+        if self.PinInitialValues:
+            rpath_guess = rpath_guess[1:]
+            bqpath_guess = bqpath_guess[:,1:]
+
         guess = np.append(rpath_guess, bqpath_guess)
 
         paths = opt.fsolve(self.EulerSystemTPI, guess)
 
-        paths = np.expand_dims(paths, axis=1).reshape((self.I+1,self.T))
-        r_path = paths[0,:]
+        if self.PinInitialValues:
+            paths = np.expand_dims(paths, axis=1).reshape((self.I+1,self.T-1))
+            r_path = np.zeros(self.T)
+            r_path[0] = self.r_init
+            r_path[1:] = paths[0,:]
+
+            bq_path = np.zeros((self.I, self.T))
+            bq_path[:,0] = self.bq_init
+            bq_path[:,1:] = paths[1:,:]
+        else:
+            paths = np.expand_dims(paths, axis=1).reshape((self.I+1,self.T))
+            r_path = paths[0,:]
+            bq_path = paths[1:,:]           
+        
         self.r_path = np.hstack((r_path, np.ones(self.S)*self.r_ss))
-        bq_path = paths[1:,:]
+
         self.bq_path = np.column_stack(( bq_path,  np.outer(self.bq_ss,np.ones(self.S)) ))
         self.bqvec_path = np.zeros((self.I,self.S,self.T+self.S))
         self.bqvec_path[:,self.FirstFertilityAge:self.FirstDyingAge,:] = np.einsum("it,s->ist", self.bq_path, \
@@ -1052,3 +1082,5 @@ class OLG(object):
 
         else:
             plt.show()
+
+        print "Bequests for country 0:", bq_path[0,:]

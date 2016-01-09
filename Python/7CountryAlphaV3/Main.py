@@ -46,7 +46,7 @@ def Multi_Country(S,I,sigma):
     DemogGraphs = False #Activates graphing graphs with demographic data and population shares
     ShowSSGraphs = False #Activates graphs for steady-state solutions for consumption, assets, and bequests
     TPIGraphs = False #Activates showing the final graphs
-    iterations_to_plot = set([1,50,230,307,350]) #Which iterations of the timepath fsolve you want to plot
+    iterations_to_plot = set([1]) #Which iterations of the timepath fsolve you want to plot
 
     #For using differing ways to solve the model
     UseStaggeredAges = True #Activates using staggered ages
@@ -55,7 +55,9 @@ def Multi_Country(S,I,sigma):
     UseDiffProductivities = False #Activates having e vary across cohorts
     UseTape = True #Activates setting any value of kd<0 to 0.001 in TPI calculation
     ADJUSTKOREAIMMIGRATION = True #Activates dividing Korean immigration by 100 to correctly scale with other countrys' immigration rates
+    
     VectorizeHouseholdSolver = False #Activates solving the household decision equations for all agents of a single age instead of each agent seperatly
+    PinInitialValues = True
 
     #Adjusts the country list if we are using less than 7 Countries
     if len(I_touse) < I:
@@ -79,14 +81,15 @@ def Multi_Country(S,I,sigma):
 
     Tolerances = (tpi_tol, demog_ss_tol)
 
-    Levers = (CalcTPI, PrintAges,PrintLoc,PrintEulErrors,PrintSS,ShowSSGraphs,Print_cabqTimepaths,CheckerMode,DemogGraphs,TPIGraphs,\
-            UseStaggeredAges,UseDiffDemog,UseSSDemog,UseDiffProductivities,UseTape,ADJUSTKOREAIMMIGRATION,VectorizeHouseholdSolver)
+    Levers = (CalcTPI, PrintAges,PrintLoc,PrintEulErrors,PrintSS,ShowSSGraphs,Print_cabqTimepaths,CheckerMode,\
+              DemogGraphs,TPIGraphs, UseStaggeredAges,UseDiffDemog,UseSSDemog,UseDiffProductivities,UseTape,\
+              ADJUSTKOREAIMMIGRATION,VectorizeHouseholdSolver,PinInitialValues)
 
     TPI_Params = (xi,MaxIters)
 
     ##WHERE THE MAGIC HAPPENS ##
 
-    Model = AUX.OLG(Country_Roster,HH_params,Firm_Params,Levers, Tolerances, TPI_Params)
+    Model = AUX.OLG(Country_Roster,HH_params,Firm_Params,Levers,Tolerances,TPI_Params)
 
     #Demographics
     Model.Import_Data()
@@ -102,17 +105,15 @@ def Multi_Country(S,I,sigma):
 
     #Timepath Iteration
     
-
     r_init = Model.r_ss*1.05
     bq_init = Model.bq_ss*.95
     a_init = Model.avec_ss
     Model.set_initial_values(r_init, bq_init, a_init)
 
-    if CalcTPI: Model.Timepath(to_plot = iterations_to_plot)
+    if CalcTPI: Model.Timepath_fsolve(to_plot = iterations_to_plot)
 
     pass
 
-
 #Input parameters for S, I and sigma here then execute this file to
 #run the model.
-Multi_Country(20,4,4)
+Multi_Country(20,2,4)
