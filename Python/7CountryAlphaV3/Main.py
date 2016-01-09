@@ -31,34 +31,31 @@ def Multi_Country(S,I,sigma):
     xi = .9999 #Parameter used to take the convex conjugate of paths
     MaxIters = 10000 #Maximum number of iterations on TPI.
 
-    #Program Levers
+    #PROGRAM LEVERS:
     CalcTPI = True #Activates the calculation of Time Path Iteration
 
+    #For terminal output
     PrintAges = False #Prints the different key ages in the demographics
     PrintLoc = False #Displays the current locations of the program inside key TPI functions
     PrintEulErrors = True #Prints the euler errors in each attempt of calculating the steady state
     PrintSS = True #Prints the result of the Steady State functions
     Print_cabqTimepaths = False #Prints the consumption, assets, and bequests timepath as it gets filled in for each iteration of TPI
+    CheckerMode = False #Activates not printing much of anything, used in conjunction with RobustChecker.py
 
-    CheckerMode = False #Reduces the number of prints when checking for robustness, use in conjunction with RobustChecker.py
-
+    #For plots to display or save
     DemogGraphs = False #Activates graphing graphs with demographic data and population shares
-
+    ShowSSGraphs = False #Activates graphs for steady-state solutions for consumption, assets, and bequests
     TPIGraphs = False #Activates showing the final graphs
+    iterations_to_plot = set([1,50,230,307,350]) #Which iterations of the timepath fsolve you want to plot
 
-    iterations = set([384,385])
-
+    #For using differing ways to solve the model
     UseStaggeredAges = True #Activates using staggered ages
     UseDiffDemog = True #Turns on different demographics for each country
     UseSSDemog = True #Activates using only steady state demographics for TPI calculation
-    ShowSSGraphs = False
-
     UseDiffProductivities = False #Activates having e vary across cohorts
     UseTape = True #Activates setting any value of kd<0 to 0.001 in TPI calculation
-
-    CalcTPI = True
-
-    ADJUSTKOREAIMMIGRATION = True #Adjusts demograhpics to correct for oddities in Korea's data.
+    ADJUSTKOREAIMMIGRATION = True #Activates dividing Korean immigration by 100 to correctly scale with other countrys' immigration rates
+    VectorizeHouseholdSolver = False #Activates solving the household decision equations for all agents of a single age instead of each agent seperatly
 
     #Adjusts the country list if we are using less than 7 Countries
     if len(I_touse) < I:
@@ -83,7 +80,7 @@ def Multi_Country(S,I,sigma):
     Tolerances = (tpi_tol, demog_ss_tol)
 
     Levers = (CalcTPI, PrintAges,PrintLoc,PrintEulErrors,PrintSS,ShowSSGraphs,Print_cabqTimepaths,CheckerMode,DemogGraphs,TPIGraphs,\
-            UseStaggeredAges,UseDiffDemog,UseSSDemog,UseDiffProductivities,UseTape,ADJUSTKOREAIMMIGRATION)
+            UseStaggeredAges,UseDiffDemog,UseSSDemog,UseDiffProductivities,UseTape,ADJUSTKOREAIMMIGRATION,VectorizeHouseholdSolver)
 
     TPI_Params = (xi,MaxIters)
 
@@ -106,16 +103,16 @@ def Multi_Country(S,I,sigma):
     #Timepath Iteration
     
 
-    r_init = Model.r_ss*1.02
-    bq_init = Model.bq_ss*.98
-    a_init = Model.avec_ss*.98
+    r_init = Model.r_ss*1.05
+    bq_init = Model.bq_ss*.95
+    a_init = Model.avec_ss
     Model.set_initial_values(r_init, bq_init, a_init)
 
-    if CalcTPI: Model.Timepath(to_plot = iterations)
+    if CalcTPI: Model.Timepath(to_plot = iterations_to_plot)
 
     pass
 
 
 #Input parameters for S, I and sigma here then execute this file to
 #run the model.
-Multi_Country(18,2,4)
+Multi_Country(20,4,4)

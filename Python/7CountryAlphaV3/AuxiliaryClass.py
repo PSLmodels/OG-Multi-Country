@@ -98,7 +98,7 @@ class OLG(object):
         #Lever Parameters
         (self.CalcTPI,self.PrintAges,self.PrintLoc,self.EulErrors,self.PrintSS,self.ShowSSGraphs,self.Print_cabqTimepaths,self.CheckerMode,\
                 self.DemogGraphs,self.TPIGraphs,self.UseStaggeredAges,self.UseDiffDemog, self.UseSSDemog,\
-                self.UseDiffProductivities,self.UseTape,self.ADJUSTKOREAIMMIGRATION) = Lever_Params
+                self.UseDiffProductivities,self.UseTape,self.ADJUSTKOREAIMMIGRATION, self.VectorizeHouseholdSolver) = Lever_Params
 
         self.IterationsToShow = set([])
 
@@ -137,7 +137,6 @@ class OLG(object):
 
 
         self.rpathlist = np.empty((1,self.T+self.S))
-
 
     #DEMOGRAPHICS SET-UP
 
@@ -328,7 +327,6 @@ class OLG(object):
             demog.plotDemographics(ages, datasets, self.I, self.S, self.T, self.I_touse, T_touse = [0,1,2,3,20]\
                     , compare_across="T", data_year=0)
 
-
     #STEADY STATE
 
     def get_Psi(self, w, e):
@@ -356,7 +354,7 @@ class OLG(object):
 
         part1 = (self.chi/we)**(self.rho-1)
 
-        psi = (1+self.chi*part1)**((1-self.rho*(self.sigma))/(self.rho-1))
+        psi = (1+self.chi*part1)**( (1-self.rho*self.sigma)/(self.rho-1) )
 
         return psi
 
@@ -378,9 +376,9 @@ class OLG(object):
 
 
         if e.ndim == 2:
-            lhat=c*(self.chi/(np.einsum("i,is->is",w,e)))**self.rho
+            lhat=c*(self.chi/np.einsum("i,is->is",w,e))**self.rho
         elif e.ndim == 3:
-            lhat=c*(self.chi/(np.einsum("it,ist->ist",w,e)))**self.rho
+            lhat=c*(self.chi/np.einsum("it,ist->ist",w,e))**self.rho
 
         return lhat
 
@@ -672,32 +670,90 @@ class OLG(object):
 
     def GetTPIComponents(self, bqvec_path, r_path):
 
-        def get_lifetime_decisionsTPI(c_1, w_life, r_life, mort_life, e_life, psi_life, bq_life, a_current, age,lastguy =True):
+        #Functions that solve lower-diagonal household decisions in vectors (new and still a bit under construction)
+        def get_lifetime_decisions_LOWERTRIANGLETEST(c0_guess, c_uppermat, a_uppermat, w_path, r_path, psi, bqvec_path):
+
+            #Initializes consumption and assets with all of the upper triangle already filled in
+            c_matrix = c_uppermat
+            a_matrix = a_uppermat
+            c_matrix[:,0,:self.T] = c0_guess.reshape(self.I,self.T)
+
+            #Gets we ahead of time for easier calculation
+            we = np.einsum("it,ist->ist",w_path,self.e)
+
+            """
+            #print np.round(np.transpose(c_matrix[0,:,:]), decimals=3)
+            #print np.round(np.transpose(a_matrix[0,:,:]), decimals=3)
+            #print c_uppermat.shape, w_path.shape, r_path.shape, psi.shape, bqvec_path.shape, self.S, self.T, self.S+self.T
+            """
+            #Loops through each year (across S) and gets decisions for every agent in the next year
+            for s in range(self.S-1):
+
+                #Gets consumption for every agents' next year using Equation 3.22
+                c_matrix[:,s+1,s+1:self.T+s+1] = ((self.beta * (1-self.MortalityRates[:,s,s:self.T+s]) * (1 + r_path[s+1:self.T+s+1] - self.delta)\
+                                                 * psi[:,s+1,s+1:self.T+s+1])/psi[:,s,s:self.T+s])**(1/self.sigma) * c_matrix[:,s,s:self.T+s]*np.exp(-self.g_A)
+                #Gets assets for every agents' next year using Equation 3.19
+                a_matrix[:,s+1,s+1:self.T+s+1] = (  (we[:,s,s:self.T+s] + (1 - r_path[s:self.T+s] - self.delta)*a_matrix[:,s,s:self.T+s] + bqvec_path[:,s,s:self.T+s])\
+                                                 -c_matrix[:,s,s:self.T+s]*(1+we[:,s,s:self.T+s]*(self.chi/we[:,s,s:self.T+s])**self.rho)  )*np.exp(-self.g_A)
+                """
+                #print np.round(np.transpose(c_matrix[0,:,:]), decimals=3)
+                #print np.round(np.transpose(a_matrix[0,:,:]), decimals=3)
+                """
+            #Gets assets in the final period of every agents' lifetime
+            a_matrix[:,-1,s+2:self.T+s+2] = (  (we[:,-1,s+1:self.T+s+1] + (1 - r_path[s+1:self.T+s+1] - self.delta)*a_matrix[:,-2,s+1:self.T+s+1] + bqvec_path[:,-1,s+1:self.T+s+1])\
+                                            -c_matrix[:,-1,s+1:self.T+s+1]*(1+we[:,-1,s+1:self.T+s+1]*(self.chi/we[:,-1,s+1:self.T+s+1])**self.rho)  )*np.exp(-self.g_A)
+
+
+            return c_matrix, a_matrix
+
+        def get_lower_triangle_Euler_TEST(c0_guess, c_uppermat, a_uppermat, w_path, r_path, psi, bqvec_path):
             
+            #Gets the decisions paths for each agent
+            c_matrix, a_matrix = get_lifetime_decisions_LOWERTRIANGLETEST(c0_guess, c_uppermat, a_uppermat, w_path, r_path, psi, bqvec_path)
+            
+            #Household Eulers are solved when the agents have no assets at the end of their life
+            Euler = np.ravel(a_matrix[:,-1,self.S:])
+
+            return Euler
+
+        #Functions that solve household decisions with for-loops (old)
+        def get_lifetime_decisionsTPI(c_1, w_life, r_life, mort_life, e_life, psi_life, bq_life, a_current, age):
+            
+            #Number of decisions the agent needs to make in its lifetime
             decisions = self.S - age -1
+
+            #Initializes the consumption and assets vectors for this agent
             cvec_path = np.zeros((self.I,decisions+1))
             avec_path = np.zeros((self.I,decisions+2))
             cvec_path[:,0] = c_1
             avec_path[:,0] = a_current
 
+            #Loops through each decision the agent makes
             for s in range(decisions):
 
+                #Algebraically manipulated version of Equation 3.22
                 cvec_path[:,s+1] = ((self.beta * (1-mort_life[:,s]) * (1 + r_path[s+1] - self.delta)\
                                    * psi_life[:,s+1])/psi_life[:,s])**(1/self.sigma) * cvec_path[:,s]*np.exp(-self.g_A)
 
+                #Algebraically manipulataed version of Equation 3.19
                 avec_path[:,s+1] = (w_life[:,s]*e_life[:,s] + (1 + r_life[s] - self.delta)*avec_path[:,s] + \
                         bq_life[:,s] - cvec_path[:,s]*(1+w_life[:,s]*e_life[:,s]*\
                         (self.chi/(w_life[:,s]*e_life[:,s]))**self.rho))*np.exp(-self.g_A)
 
+            #Gets the remaining assets in the final year of the agent't lifetime
             avec_path[:,s+2] = (w_life[:,s+1]*e_life[:,s+1] + (1 + r_life[s+1] - self.delta)*avec_path[:,s+1] \
                     - cvec_path[:,s+1]*(1+w_life[:,s+1]*e_life[:,s+1]*(self.chi/(w_path[:,s+1]*e_life[:,s+1]))\
                     **self.rho))*np.exp(-self.g_A)
 
+
             return cvec_path, avec_path
 
-        def optc1_Euler_TPI(c1_guess, w_life, r_life, mort_life, e_life, psi_life, bq_life, a_current, age,lastguy = True):
+        def optc1_Euler_TPI(c1_guess, w_life, r_life, mort_life, e_life, psi_life, bq_life, a_current, age):
 
+            #Gets the individual decisions paths of the agent to check if finals assets are 0
             cpath_indiv, apath_indiv = get_lifetime_decisionsTPI(c1_guess, w_life, r_life, mort_life, e_life, psi_life, bq_life, a_current, age)
+            
+            #Household Eulers are solved when the agent doesn't have any assets at the end of its life
             Euler = np.ravel(apath_indiv[:,-1])
 
             if np.any(cpath_indiv<0):
@@ -706,22 +762,58 @@ class OLG(object):
 
             return Euler
 
+        #Checks various household condidions
+        def check_household_conditions(w_path, r_path, c_matrix, a_matrix, psi, bqvec_path):  
+            
+            #Multiplies wages and productivities ahead of time for easy calculations of the first two equations below
+            we = np.einsum("it,ist->ist",w_path[:,:self.T-1],self.e[:,:-1,:self.T-1])
+
+            #Disparity between left and right sides of Equation 3.22
+            Chained_C_Condition = psi[:,:-1,:self.T-1]*c_matrix[:,:-1,:self.T-1]**(-self.sigma)\
+                                  - self.beta*(1-self.MortalityRates[:,:-1,:self.T-1])*psi[:,1:,1:self.T]\
+                                  *(c_matrix[:,1:,1:self.T]*np.exp(self.g_A))**(-self.sigma)*(1+r_path[1:self.T]-self.delta)
+            
+            #Disparity between left and right sides of Equation 3.19
+            Modified_Budget_Constraint = c_matrix[:,:-1,:self.T-1]\
+                                         -  (we + (1+r_path[:self.T-1]-self.delta)*a_matrix[:,:-2,:self.T-1] + bqvec_path[:,:-1,:self.T-1]\
+                                         - a_matrix[:,1:-1,1:self.T]*np.exp(self.g_A))\
+                                         /(1 + we*(self.chi/we)**self.rho)
+            
+            #Multiplies wages and productivities ahead of time for easy calculations of the two equations below
+            we = np.einsum("it,ist->ist",w_path[:,:self.T],self.e[:,:-1,:self.T])
+            
+            #Disparity between left and right sides of Equation 3.19 algebraically manipulated so assets next period is the left-side variable
+            Modified_Budget_Constraint2 = - a_matrix[:,1:-1,1:self.T+1]\
+                                          + ( we + (1+r_path[:self.T] - self.delta)*a_matrix[:,:-2,:self.T] + bqvec_path[:,:-1,:self.T]\
+                                          - (c_matrix[:,:-1,:self.T]*(1+we*(self.chi/we)**self.rho)) )*np.exp(-self.g_A)
+
+            #Any remaining assets each agent has at the end of its lifetime. Should be 0 if other Eulers are solving correctly
+            Household_Euler = a_matrix[:,-1,:]
+
+            return Chained_C_Condition, Modified_Budget_Constraint, Modified_Budget_Constraint2, Household_Euler
+
+        #Gets consumption and assets matrices using fsolve
         def get_c_a_matrices(w_path, r_path, psi, bqvec_path):
 
+            #Initializes the consumption and assets matrices
             c_matrix = np.zeros((self.I,self.S,self.T+self.S))
             a_matrix = np.zeros((self.I,self.S+1,self.T+self.S))
             a_matrix[:,:-1,0] = self.a_init
 
+            #Equation 3.19 for the oldest agent in time t=0. Note that this agent chooses to consume everything so that it has no assets in the following period
             c_matrix[:,self.S-1,0] = (w_path[:,0]*self.e[:,self.S-1,0] + (1 + r_path[0] - self.delta)*self.a_init[:,self.S-1] + bqvec_path[:,self.S-1,0])\
             /(1+w_path[:,0]*self.e[:,self.S-1,0]*(self.chi/(w_path[:,0]*self.e[:,self.S-1,0]))**(self.rho))
 
+            #Loops over each agent's lifetime decisions who is alive today (Upper triangle)
             for age in range(self.S-2,0,-1):
-                
-                c1_guess = (c_matrix[:,age+1,0]*(psi[:,age,0]/psi[:,age+1,1])\
-                    /((self.beta*(1+r_path[0]-self.delta))**(1/self.sigma)))/np.exp(self.g_A)
-                
+
                 p = self.S-age #Remaining decisions
 
+                #Makes a guess for the fsolve for this agent's consumption that is a function of the consumption of the agent one year older
+                c1_guess = (c_matrix[:,age+1,0]*(psi[:,age,0]/psi[:,age+1,1])\
+                    /((self.beta*(1+r_path[0]-self.delta))**(1/self.sigma)))/np.exp(self.g_A)
+
+                #All the variables this agent will face during its lifetime. (Note these are diagonal vectors)
                 w_life = w_path[:,:p]
                 r_life = r_path[:p+1]
                 mort_life = np.diagonal(self.MortalityRates[:,age:,age:], axis1=1, axis2=2)
@@ -730,86 +822,117 @@ class OLG(object):
                 bq_life = np.diagonal(bqvec_path[:,age:,:p+1], axis1=1, axis2=2)
                 a_current = self.a_init[:,age]
 
+                #Solves for this agent's optimal initial consumption in time t=0 using an fsolve
                 opt_c1 = opt.fsolve(optc1_Euler_TPI, c1_guess, args = (w_life, r_life, mort_life, e_life, psi_life, bq_life, a_current, age))
-            
+
+                #Solves for all the remaining lifetime decisions for this agent as a function of its optimal initial consumption using Equations 3.19 and 3.22
                 cpath_indiv, apath_indiv = get_lifetime_decisionsTPI(opt_c1, w_life, r_life, mort_life, e_life, psi_life, bq_life, a_current, age)
                 
+                #Fills the agents consumption and assets decision vectors as diagonals in the main matrix
                 for i in xrange(self.I):
                     np.fill_diagonal(c_matrix[i,age:,:], cpath_indiv[i,:])
                     np.fill_diagonal(a_matrix[i,age:,:], apath_indiv[i,:])
 
+                #Prints Consumption and Assets matrices if Print_cabqTimepaths = True in Main.py
                 if self.Print_cabqTimepaths:
-                    print "Consumption for year", t
+                    print "Consumption for generation of age", age
                     print np.round(np.transpose(c_matrix[0,:,:self.T]), decimals=3)
-                    print "Assets for year", t
+                    print "Assets for generation of age", age
                     print np.round(np.transpose(a_matrix[0,:,:self.T]), decimals=3)
 
-            for t in range(self.T):
+            #Will solve for the lower triangle of the household matrices using vectorization if = True and by agent if = False
+            #WARNING: USING THE VECTORIZATION METHOD MAY PRODUCE INCORRECT RESULTS
+            if self.VectorizeHouseholdSolver:
 
-                c1_guess = c_matrix[:,0,t-1]
+                #Initializes a guess for the first vector for the fsolve to use
+                c0_guess = np.zeros((self.I,self.T))
 
-                age = 0
-                w_life = w_path[:,t:t+self.S]
-                r_life = r_path[t:t+self.S+1]
-                mort_life = np.diagonal(self.MortalityRates[:,:,t:t+self.S+1], axis1=1, axis2=2)
-                e_life = np.diagonal(self.e[:,:,t:t+self.S+1], axis1=1, axis2=2)
-                psi_life = np.diagonal(psi[:,:,t:t+self.S+1], axis1=1, axis2=2)
-                bq_life = np.diagonal(bqvec_path[:,:,t:t+self.S+1], axis1=1, axis2=2)
-                a_current = np.zeros(self.I)
-
-                opt_c1 = opt.fsolve(optc1_Euler_TPI, c1_guess, args = (w_life, r_life, mort_life, e_life, psi_life, bq_life, a_current, age))
-            
-                cpath_indiv, apath_indiv = get_lifetime_decisionsTPI(opt_c1, w_life, r_life, mort_life, e_life, psi_life, bq_life, a_current, age)
+                #Fills it the guess for each country
+                for i in range(self.I):
+                    c0_guess[i,:] = np.linspace(c_matrix[i,1,0], self.cvec_ss[i,-1], self.T)
                 
-                for i in xrange(self.I):
-                    np.fill_diagonal(c_matrix[i,:,t:], cpath_indiv[i,:])
-                    np.fill_diagonal(a_matrix[i,:,t:], apath_indiv[i,:])
+                #Solves for the entire consumption and assets matrices
+                opt.fsolve(get_lower_triangle_Euler_TEST, c0_guess, args=(c_matrix, a_matrix, w_path, r_path, psi, bqvec_path))
 
-                if self.Print_cabqTimepaths:
-                    print "Consumption for year", t
-                    print np.round(np.transpose(c_matrix[0,:,:self.T]), decimals=3)
-                    print "Assets for year", t
-                    print np.round(np.transpose(a_matrix[0,:,:self.T]), decimals=3)
-    
-            we = np.einsum("it,ist->ist",w_path[:,:self.T-1],self.e[:,:-1,:self.T-1])
+            else:
 
-            Chained_C_Condition = psi[:,:-1,:self.T-1]*c_matrix[:,:-1,:self.T-1]**(-self.sigma)\
-                                  - self.beta*(1-self.MortalityRates[:,:-1,:self.T-1])*psi[:,1:,1:self.T]\
-                                  *(c_matrix[:,1:,1:self.T]*np.exp(self.g_A))**(-self.sigma)*(1+r_path[1:self.T]-self.delta)
+                #Loops through each agent yet to be born and gets that agents lifetime decisions from age 0 to death (Upper Triangle)
+                for t in range(self.T):
+
+                    age = 0
+
+                    #Guess for initial consumption is based on agent one year older
+                    c1_guess = c_matrix[:,0,t-1]
+
+                    #Variables this agent will face over its lifetime
+                    w_life = w_path[:,t:t+self.S]
+                    r_life = r_path[t:t+self.S+1]
+                    mort_life = np.diagonal(self.MortalityRates[:,:,t:t+self.S+1], axis1=1, axis2=2)
+                    e_life = np.diagonal(self.e[:,:,t:t+self.S+1], axis1=1, axis2=2)
+                    psi_life = np.diagonal(psi[:,:,t:t+self.S+1], axis1=1, axis2=2)
+                    bq_life = np.diagonal(bqvec_path[:,:,t:t+self.S+1], axis1=1, axis2=2)
+                    #Agents are born with no assets
+                    a_current = np.zeros(self.I)
+
+                    #Gets optimal initial consumption for this agent using an fsolve. Solved using equations 3.19 and 3.22
+                    opt_c1 = opt.fsolve(optc1_Euler_TPI, c1_guess, args = (w_life, r_life, mort_life, e_life, psi_life, bq_life, a_current, age))
+
+                    #Gets optimal decisions paths for this agent
+                    cpath_indiv, apath_indiv = get_lifetime_decisionsTPI(opt_c1, w_life, r_life, mort_life, e_life, psi_life, bq_life, a_current, age)
+                    
+                    #Fills the agents consumption and assets decision vectors as diagonals in the main matrix
+                    for i in xrange(self.I):
+                        np.fill_diagonal(c_matrix[i,:,t:], cpath_indiv[i,:])
+                        np.fill_diagonal(a_matrix[i,:,t:], apath_indiv[i,:])
+
+                    #Prints Consumption and Assets matrices if Print_cabqTimepaths = True in Main.py                    
+                    if self.Print_cabqTimepaths:
+                        print "Consumption for year", t
+                        print np.round(np.transpose(c_matrix[0,:,:self.T]), decimals=3)
+                        print "Assets for year", t
+                        print np.round(np.transpose(a_matrix[0,:,:self.T]), decimals=3)
+
+            #Gets matrices for the disparities of critical household conditions and constraints
+            Chained_C_Condition, Modified_Budget_Constraint, Modified_Budget_Constraint2, Household_Euler = check_household_conditions(w_path, r_path, c_matrix, a_matrix, psi, bqvec_path)
             
-            Modified_Budget_Constraint = c_matrix[:,:-1,:self.T-1]\
-                                         -  (we + (1+r_path[:self.T-1]-self.delta)*a_matrix[:,:-2,:self.T-1] + bqvec_path[:,:-1,:self.T-1]\
-                                         - a_matrix[:,1:-1,1:self.T]*np.exp(self.g_A))\
-                                         /(1 + we*(self.chi/we)**self.rho)
-
-            Household_Euler = a_matrix[:,-1,:]
-
-            
+            #Prints if each set of conditions are satisfied or not
             if self.EulErrors:
                 print "\nEuler Household satisfied:", np.isclose(np.max(np.absolute(Household_Euler)), 0)
                 print "Equation 3.22 satisfied:", np.isclose(np.max(np.absolute(Chained_C_Condition)), 0)
                 print "Equation 3.19 satisfied:", np.isclose(np.max(np.absolute(Modified_Budget_Constraint)), 0)
+                print "Equation 3.19 (other) satisfied:", np.isclose(np.max(np.absolute(Modified_Budget_Constraint2)), 0)
 
-                print np.round(np.transpose(100000*Chained_C_Condition[0,:,:self.T]), decimals=4)
-
-
+                #print np.round(np.transpose(100000*Chained_C_Condition[0,:,:self.T]), decimals=4)
+                #print np.round(np.transpose(Modified_Budget_Constraint[0,:,:self.T]), decimals=4)
+                #print np.transpose(Chained_C_Condition[0,:,:self.T])
+                #print np.round(np.transpose(self.MortalityRates[0,:,:self.T]), decimals=4)
+            
+            #Returns only up until time T and not the vector 
             return c_matrix[:,:,:self.T], a_matrix[:,:-1,:self.T]
 
+        #Equation 3.25
         w_path = np.einsum("it,i->it",np.einsum("i,t->it",self.alpha*self.A,1/r_path)**(self.alpha/(1-self.alpha)),(1-self.alpha)*self.A)
 
+        #Equation 3.21
         psi = self.get_Psi(w_path,self.e)
 
+        #Equations 3.19, 3.22
         c_matrix, a_matrix = get_c_a_matrices(w_path, r_path, psi, bqvec_path)
 
+        #Equation 3.20
         lhat_path = self.get_lhat(c_matrix, w_path[:,:self.T], self.e[:,:,:self.T])
 
+        #Equation 3.14
         n_path = self.get_n(lhat_path)
 
+        #Equation 3.26
         kd_path = np.sum(a_matrix*self.Nhat[:,:,:self.T],axis=1)
 
+        #Equation 3.15
         y_path = self.get_Y(kd_path,n_path)
 
-        kf_path = np.outer(self.alpha*self.A, 1/r_path[:self.T])**(1/(1-self.alpha)) * n_path-kd_path
+        #Equation 3.27
+        kf_path = np.outer(self.alpha*self.A, 1/r_path[:self.T])**( 1/(1-self.alpha) )*n_path - kd_path
 
         return w_path, c_matrix, a_matrix, kd_path, kf_path, n_path, y_path, lhat_path
 
@@ -841,9 +964,7 @@ class OLG(object):
             print "Iteration:", self.Timepath_counter, "Min Euler:", np.min(np.absolute(Euler_all)), "Mean Euler:", np.mean(np.absolute(Euler_all)), "Max Euler_bq:", np.max(np.absolute(Euler_bq)), "Max Euler_kf", np.max(np.absolute(Euler_kf))
 
         if self.Timepath_counter in self.IterationsToShow:
-            self.plot_timepaths(r_path, bq_path, w_path, c_matrix, lhat_path, n_path, kd_path, kf_path)
-
-        self.rpathlist = np.vstack((self.rpathlist, r_path))
+            self.plot_timepaths(r_path, bq_path, w_path, c_matrix, lhat_path, n_path, kd_path, kf_path, SAVE=False)
         
         self.Timepath_counter += 1
         
@@ -852,12 +973,12 @@ class OLG(object):
     def Timepath(self, to_plot = set([])):
         
         self.IterationsToShow = to_plot
-        self.testlist = []
+
         rpath_guess, bqpath_guess = self.get_initialguesses()
 
         guess = np.append(rpath_guess, bqpath_guess)
 
-        paths = opt.fsolve(self.EulerSystemTPI, guess, xtol=1e-4)
+        paths = opt.fsolve(self.EulerSystemTPI, guess)
 
         paths = np.expand_dims(paths, axis=1).reshape((self.I+1,self.T))
         r_path = paths[0,:]
@@ -881,7 +1002,7 @@ class OLG(object):
         for i in range(self.I):
             plt.plot(range(self.S+self.T), r_path)
         plt.title(str("r_path "+"iteration: "+str(self.Timepath_counter)))
-        plt.legend(self.I_touse)
+        #plt.legend(self.I_touse)
 
         plt.subplot(332)
         for i in range(self.I):
@@ -925,34 +1046,9 @@ class OLG(object):
 
 
         if SAVE:
-            name= "OLGresult_"+str(self.I)+"_"+str(self.S)+"_"+str(self.sigma)+".png"
+            name= "OLGresult_Iter"+str(self.Timepath_counter)+"_"+str(self.I)+"_"+str(self.S)+"_"+str(self.sigma)+".png"
             plt.savefig(name)
-            plt.cla()
+            plt.clf()
 
         else:
             plt.show()
-
-    def GETMAGICINDICESTOUSELATER(self):
-
-        i_indices = []
-        j_indices = []
-
-        I=7
-        S=8
-        T=S*4
-
-        z = np.zeros((I,S,S+T))
-        a = np.array(range(1,S+1)).T*1.
-        for r in range(1,T):
-            a = np.vstack( (a, np.linspace(1+r*S,S+S*r,S).T) )
-        a = a.T
-        a = np.tile(a, (I,1,1))
-
-        s_indices = np.repeat(range(S), T)
-        t_indices = sum([range(s,T+s) for s in range(S)], [])
-
-        z[:,s_indices,t_indices] = a.reshape((I,S*T))
-        b = z[:,s_indices,t_indices].reshape(I,S,T)
-
-
-
