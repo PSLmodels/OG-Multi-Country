@@ -116,4 +116,4 @@ def Multi_Country(S,I,sigma):
 
 #Input parameters for S, I and sigma here then execute this file to
 #run the model.
-Multi_Country(20,2,4)
+Multi_Country(18,2,4)

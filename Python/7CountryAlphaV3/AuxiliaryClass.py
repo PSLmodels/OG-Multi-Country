@@ -48,8 +48,6 @@ class OLG(object):
 
             -TPI_Params = tuple: contains the xi parameter and the maximum number of iterations.
 
-
-        
         Variables Stored in Object:
             - self.T = Scalar: of the total amount of time periods
             - self.T_1 = Scalar: Transition year for the demographics
@@ -64,9 +62,6 @@ class OLG(object):
             - self.A = Vector [I,1], Technology level for each country
             - self.e = Matrix [I,S,T], Labor Productivities
             - All of these Objects in Function, as well as the contents of the Tuples were saved in the object
-
-
-
         """
         #PARAMETER SET UP
 
@@ -344,7 +339,6 @@ class OLG(object):
         Outputs:
 
         """
-
 
         if e.ndim == 2:
             we =  np.einsum("i,is->is",w,e)
@@ -802,7 +796,7 @@ class OLG(object):
             #Equation 3.19 for the oldest agent in time t=0. Note that this agent chooses to consume everything so that it has no assets in the following period
             c_matrix[:,self.S-1,0] = (w_path[:,0]*self.e[:,self.S-1,0] + (1 + r_path[0] - self.delta)*self.a_init[:,self.S-1] + bqvec_path[:,self.S-1,0])\
             /(1+w_path[:,0]*self.e[:,self.S-1,0]*(self.chi/(w_path[:,0]*self.e[:,self.S-1,0]))**(self.rho))
-
+            
             #Loops over each agent's lifetime decisions who is alive today (Upper triangle)
             for age in range(self.S-2,0,-1):
 
@@ -878,7 +872,7 @@ class OLG(object):
 
                     #Gets optimal decisions paths for this agent
                     cpath_indiv, apath_indiv = get_lifetime_decisionsTPI(opt_c1, w_life, r_life, mort_life, e_life, psi_life, bq_life, a_current, age)
-                    
+
                     #Fills the agents consumption and assets decision vectors as diagonals in the main matrix
                     for i in xrange(self.I):
                         np.fill_diagonal(c_matrix[i,:,t:], cpath_indiv[i,:])
@@ -906,7 +900,7 @@ class OLG(object):
                 #print np.transpose(Chained_C_Condition[0,:,:self.T])
                 #print np.round(np.transpose(self.MortalityRates[0,:,:self.T]), decimals=4)
             
-            #Returns only up until time T and not the vector 
+            #Returns only up until time T and not the vector
             return c_matrix[:,:,:self.T], a_matrix[:,:-1,:self.T]
 
         #Equation 3.25
