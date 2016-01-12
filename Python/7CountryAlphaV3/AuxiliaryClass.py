@@ -25,7 +25,7 @@ class OLG(object):
 
     """
 
-    def __init__(self, countries, HH_Params, Firm_Params, Lever_Params, Tol_Params, TPI_Params):
+    def __init__(self, countries, HH_Params, Firm_Params, Lever_Params, Tol_Params):
         """
         Description: 
             -This creates the object and stores all of the parameters into the object.
@@ -96,7 +96,7 @@ class OLG(object):
         self.delta=1-(1-delta_annual)**(70/self.S)
 
         #Lever Parameters
-        (self.CalcTPI,self.PrintAges,self.PrintLoc,self.EulErrors,self.PrintSS,self.ShowSSGraphs,self.Print_cabqTimepaths,self.CheckerMode,\
+        (self.CalcTPI,self.PrintAges,self.PrintLoc,self.EulErrors,self.PrintSS,self.ShowSSGraphs,self.Print_cabqTimepaths,self.CheckerMode,self.Iterate,\
                 self.DemogGraphs,self.TPIGraphs,self.UseStaggeredAges,self.UseDiffDemog, self.UseSSDemog,\
                 self.UseDiffProductivities,self.UseTape,self.ADJUSTKOREAIMMIGRATION, self.VectorizeHouseholdSolver, self.PinInitialValues) = Lever_Params
 
@@ -104,11 +104,7 @@ class OLG(object):
 
         #Tolerance Parameters
 
-        (self.tpi_tol, self.demog_ss_tol) = Tol_Params
-
-
-        #Timepath Iteration Parameters
-        (self.xi, self.MaxIters) = TPI_Params
+        (self.demog_ss_tol) = Tol_Params
 
         self.LeaveHouseAge, self.FirstFertilityAge, self.LastFertilityAge, self.MaxImmigrantAge, self.FirstDyingAge,\
                 self.agestopull = demog.getkeyages(self.S,self.PrintAges,self.UseStaggeredAges)
@@ -692,14 +688,15 @@ class OLG(object):
                 c_matrix[:,s+1,s+1:self.T+s+1] = ((self.beta * (1-self.MortalityRates[:,s,s:self.T+s]) * (1 + r_path[s+1:self.T+s+1] - self.delta)\
                                                  * psi[:,s+1,s+1:self.T+s+1])/psi[:,s,s:self.T+s])**(1/self.sigma) * c_matrix[:,s,s:self.T+s]*np.exp(-self.g_A)
                 #Gets assets for every agents' next year using Equation 3.19
-                a_matrix[:,s+1,s+1:self.T+s+1] = (  (we[:,s,s:self.T+s] + (1 - r_path[s:self.T+s] - self.delta)*a_matrix[:,s,s:self.T+s] + bqvec_path[:,s,s:self.T+s])\
+                a_matrix[:,s+1,s+1:self.T+s+1] = (  (we[:,s,s:self.T+s] + (1 + r_path[s:self.T+s] - self.delta)*a_matrix[:,s,s:self.T+s] + bqvec_path[:,s,s:self.T+s])\
                                                  -c_matrix[:,s,s:self.T+s]*(1+we[:,s,s:self.T+s]*(self.chi/we[:,s,s:self.T+s])**self.rho)  )*np.exp(-self.g_A)
                 """
                 #print np.round(np.transpose(c_matrix[0,:,:]), decimals=3)
                 #print np.round(np.transpose(a_matrix[0,:,:]), decimals=3)
                 """
             #Gets assets in the final period of every agents' lifetime
-            a_matrix[:,-1,s+2:self.T+s+2] = (  (we[:,-1,s+1:self.T+s+1] + (1 - r_path[s+1:self.T+s+1] - self.delta)*a_matrix[:,-2,s+1:self.T+s+1] + bqvec_path[:,-1,s+1:self.T+s+1])\
+            #print bqvec_path[:,-1,s+1:self.T+s+1]
+            a_matrix[:,-1,s+2:self.T+s+2] = (  (we[:,-1,s+1:self.T+s+1] + (1 + r_path[s+1:self.T+s+1] - self.delta)*a_matrix[:,-2,s+1:self.T+s+1])\
                                             -c_matrix[:,-1,s+1:self.T+s+1]*(1+we[:,-1,s+1:self.T+s+1]*(self.chi/we[:,-1,s+1:self.T+s+1])**self.rho)  )*np.exp(-self.g_A)
 
 
@@ -902,7 +899,7 @@ class OLG(object):
                 print "Equation 3.19 (other) satisfied:", np.isclose(np.max(np.absolute(Modified_Budget_Constraint2)), 0)
 
                 #print np.round(np.transpose(100000*Chained_C_Condition[0,:,:self.T]), decimals=4)
-                #print np.round(np.transpose(Modified_Budget_Constraint[0,:,:self.T]), decimals=4)
+                #print np.round(np.transpose(Modified_Budget_Constraint[0,:,:self.T]), decimals=4) #Eulers
                 #print np.transpose(Chained_C_Condition[0,:,:self.T])
                 #print np.round(np.transpose(self.MortalityRates[0,:,:self.T]), decimals=4)
             
@@ -974,7 +971,7 @@ class OLG(object):
         else:
             Euler_all = np.append(Euler_bq, Euler_kf)
 
-        if self.EulErrors: 
+        if self.Iterate: 
             print "Iteration:", self.Timepath_counter, "Min Euler:", np.min(np.absolute(Euler_all)), "Mean Euler:", np.mean(np.absolute(Euler_all)), "Max Euler_bq:", np.max(np.absolute(Euler_bq)), "Max Euler_kf", np.max(np.absolute(Euler_kf))
 
         if self.Timepath_counter in self.IterationsToShow:
