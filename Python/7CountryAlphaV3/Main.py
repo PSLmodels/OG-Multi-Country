@@ -26,10 +26,8 @@ def Multi_Country(S,I,sigma):
     rho = 1.3 #Other New Parameter
 
     #Convergence Tolerances
-    tpi_tol = 1e-8 #Convergence Tolerance
     demog_ss_tol = 1e-8 #Used in getting ss for population share
-    xi = .9999 #Parameter used to take the convex conjugate of paths
-    MaxIters = 10000 #Maximum number of iterations on TPI.
+
 
     #PROGRAM LEVERS:
     CalcTPI = True #Activates the calculation of Time Path Iteration
@@ -37,10 +35,12 @@ def Multi_Country(S,I,sigma):
     #For terminal output
     PrintAges = False #Prints the different key ages in the demographics
     PrintLoc = False #Displays the current locations of the program inside key TPI functions
-    PrintEulErrors = True #Prints the euler errors in each attempt of calculating the steady state
-    PrintSS = True #Prints the result of the Steady State functions
+    PrintSSEulErrors = False #Prints the euler errors in each attempt of calculating the steady state
+    PrintSS = False #Prints the result of the Steady State functions
     Print_cabqTimepaths = False #Prints the consumption, assets, and bequests timepath as it gets filled in for each iteration of TPI
+    Print_HH_Eulers = False #Prints whether the equations for the household decisions are satisfied (Equations 3.22, 3.19, and sum(assets) = 0)
     CheckerMode = False #Activates not printing much of anything, used in conjunction with RobustChecker.py
+    Iterate = True #Shows the current iteration number and the associated Eulers
 
     #For plots to display or save
     DemogGraphs = False #Activates graphing graphs with demographic data and population shares
@@ -51,13 +51,14 @@ def Multi_Country(S,I,sigma):
     #For using differing ways to solve the model
     UseStaggeredAges = True #Activates using staggered ages
     UseDiffDemog = True #Turns on different demographics for each country
-    UseSSDemog = True #Activates using only steady state demographics for TPI calculation
+    UseSSDemog = False #Activates using only steady state demographics for TPI calculation
     UseDiffProductivities = False #Activates having e vary across cohorts
     UseTape = True #Activates setting any value of kd<0 to 0.001 in TPI calculation
     ADJUSTKOREAIMMIGRATION = True #Activates dividing Korean immigration by 100 to correctly scale with other countrys' immigration rates
     
-    VectorizeHouseholdSolver = False #Activates solving the household decision equations for all agents of a single age instead of each agent seperatly
-    PinInitialValues = True
+    VectorizeHouseholdSolver = True #Activates solving the household decision equations for all agents of a single age instead of each agent seperatly
+    PinInitialValues = False
+    UsePrev_c0 = False
 
     #Adjusts the country list if we are using less than 7 Countries
     if len(I_touse) < I:
@@ -70,7 +71,6 @@ def Multi_Country(S,I,sigma):
         I_touse = I_touse[:I]
         time.sleep(2)
 
-
     ##INPUTS INTO THE CLASS###
 
     Country_Roster = (I_dict, I_touse)
@@ -79,17 +79,15 @@ def Multi_Country(S,I,sigma):
 
     Firm_Params = (alpha, delta_ann, chi, rho, g_A)
 
-    Tolerances = (tpi_tol, demog_ss_tol)
+    Tolerances = (demog_ss_tol)
 
-    Levers = (CalcTPI, PrintAges,PrintLoc,PrintEulErrors,PrintSS,ShowSSGraphs,Print_cabqTimepaths,CheckerMode,\
-              DemogGraphs,TPIGraphs, UseStaggeredAges,UseDiffDemog,UseSSDemog,UseDiffProductivities,UseTape,\
-              ADJUSTKOREAIMMIGRATION,VectorizeHouseholdSolver,PinInitialValues)
-
-    TPI_Params = (xi,MaxIters)
+    Levers = (CalcTPI, PrintAges,PrintLoc,PrintSSEulErrors,PrintSS,ShowSSGraphs,Print_cabqTimepaths,Print_HH_Eulers,\
+              CheckerMode,Iterate,DemogGraphs,TPIGraphs,UseStaggeredAges,UseDiffDemog,UseSSDemog,UseDiffProductivities,\
+              UseTape,ADJUSTKOREAIMMIGRATION,VectorizeHouseholdSolver,PinInitialValues,UsePrev_c0)
 
     ##WHERE THE MAGIC HAPPENS ##
 
-    Model = AUX.OLG(Country_Roster,HH_params,Firm_Params,Levers,Tolerances,TPI_Params)
+    Model = AUX.OLG(Country_Roster,HH_params,Firm_Params,Levers,Tolerances)
 
     #Demographics
     Model.Import_Data()
@@ -116,4 +114,7 @@ def Multi_Country(S,I,sigma):
 
 #Input parameters for S, I and sigma here then execute this file to
 #run the model.
-Multi_Country(18,2,4)
+
+start = time.time()
+Multi_Country(20,2,4)
+print "Finished in ", time.time()-start, "seconds"
