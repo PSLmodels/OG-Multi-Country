@@ -6,6 +6,8 @@ import scipy.sparse as sparse
 
 np.set_printoptions(threshold = 3000, linewidth=2000, suppress=True)
 
+TimeModel=True #Activates timing the model
+
 def Multi_Country(S,I,sigma):
 
     #NOTE:To run the model, simply run the Multi_Country function with your chosen levels
@@ -117,4 +119,11 @@ def Multi_Country(S,I,sigma):
 
 start = time.time()
 Multi_Country(20,2,4)
-print "Finished in ", time.time()-start, "seconds"
+tottime=time.time()-start
+
+if TimeModel==True:
+    minutes=int(tottime/60)
+    hours=int(minutes/60)
+    seconds=tottime-minutes*60
+    minutes=minutes-hours*60
+    print "The code took:", hours, "hours,", minutes, "minutes and", seconds, "seconds to complete"
