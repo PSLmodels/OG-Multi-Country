@@ -51,7 +51,7 @@ def Multi_Country(S,I,sigma):
     #For using differing ways to solve the model
     UseStaggeredAges = True #Activates using staggered ages
     UseDiffDemog = True #Turns on different demographics for each country
-    UseSSDemog = False #Activates using only steady state demographics for TPI calculation
+    UseSSDemog = True #Activates using only steady state demographics for TPI calculation
     UseDiffProductivities = False #Activates having e vary across cohorts
     UseTape = True #Activates setting any value of kd<0 to 0.001 in TPI calculation
     ADJUSTKOREAIMMIGRATION = True #Activates dividing Korean immigration by 100 to correctly scale with other countrys' immigration rates
@@ -105,7 +105,7 @@ def Multi_Country(S,I,sigma):
     
     r_init = Model.r_ss*1.05
     bq_init = Model.bq_ss*.95
-    a_init = Model.avec_ss
+    a_init = Model.avec_ss*.7
     Model.set_initial_values(r_init, bq_init, a_init)
 
     if CalcTPI: Model.Timepath_fsolve(to_plot = iterations_to_plot)
@@ -116,5 +116,5 @@ def Multi_Country(S,I,sigma):
 #run the model.
 
 start = time.time()
-Multi_Country(20,2,4)
+Multi_Country(40,7,4)
 print "Finished in ", time.time()-start, "seconds"
