@@ -48,7 +48,7 @@ def Multi_Country(S,I,sigma):
     DemogGraphs = False #Activates graphing graphs with demographic data and population shares
     ShowSSGraphs = False #Activates graphs for steady-state solutions for consumption, assets, and bequests
     TPIGraphs = False #Activates showing the final graphs
-    iterations_to_plot = set([1]) #Which iterations of the timepath fsolve you want to plot
+    iterations_to_plot = set([257]) #Which iterations of the timepath fsolve you want to plot
 
     #For using differing ways to solve the model
     UseStaggeredAges = True #Activates using staggered ages
@@ -107,7 +107,7 @@ def Multi_Country(S,I,sigma):
     
     r_init = Model.r_ss*1.05
     bq_init = Model.bq_ss*.95
-    a_init = Model.avec_ss
+    a_init = Model.avec_ss*.7
     Model.set_initial_values(r_init, bq_init, a_init)
 
     if CalcTPI: Model.Timepath_fsolve(to_plot = iterations_to_plot)

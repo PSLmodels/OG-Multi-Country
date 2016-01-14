@@ -8,95 +8,68 @@ comm=MPI.COMM_WORLD
 rank=comm.Get_rank()
 size=comm.Get_size()
 
-Sinputs=np.array([20,40,60,80]) #Input the levels of numbers of cohorts you want checked
-S=Sinputs.size
-IUB=8 #Upper bound for the number of countries
-Istart=2 #Lower bound for the number of countries, absolute minimum is 2.
-SigUB=4 #Upper bound for the sigma parameter (The slope of the curve)
-Sigstart=1 #Lower Bound for the sigma parameter
-IRange=IUB-Istart #Range of the number of countries
-SigRange=SigUB-Sigstart #Range of the slope parameter
+Sinputs=np.array([20,25,30,35,40,45,50,55,60,65,70,75,80])
+S=13
 
-#REMEMBER THAT THE NUMBER OF PROCESSORS-1 MUST DIVIDE SIG_RANGE*IRANGE*S.
-#THE FIRST PROCESSOR IS USED FOR CSV GENERATION.
 
-checker=np.zeros(((SigRange)*(IRange)*(S)),dtype=bool) if rank==0 else None
+IUB=8
+SigUB=6
+
+Sigstart=1
+Istart=2
+
+checker=np.zeros(((SigUB-Sigstart)*(IUB-Istart)*(S)),dtype=bool) if rank==0 else None
 
 if rank!=0:
-    checkerpiece=np.zeros(((IRange)*(S)),dtype=bool) 
+    checkerpiece=np.zeros(((IUB-Istart)*(S)),dtype=bool) 
 else: 
     checkerpiece=np.zeros(0,dtype=bool)
 
-def Send(Sigrange,IRange):
-    '''
-    Description: This automatically creates the tuple for that will tell
-    MPI where to send each of the pieces of checkerpiece.
-
-    Inputs:
-        -Sigrange: Range of the sigma values
-        -IRange: Range of the number of countries
-
-    Outputs:
-        -Tuple1
-
-    '''
-    tuple1 = (0,)
-    for i in xrange(Sigrange):
-        tuple1+= (IRange*S,)
-    
-    return tuple1
-
-def Recieve(Sigrange,IRange):
-    '''
-    Description: Similar to the Send, it automatically creates the tuple
-    that is needed to send
-
-    Inputs:
-        -Sigrange:
-        -IRange
-
-    Outputs:
-        -tuple2
-
-    '''
-    tuple2 = (0,0,)
-    for i in xrange(1,Sigrange):
-        tuple2+=(IRange*S*i,)
-
-    return tuple2
-
-tuple1=Send(SigRange,IRange)
-tuple2=Recieve(SigRange,IRange)
-
-comm.Scatterv([checker,tuple1,tuple2,MPI.BOOL],checkerpiece)
+comm.Scatterv([checker,(0,(IUB-Istart)*(S),(IUB-Istart)*(S),(IUB-Istart)*(S),(IUB-Istart)*(S),(IUB-Istart)*(S)),\
+        (0,0,(IUB-Istart)*(S),2*(IUB-Istart)*(S),3*(IUB-Istart)*(S),4*(IUB-Istart)*(S)),MPI.BOOL],checkerpiece)
 
 if rank!=0:
     sig=rank
     for s in xrange(S):
         for i in xrange(Istart,IUB):
             try:
-                mn.Multi_Country(Sinputs[s],i,sig)
-                checkerpiece=np.reshape(checkerpiece,(IRange,S))
+                mn.TheWholeSmack(Sinputs[s],i,sig)
+                checkerpiece=np.reshape(checkerpiece,(IUB-Istart,S))
                 checkerpiece[i-Istart,s]=True
-                checkerpiece=np.reshape(checkerpiece, (IRange)*(S))
+                checkerpiece=np.reshape(checkerpiece, (IUB-Istart)*(S))
                 print "Success at:", Sinputs[s], "cohorts,",i,"countries",sig,"slope"
+                #comm.Send(checkerpiece,dest=0)
             except:
-                checkerpiece=np.reshape(checkerpiece[:,np.newaxis],(IRange,S))
+                checkerpiece=np.reshape(checkerpiece,(IUB-Istart,S))
                 checkerpiece[i-Istart,s]=False
-                checkerpiece=np.reshape(checkerpiece, (IRange)*(S))
+                checkerpiece=np.reshape(checkerpiece, (IUB-Istart)*(S))
                 print "Failure at:", Sinputs[s], "cohorts,",i,"countries",sig,"slope"
 
+                #comm.Send(checkerpiece,dest=0)
 
 
-comm.Gatherv(checkerpiece,[checker,tuple1,tuple2,MPI.BOOL])
+comm.Gatherv(checkerpiece,[checker,(0,(IUB-Istart)*(S),(IUB-Istart)*(S),(IUB-Istart)*(S),(IUB-Istart)*(S),(IUB-Istart)*(S)),\
+        (0,0,(IUB-Istart)*(S),2*(IUB-Istart)*(S),3*(IUB-Istart)*(S),4*(IUB-Istart)*(S)),MPI.BOOL])
 
 
-#This creates the csv sheets, one for each slope parameter, that shows the results of
-#the robustness check. Each cell has a "True" where the model worked, and a "False"
-#Where it did not.
+'''
+for sig in xrange(Sigstart,SigUB):
+    for i in xrange(Istart,IUB):
+        for s in xrange(Sstart,SUB):
+            
+            try:
+                mn.TheWholeSmack(s,i,sig)
+                checker[sig-Sigstart,i-Istart,s-Sstart]=True
+
+            except:
+                checker[sig-Sigstart,i-Istart,s-Sstart]=False
+'''
+               
+                
+#print checker[:,:,:]
 if rank==0:
-    checker=np.reshape(checker,(SigRange,IRange,S))
-    for z in xrange(SigRange):
-        label="Curve_" +str(z+1)+".csv"
+    checker=np.reshape(checker,(SigUB-Sigstart,IUB-Istart,S))
+    for z in xrange(SigUB-Sigstart):
+        label="Curve_" +str(z)+".csv"
         np.savetxt(label,checker[z,:,:],delimiter=",")
 

@@ -9,20 +9,27 @@ from matplotlib import pyplot as plt
 import AuxiliaryDemographics as demog
 
 
+
 class OLG(object):
     """
     (NEW!) This object centralizes all of the operations of the model. Before, we had to pass in and keep track of
     different parameters. With this, we have all important parts of the model to the OLG object, which can be easily
-    accessed by any of the functions. Inputting all of the parameters starts at about line 585.
-    
+    accessed by any of the functions.    
     Unlike the previous versions of the code, the comments for this version will indicate inputs, outputs, and which
     objects will be stored in the objects.
 
-    KEY:
 
-    * - Variable that isn't stored in object
-    # - Variable that is stored in object 
+    For each function there are the following categories:
+        Description:                    Brief description of what the function does
+        Inputs:                         Lists the inputs that the function uses
+        Variables Called From Object:   Lists the variables that the function calls from storage
+        Variables Stored in Object:     Lists the variables that are put into storage
+        Other Functions Called:         Lists the other non-library functions needed to complete the process of the current function
+        Objects in Function:            Lists the variables that are exclusive to that function
+        Outputs:                        Lists the outputs that the function puts out.
 
+    Note that if a category isn't listed, then there aren't any variables/functions that fit that category in that
+        particular function.
     """
 
     def __init__(self, countries, HH_Params, Firm_Params, Lever_Params, Tol_Params):
@@ -34,34 +41,77 @@ class OLG(object):
         Inputs:
             -self: "self" stores all of the components of the model. To access any part,
              simply type "self.variable_name" while in the object and "objectname.variable_name"
-             outside the object.
+             outside the object. Every other object function will just take this as given, so 
+             future mentions of self won't be rewritten.
 
-            -countries = tuple: contains a dictionary and tuple for countries and their associated number
-
-            -HH_Params = tuple: contains S, I, annualized Beta and sigma.
-
-            -Firm_Params = tuple: contains alpha, annualized delta, chi, rho and g_A
-
-            -Lever_Params = tuple: Very large tuple that contains all of the binary variables given by the user in the input section.
-
-            -Tol_Params = tuple: contains the entered tolerance levels for TPI and demographics
-
-            -TPI_Params = tuple: contains the xi parameter and the maximum number of iterations.
+            -countries              = tuple: contains a dictionary and tuple for countries and their associated number
+            -Firm_Params            = tuple: contains alpha, annualized delta, chi, rho and g_A
+            -HH_Params              = tuple: contains S, I, annualized Beta and sigma.
+            -Lever_Params           = tuple: contains boolean levers indicated by the users such as:
+                                        CalcTPI,PrintAges,PrintLoc,PrintSSEulErrors,PrintSS,ShowSSGraphs,Print_cabqTimepaths
+                                        Print_HH_Eulers,CheckerMode,Iterate,DemogGraphs,TPIGraphs,UseStaggeredAges,
+                                        UseDiffDemog,UseSSDemog,UseDiffProductivities,UseTape,ADJUSTKOREAIMMIGRATION,
+                                        VectorizeHouseholdSolver,PinInitialValues,UsePrev_C0
+            -Tol_Params             = tuple: contains the xi parameter and the maximum number of iterations.
 
         Variables Stored in Object:
-            - self.T = Scalar: of the total amount of time periods
-            - self.T_1 = Scalar: Transition year for the demographics
-            - self.delta = Scalar: calulated overall depreciation rate
-            - self.beta = Scalar: calculated overall future discount rate
-            - self.LeaveHouseAge = Scalar:  From the Auxiliary Demographics module, see that page for details
-            - self.FirstFertilityAge = Scalar: From the Auxiliary Demographics module, see that page for details
+
+            - self.A                = Array: [I,1], Technology level for each country
+            - self.c0_alive         = Array:
+            - self.c0_future        = Array:
+            - self.e                = Array: [I,S,T], Labor Productivities
+            - self.I_touse          = Array: [I], Roster of countries that are being used
+            - self.lbar             = Array:
+            - self.MortalityRates   = Array:
+            - self.Mortality_ss     = Array:
+            - self.Nhat             = Array:
+            - self.Nhat_ss          = Array:
+            - self.CalcTPI          = Boolean: Activates Calculating the TPI
+            - self.CheckerMode      = Boolean: Used in conjunction with Checker.py, a MPI code that checks the
+                                               robustness of the code. With this activated, the code only prints
+                                               the statements that are necessary. This speeds up the robust check
+                                               process.
+            - self.DemogGraphs      = Boolean: Activates the showing of the deomgraphics graphs
+            - self.Iterate          = Boolean: Activates printing the iteration number and euler errors at each
+                                               step of the TPI process.
+            - self.PinInitialValues = Boolean: REDUNDANT, WILL REMOVE SOON
+            - self.PrintAges        = Boolean: Prints the ages calculated in the demographics
+            - self.Print_cabqTimepaths = Boolean: Prints the assests and consumption matrices we are filling
+            - self.Print_HH_Eulers  = Boolean: Prints the Euler Errors for households
+            - self.PrintLoc         = Boolean: Prints the location of the code, used for debugging purposes
+            - self.PrintSS          = Boolean: Prints the results of the steady state calculation
+            - self.PrintSSEulErrors = Boolean: Prints the Euler Errors calculated in the steady state
+            - self.ShowSSGraphs     = Boolean: Activates showing the graphs that result from the steady state
+            - self.TPIGraphs        = Boolean: Activates the final TPI graph
+            - self.UseDiffDemog     = Boolean: Allows each country to have different demographics.
+            - self.UsePrev_c0       = Boolean:
+            - self.UseStaggeredAges = Boolean:
+            - self.I_dict           = Dictionary: [I], Associates a country with a number
+
+            - self.agestopull       = Scalar:
+            - self.alpha            = Scalar: Capital share of production
+            - self.beta             = Scalar: calculated overall future discount rate
+            - self.chi              = Scalar:
+            - self.delta            = Scalar: calulated overall depreciation rate
+            - self.demog_ss_tol     = Scalar:
+            - self.FirstDyingAge    = Scalar: From the Auxiliary Demographics module, see that page for details
+            - self.FirstFertilityAge= Scalar: From the Auxiliary Demographics module, see that page for details
+            - self.g_A              = Scalar:
+            - self.I                = Scalar: Number of Countries
             - self.LastFertilityAge = Scalar: From the Auxiliary Demographics module, see that page for details
-            - self.MaxImmigrantAge = Scalar: From the Auxiliary Demographics module, see that page for details
-            - self.FirstDyingAge = Scalar: From the Auxiliary Demographics module, see that page for details
-            - self.agestopull = Scalar: From the Auxiliary Demographics module, see that page for details
-            - self.A = Vector [I,1], Technology level for each country
-            - self.e = Matrix [I,S,T], Labor Productivities
-            - All of these Objects in Function, as well as the contents of the Tuples were saved in the object
+            - self.LeaveHouseAge    = Scalar: From the Auxiliary Demographics module, see that page for details
+
+            - self.MaxImmigrantAge  = Scalar: From the Auxiliary Demographics module, see that page for details
+            - self.rho              = Scalar:
+            - self.S                = Scalar: Number of Cohorts
+            - self.T                = Scalar: of the total amount of time periods
+            - self.T_1              = Scalar: Transition year for the demographics
+            - self.Timepath_counter = Scalar:
+            - self.IterationsToShow = Set: A set of user inputs of iteration TPI graphs to show 
+
+        Objects in Function:
+            - beta_annual           = Scalar:
+            - delta_annual          = Scalar:
         """
         #PARAMETER SET UP
 
@@ -135,26 +185,37 @@ class OLG(object):
 
     def Import_Data(self):
         """
-        Description: Imports the data files (.csv). Additionally, it creates and stores the
-        data in the object
+        Description:
+            - This function activates importing the .CSV files that contain our demographics.
+
+        Variables Called from Object:
+            - self.S                = Scalar: Number of Cohorts
+            - self.T                = Scalar: of the total amount of time periods
+            - self.I                = Scalar: Number of Countries
 
 
-        Variables used in Object: 
-        -LastFertility
-        -FirstFertility
-        -I
-        -S
-        -T
-        -I_all
-        -
-        
-        Variables stored in object:
-        -
+
+        Variables Stored in Object:
+            - self.N                = Scalar: Number of Countries
+            - self.Nhat             = Scalar: Number of Countries
+            - self.all_FertilityAges= Scalar: Number of Countries
+            - self.FertilityRates   = Scalar: Number of Countries
+            - self.MortalityRates   = Scalar: Number of Countries
+            - self.Migrants         = Scalar: Number of Countries
+            - self.g_N              = Scalar: Number of Countries
 
 
+        Other Functions Called:
+            -
+
+        Objects in Function:
+            - f_range              = Scalar: Range of fertilities, based on start age
+            - I_all
+
+        Outputs:
+            -
 
         """
-
 
         f_range=self.LastFertilityAge+1-self.FirstFertilityAge
 
@@ -237,18 +298,30 @@ class OLG(object):
     def Demographics(self):
 
         """
-        Description: Initializes the storage of all of the parameters into the objects. By 
-                    typing "self.variable_name" in the object, you can access any of the inputs.
+        Description:
+            -Description of the Function
 
         Inputs:
+            -
 
-        
+        Variables Called from Object:
+            -
+
+        Variables Stored in Object:
+            -
+
+        Other Functions Called:
+            -
+
         Objects in Function:
-
+            -
 
         Outputs:
+            -
 
         """
+
+
 
 
         self.ImmigrationRates = np.zeros((self.I,self.S,self.T))
@@ -325,16 +398,26 @@ class OLG(object):
     def get_Psi(self, w, e):
 
         """
-        Description: Initializes the storage of all of the parameters into the objects. By 
-                    typing "self.variable_name" in the object, you can access any of the inputs.
+        Description:
+            -Description of the Function
 
         Inputs:
+            -
 
-        
+        Variables Called from Object:
+            -
+
+        Variables Stored in Object:
+            -
+
+        Other Functions Called:
+            -
+
         Objects in Function:
-
+            -
 
         Outputs:
+            -
 
         """
 
@@ -353,16 +436,26 @@ class OLG(object):
     def get_lhat(self,c,w,e):
 
         """
-        Description: Initializes the storage of all of the parameters into the objects. By 
-                    typing "self.variable_name" in the object, you can access any of the inputs.
+        Description:
+            -Description of the Function
 
         Inputs:
+            -
 
-        
+        Variables Called from Object:
+            -
+
+        Variables Stored in Object:
+            -
+
+        Other Functions Called:
+            -
+
         Objects in Function:
-
+            -
 
         Outputs:
+            -
 
         """
 
@@ -376,16 +469,26 @@ class OLG(object):
 
     def get_n(self, lhat):
         """
-        Description: Initializes the storage of all of the parameters into the objects. By 
-                    typing "self.variable_name" in the object, you can access any of the inputs.
+        Description:
+            -Description of the Function
 
         Inputs:
+            -
 
-        
+        Variables Called from Object:
+            -
+
+        Variables Stored in Object:
+            -
+
+        Other Functions Called:
+            -
+
         Objects in Function:
-
+            -
 
         Outputs:
+            -
 
         """
 
@@ -398,16 +501,26 @@ class OLG(object):
 
     def get_Y(self, kd, n):
         """
-        Description: Initializes the storage of all of the parameters into the objects. By 
-                    typing "self.variable_name" in the object, you can access any of the inputs.
+        Description:
+            -Description of the Function
 
         Inputs:
+            -
 
-        
+        Variables Called from Object:
+            -
+
+        Variables Stored in Object:
+            -
+
+        Other Functions Called:
+            -
+
         Objects in Function:
-
+            -
 
         Outputs:
+            -
 
         """
 
@@ -420,31 +533,51 @@ class OLG(object):
 
     def GetSSComponents(self, bq_ss, r_ss):
         """
-        Description: Initializes the storage of all of the parameters into the objects. By 
-                    typing "self.variable_name" in the object, you can access any of the inputs.
+        Description:
+            -Description of the Function
 
         Inputs:
+            -
 
-        
+        Variables Called from Object:
+            -
+
+        Variables Stored in Object:
+            -
+
+        Other Functions Called:
+            -
+
         Objects in Function:
-
+            -
 
         Outputs:
+            -
 
         """
 
         def get_lifetime_decisionsSS(c_1, w_ss, r_ss):
             """
-            Description: Initializes the storage of all of the parameters into the objects. By 
-                    typing "self.variable_name" in the object, you can access any of the inputs.
+            Description:
+                -Description of the Function
 
             Inputs:
+                -
 
-        
+            Variables Called from Object:
+                -
+
+            Variables Stored in Object:
+                -
+
+            Other Functions Called:
+                -
+
             Objects in Function:
-
+                -
 
             Outputs:
+                -
 
             """
 
@@ -470,16 +603,26 @@ class OLG(object):
 
         def householdEuler_SS(c_1, w_ss, r_ss):
             """
-            Description: Initializes the storage of all of the parameters into the objects. By 
-                    typing "self.variable_name" in the object, you can access any of the inputs.
+            Description:
+                -Description of the Function
 
             Inputs:
+                -
 
-        
+            Variables Called from Object:
+                -
+
+            Variables Stored in Object:
+                -
+
+            Other Functions Called:
+                -
+
             Objects in Function:
-
+                -
 
             Outputs:
+                -
 
             """
 
@@ -521,16 +664,26 @@ class OLG(object):
 
     def EulerSystemSS(self,guess):
         """
-        Description: Initializes the storage of all of the parameters into the objects. By 
-                    typing "self.variable_name" in the object, you can access any of the inputs.
+        Description:
+            -Description of the Function
 
         Inputs:
+            -
 
-        
+        Variables Called from Object:
+            -
+
+        Variables Stored in Object:
+            -
+
+        Other Functions Called:
+            -
+
         Objects in Function:
-
+            -
 
         Outputs:
+            -
 
         """
 
@@ -561,16 +714,26 @@ class OLG(object):
 
     def SteadyState(self, rss_guess, bqss_guess):
         """
-        Description: Initializes the storage of all of the parameters into the objects. By 
-                    typing "self.variable_name" in the object, you can access any of the inputs.
+        Description:
+            -Description of the Function
 
         Inputs:
+            -
 
-        
+        Variables Called from Object:
+            -
+
+        Variables Stored in Object:
+            -
+
+        Other Functions Called:
+            -
+
         Objects in Function:
-
+            -
 
         Outputs:
+            -
 
         """
 
@@ -629,6 +792,30 @@ class OLG(object):
             print "c_vec_ss steady state", self.cvec_ss
 
     def checkSSEulers(self):
+        """
+        Description:
+            -Description of the Function
+
+        Inputs:
+            -
+
+        Variables Called from Object:
+            -
+
+        Variables Stored in Object:
+            -
+
+        Other Functions Called:
+            -
+
+        Objects in Function:
+            -
+
+        Outputs:
+            -
+
+        """
+
         we = np.einsum("i,is->is",self.w_ss,self.e_ss[:,:-1])
 
         print self.psi_ss[:,:-1]*self.cvec_ss[:,:-1]**(-self.sigma) - self.beta*(1-self.Mortality_ss[:,:-1])*self.psi_ss[:,1:]*(self.cvec_ss[:,1:]*np.exp(self.g_A))**(-self.sigma)*(1+self.r_ss-self.delta)
@@ -640,11 +827,59 @@ class OLG(object):
     #TIMEPATH-ITERATION
 
     def set_initial_values(self, r_init, bq_init, a_init):
+        """
+        Description:
+            -Description of the Function
+
+        Inputs:
+            -
+
+        Variables Called from Object:
+            -
+
+        Variables Stored in Object:
+            -
+
+        Other Functions Called:
+            -
+
+        Objects in Function:
+            -
+
+        Outputs:
+            -
+
+        """
+
         self.r_init = r_init
         self.bq_init = bq_init
         self.a_init = a_init
 
     def get_initialguesses(self):
+        """
+        Description:
+            -Description of the Function
+
+        Inputs:
+            -
+
+        Variables Called from Object:
+            -
+
+        Variables Stored in Object:
+            -
+
+        Other Functions Called:
+            -
+
+        Objects in Function:
+            -
+
+        Outputs:
+            -
+
+        """
+
 
         rpath_guess = np.zeros(self.T)
         bqpath_guess = np.zeros((self.I,self.T))
@@ -661,8 +896,57 @@ class OLG(object):
 
     def GetTPIComponents(self, bqvec_path, r_path):
 
+        """
+        Description:
+            -Description of the Function
+
+        Inputs:
+            -
+
+        Variables Called from Object:
+            -
+
+        Variables Stored in Object:
+            -
+
+        Other Functions Called:
+            -
+
+        Objects in Function:
+            -
+
+        Outputs:
+            -
+
+        """
+
+
         #Functions that solve lower-diagonal household decisions in vectors
         def get_lifetime_decisions_LOWERTRIANGLETEST(c0_guess, c_uppermat, a_uppermat, w_path, r_path, psi, bqvec_path):
+            """
+            Description:
+                -Description of the Function
+
+            Inputs:
+                -
+
+            Variables Called from Object:
+                -
+
+            Variables Stored in Object:
+                -
+
+            Other Functions Called:
+                -
+
+            Objects in Function:
+                -
+
+            Outputs:
+                -
+
+            """
+
 
             #Initializes consumption and assets with all of the upper triangle already filled in
             c_matrix = c_uppermat
@@ -690,6 +974,30 @@ class OLG(object):
             return c_matrix, a_matrix
 
         def get_lower_triangle_Euler_TEST(c0_guess, c_uppermat, a_uppermat, w_path, r_path, psi, bqvec_path):
+            """
+            Description:
+                -Description of the Function
+
+            Inputs:
+                -
+
+            Variables Called from Object:
+                -
+
+            Variables Stored in Object:
+                -
+
+            Other Functions Called:
+                -
+
+            Objects in Function:
+                -
+
+            Outputs:
+                -
+
+            """
+
             
             #Gets the decisions paths for each agent
             c_matrix, a_matrix = get_lifetime_decisions_LOWERTRIANGLETEST(c0_guess, c_uppermat, a_uppermat, w_path, r_path, psi, bqvec_path)
@@ -703,6 +1011,30 @@ class OLG(object):
 
         #Functions that solve upper-diagonal household decisions in vectors
         def get_lifetime_decisions_UPPERTRIANGLETEST(c0_guess, c_matrix, a_matrix, w_path, r_path, psi, bqvec_path):
+            """
+            Description:
+                -Description of the Function
+
+            Inputs:
+                -
+
+            Variables Called from Object:
+                -
+
+            Variables Stored in Object:
+                -
+
+            Other Functions Called:
+                -
+
+            Objects in Function:
+                -
+
+            Outputs:
+                -
+
+            """
+
             
             c_matrix[:,:-1,0] = c0_guess.reshape(self.I,self.S-1)
             we = np.einsum("it,ist->ist",w_path,self.e)
@@ -724,6 +1056,31 @@ class OLG(object):
             return c_matrix, a_matrix
 
         def get_upper_triangle_Euler_TEST(c0_guess, c_matrix, a_matrix, w_path, r_path, psi, bqvec_path):
+
+            """
+            Description:
+                -Description of the Function
+
+            Inputs:
+                -
+
+            Variables Called from Object:
+                -
+
+            Variables Stored in Object:
+                -
+
+            Other Functions Called:
+                -
+
+            Objects in Function:
+                -
+
+            Outputs:
+                -
+
+            """
+
             
             #Gets the decisions paths for each agent
             c_matrix, a_matrix = get_lifetime_decisions_UPPERTRIANGLETEST(c0_guess, c_matrix, a_matrix, w_path, r_path, psi, bqvec_path)
@@ -737,6 +1094,31 @@ class OLG(object):
 
         #Functions that solve household decisions with for-loops (old)
         def get_lifetime_decisionsTPI(c_1, w_life, r_life, mort_life, e_life, psi_life, bq_life, a_current, age):
+
+            """
+            Description:
+                -Description of the Function
+
+            Inputs:
+                -
+
+            Variables Called from Object:
+                -
+
+            Variables Stored in Object:
+                -
+
+            Other Functions Called:
+                -
+
+            Objects in Function:
+                -
+
+            Outputs:
+                -
+
+            """
+
             
             #Number of decisions the agent needs to make in its lifetime
             decisions = self.S - age -1
@@ -769,6 +1151,31 @@ class OLG(object):
 
         def optc1_Euler_TPI(c1_guess, w_life, r_life, mort_life, e_life, psi_life, bq_life, a_current, age):
 
+            """
+            Description:
+                -Description of the Function
+
+            Inputs:
+                -
+
+            Variables Called from Object:
+                -
+
+            Variables Stored in Object:
+                -
+
+            Other Functions Called:
+                -
+
+            Objects in Function:
+                -
+
+            Outputs:
+                -
+
+            """
+
+
             #Gets the individual decisions paths of the agent to check if finals assets are 0
             cpath_indiv, apath_indiv = get_lifetime_decisionsTPI(c1_guess, w_life, r_life, mort_life, e_life, psi_life, bq_life, a_current, age)
             
@@ -783,6 +1190,31 @@ class OLG(object):
 
         #Checks various household condidions
         def check_household_conditions(w_path, r_path, c_matrix, a_matrix, psi, bqvec_path):  
+
+            """
+            Description:
+                -Description of the Function
+
+            Inputs:
+                -
+
+            Variables Called from Object:
+                -
+
+            Variables Stored in Object:
+                -
+
+            Other Functions Called:
+                -
+
+            Objects in Function:
+                -
+
+            Outputs:
+                -
+
+            """
+
             
             #Multiplies wages and productivities ahead of time for easy calculations of the first two equations below
             we = np.einsum("it,ist->ist",w_path[:,:self.T-1],self.e[:,:-1,:self.T-1])
@@ -813,6 +1245,30 @@ class OLG(object):
 
         #Gets consumption and assets matrices using fsolve
         def get_c_a_matrices(w_path, r_path, psi, bqvec_path):
+            """
+            Description:
+                -Description of the Function
+
+            Inputs:
+                -
+
+            Variables Called from Object:
+                -
+
+            Variables Stored in Object:
+                -
+
+            Other Functions Called:
+                -
+
+            Objects in Function:
+                -
+
+            Outputs:
+                -
+
+            """
+
             
             #Initializes the consumption and assets matrices
             c_matrix = np.zeros((self.I,self.S,self.T+self.S))
@@ -965,6 +1421,30 @@ class OLG(object):
         return w_path, c_matrix, a_matrix, kd_path, kf_path, n_path, y_path, lhat_path
 
     def EulerSystemTPI(self, guess):
+        """
+        Description:
+            -Description of the Function
+
+        Inputs:
+            -
+
+        Variables Called from Object:
+            -
+
+        Variables Stored in Object:
+            -
+
+        Other Functions Called:
+            -
+
+        Objects in Function:
+            -
+
+        Outputs:
+            -
+
+        """
+
 
         if self.PinInitialValues:
             guess = np.expand_dims(guess, axis=1).reshape((self.I+1,self.T-1))
@@ -1014,6 +1494,30 @@ class OLG(object):
         return Euler_all
 
     def Timepath_fsolve(self, to_plot = set([])):
+        """
+        Description:
+            -Description of the Function
+
+        Inputs:
+            -
+
+        Variables Called from Object:
+            -
+
+        Variables Stored in Object:
+            -
+
+        Other Functions Called:
+            -
+
+        Objects in Function:
+            -
+
+        Outputs:
+            -
+
+        """
+
         
         self.IterationsToShow = to_plot
 
@@ -1053,6 +1557,30 @@ class OLG(object):
         self.plot_timepaths(self.r_path, self.bq_path, self.w_path, self.c_matrix, self.lhat_path, self.n_path, self.kd_path, self.kf_path, SAVE=True)
 
     def plot_timepaths(self, r_path, bq_path, w_path, c_matrix, lhat_path, n_path, kd_path, kf_path, SAVE=False):
+        """
+        Description:
+            -Description of the Function
+
+        Inputs:
+            -
+
+        Variables Called from Object:
+            -
+
+        Variables Stored in Object:
+            -
+
+        Other Functions Called:
+            -
+
+        Objects in Function:
+            -
+
+        Outputs:
+            -
+
+        """
+
 
         title = str("S = " + str(self.S) + ", T = " + str(self.T))
         plt.suptitle(title)
