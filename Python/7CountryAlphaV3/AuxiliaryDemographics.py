@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 
 
 #DEMOGRAPHICS FUNCTIONS
-def getkeyages(S, PrintAges, UseStaggeredAges):
+def getkeyages(S, PrintAges):
     """
     Description:
         -Gets the key ages for calculating demographics based on S
@@ -16,7 +16,6 @@ def getkeyages(S, PrintAges, UseStaggeredAges):
     Inputs:
         S                = Int in [10,80], Number of cohorts
         PrintAges        = Bool, Prints key ages if true
-        UseStaggeredAges = Bool, Gets ages to use from a linspace rather than a sequence of integers
 
     Functions called:
         -None
@@ -31,20 +30,13 @@ def getkeyages(S, PrintAges, UseStaggeredAges):
        
     Returns: LeaveHouseAge, FirstFertilityAge, LastFertilityAge, MaxImmigrantAge, FirstDyingAge, agestopull
     """
-    if UseStaggeredAges:
-        agestopull = np.arange(80)[np.where(np.in1d(np.arange(80), np.round(np.linspace(0, 80, num=S, endpoint=False))))]
-        LeaveHouseAge = np.abs(agestopull - 21).argmin()#The age when agents become independent households and don't rely on parents consumption
-        FirstFertilityAge = np.abs(agestopull - 23).argmin()#The age when agents have their first children
-        LastFertilityAge = np.abs(agestopull - 45).argmin()#The age when agents have their last children
-        MaxImmigrantAge = np.abs(agestopull - 65).argmin()#All immigrants are between ages 0 and MaxImmigrantAge
-        FirstDyingAge = np.abs(agestopull - 68).argmin()#The first age agents can begin to die
-    else:
-        agestopull = range(S)
-        LeaveHouseAge = int(np.round(S/80.*21))#The age when agents become independent households and don't rely on parents consumption
-        FirstFertilityAge = int(np.round(S/80.*23))#The age when agents have their first children
-        LastFertilityAge = int(np.round(S/80.*45))#The age when agents have their last children
-        MaxImmigrantAge = int(np.round(S/80.*65))#All immigrants are between ages 0 and MaxImmigrantAge
-        FirstDyingAge = int(np.round(S/80.*68))#The first age agents can begin to die
+
+    agestopull = np.arange(80)[np.where(np.in1d(np.arange(80), np.round(np.linspace(0, 80, num=S, endpoint=False))))]
+    LeaveHouseAge = np.abs(agestopull - 21).argmin()#The age when agents become independent households and don't rely on parents consumption
+    FirstFertilityAge = np.abs(agestopull - 23).argmin()#The age when agents have their first children
+    LastFertilityAge = np.abs(agestopull - 45).argmin()#The age when agents have their last children
+    MaxImmigrantAge = np.abs(agestopull - 65).argmin()#All immigrants are between ages 0 and MaxImmigrantAge
+    FirstDyingAge = np.abs(agestopull - 68).argmin()#The first age agents can begin to die
 
     #Insures that parents don't die with kids in the home
     if FirstDyingAge - (LeaveHouseAge + LastFertilityAge) <= 0:
@@ -58,25 +50,52 @@ def getkeyages(S, PrintAges, UseStaggeredAges):
     if agestopull[LastFertilityAge] > 45:
         agestopull[LastFertilityAge] = 45
 
-    if PrintAges:
-        print "All ages to pull:", agestopull
-        print "Adjusted to S =", S, ":    LeaveHouseAge =", LeaveHouseAge, "FirstFertilityAge =", FirstFertilityAge, \
-        "LastFertilityAge =", LastFertilityAge, "FirstDyingAge =", FirstDyingAge, "MaxImmigrantAge =", MaxImmigrantAge
-        if UseStaggeredAges:
-            print "To pull from the data:  LeaveHouseAge =", agestopull[LeaveHouseAge], "FirstFertilityAge =", agestopull[FirstFertilityAge], \
-            "LastFertilityAge =", agestopull[LastFertilityAge], "FirstDyingAge =", agestopull[FirstDyingAge], "MaxImmigrantAge =", agestopull[MaxImmigrantAge],"\n"
-
     return LeaveHouseAge, FirstFertilityAge, LastFertilityAge, MaxImmigrantAge, FirstDyingAge, agestopull
 
 def plotDemographics(ages, datasets, I, S, T, I_touse, T_touse = None, compare_across = "T", data_year = 0):
+    """
+    Description:
+        -Description of the Function
+
+    Inputs:
+        - ages
+        - datasets
+        - I
+        - S
+        - T
+        - I_touse
+        - T_touse
+        - compare_across
+        - data_year
+
+    Variables Called from Object:
+        - FirstFertilityAge
+        - LastFertilityAge
+        - FirstDyingAge
+        - MaxImmigrantAge
+        - FertilityRates
+        - MortalityRates
+        - ImmigrationRates
+        - Nhat
+
+    Other Functions Called:
+        -None
+
+    Objects in Function:
+        - subplotdim_dict
+        - magic_int
+
+    Outputs:
+        - None
+    """
 
     FirstFertilityAge, LastFertilityAge, FirstDyingAge, MaxImmigrantAge = ages
     FertilityRates, MortalityRates, ImmigrationRates, Nhat = datasets
 
-
     if T_touse is None or T_touse == "default":
         T_touse = [0, S//4, S//2, S, T]
 
+    #The firstPlot is a subplot of key demographic data and the population dynamics for each country
     def firstPlot():
         plt.subplot(231)
         for i in range(I):
@@ -109,6 +128,7 @@ def plotDemographics(ages, datasets, I, S, T, I_touse, T_touse = None, compare_a
         plt.ylabel('Population Share')
         plt.title("Initial Population Shares", fontsize=14)
 
+        #Population Shares at the SS
         plt.subplot(235)
         for i in range(I):
             plt.plot(range(S), Nhat[i,:,-1])
@@ -116,6 +136,7 @@ def plotDemographics(ages, datasets, I, S, T, I_touse, T_touse = None, compare_a
         plt.ylabel('Population Share')
         plt.title("Steady State Population Shares", fontsize=14)
 
+        #Transition path for total population of each country from the initial shares to the steady-state
         plt.subplot(236)           
         for i in range(I):
             plt.plot(range(T), np.sum(Nhat[i,:,:T], axis=0))
@@ -125,10 +146,13 @@ def plotDemographics(ages, datasets, I, S, T, I_touse, T_touse = None, compare_a
 
         plt.show()
 
+    #The secondPlot compares population shares across years or across countries depending on the function input 'compare_across'
     def secondPlot():
 
-        subplotdim_dict = {2: (122, False), 3:(222, False), 4:(222, False), 5:(232, True), 6:(232, True), 7:(242, True), 8:(242, True)}
+        #Dictionary that contains ideal dimensions of the subplot depending on how many countries are being used
+        subplotdim_dict = {2:222, 3:222, 4:222, 5:232, 6:232, 7:242, 8:242}
 
+        #If we want to compare each country in a given year...
         if compare_across == "T":
 
             if len(T_touse) == 1:
@@ -140,13 +164,11 @@ def plotDemographics(ages, datasets, I, S, T, I_touse, T_touse = None, compare_a
                 plt.xlabel('Age')
                 plt.ylabel('Population Share')
                 plt.legend(I_touse, loc="upper right")
-                full_screen = False
 
             else:
 
                 if len(T_touse) > 8: raise ValueError("Too many years to plot")
-                magic_int = subplotdim_dict[len(T_touse)][0]
-                full_screen = subplotdim_dict[len(T_touse)][1]
+                magic_int = subplotdim_dict[len(T_touse)]
 
                 plt.subplot(magic_int-1)
                 for i in range(I): plt.plot(0,0)
@@ -165,12 +187,12 @@ def plotDemographics(ages, datasets, I, S, T, I_touse, T_touse = None, compare_a
                         plt.xlabel('Age')
                         plt.ylabel('Population Share')
 
+        #If we want to compare years for each country...
         elif compare_across == "I":
-            magic_int = subplotdim_dict[I][0]
-            full_screen = subplotdim_dict[I][1]
+            magic_int = subplotdim_dict[I]
 
             plt.subplot(magic_int-1)
-            for i in range(I): plt.plot(0,0)
+            for t in range(T): plt.plot(0,0)
             legend = ["t = " + str(T_touse[index]) if t >= 0 else "t = " + str(T+1+T_touse[index]) for index, t in enumerate(T_touse)]
             plt.legend(legend, loc="center")
             plt.gca().axes.get_xaxis().set_visible(False)
@@ -185,10 +207,10 @@ def plotDemographics(ages, datasets, I, S, T, I_touse, T_touse = None, compare_a
                     plt.xlabel('Age')
                     plt.ylabel('Population Share')
         
-        else: raise TypeError(compare_across + " is not a valid name for 'compare_across'")
+        else: raise TypeError(compare_across + " is not a valid name for 'compare_across'. Choose either 'T' or 'I'")
 
         plt.tight_layout()
-        #if full_screen: plt.get_current_fig_manager().window.showMaximized()
+
         plt.show()
 
     firstPlot()
