@@ -8,16 +8,9 @@ from matplotlib import pyplot as plt
 
 import AuxiliaryDemographics as demog
 
-
-
 class OLG(object):
     """
-    (NEW!) This object centralizes all of the operations of the model. Before, we had to pass in and keep track of
-    different parameters. With this, we have all important parts of the model to the OLG object, which can be easily
-    accessed by any of the functions.    
-    Unlike the previous versions of the code, the comments for this version will indicate inputs, outputs, and which
-    objects will be stored in the objects.
-
+    TODO: SOME SORT OF DESCRIPTION OF WHAT THE OLG CLASS DOES
 
     For each function there are the following categories:
         Description:                    Brief description of what the function does
@@ -32,7 +25,7 @@ class OLG(object):
         particular function.
     """
 
-    def __init__(self, countries, HH_Params, Firm_Params, Lever_Params, Tol_Params):
+    def __init__(self, countries, HH_Params, Firm_Params, Lever_Params):
         """
         Description: 
             -This creates the object and stores all of the parameters into the object.
@@ -48,33 +41,24 @@ class OLG(object):
             -Firm_Params            = tuple: contains alpha, annualized delta, chi, rho and g_A
             -HH_Params              = tuple: contains S, I, annualized Beta and sigma.
             -Lever_Params           = tuple: contains boolean levers indicated by the users such as:
-                                        CalcTPI,PrintAges,PrintLoc,PrintSSEulErrors,PrintSS,ShowSSGraphs,Print_cabqTimepaths
-                                        Print_HH_Eulers,CheckerMode,Iterate,DemogGraphs,TPIGraphs,UseStaggeredAges,
-                                        UseDiffDemog,UseSSDemog,UseDiffProductivities,UseTape,ADJUSTKOREAIMMIGRATION,
-                                        VectorizeHouseholdSolver,PinInitialValues,UsePrev_C0
-            -Tol_Params             = tuple: contains the xi parameter and the maximum number of iterations.
+                                        PrintAges,PrintLoc,PrintSSEulErrors,PrintSS,ShowSSGraphs,Print_cabqTimepaths
+                                        Print_HH_Eulers,CheckerMode,Iterate,DemogGraphs,TPIGraphs,UseDiffDemog,UseSSDemog
+                                        UseDiffProductivities,UseTape,ADJUSTKOREAIMMIGRATION,VectorizeHouseholdSolver
 
         Variables Stored in Object:
 
             - self.A                = Array: [I,1], Technology level for each country
-            - self.c0_alive         = Array:
-            - self.c0_future        = Array:
+            - self.agestopull       = Array: [S], Contains which ages to be used from the data when S<80
             - self.e                = Array: [I,S,T], Labor Productivities
             - self.I_touse          = Array: [I], Roster of countries that are being used
-            - self.lbar             = Array:
-            - self.MortalityRates   = Array:
-            - self.Mortality_ss     = Array:
-            - self.Nhat             = Array:
-            - self.Nhat_ss          = Array:
-            - self.CalcTPI          = Boolean: Activates Calculating the TPI
+            - self.lbar             = Array: [T+S], Time endowment in each year
+
             - self.CheckerMode      = Boolean: Used in conjunction with Checker.py, a MPI code that checks the
                                                robustness of the code. With this activated, the code only prints
                                                the statements that are necessary. This speeds up the robust check
                                                process.
-            - self.DemogGraphs      = Boolean: Activates the showing of the deomgraphics graphs
             - self.Iterate          = Boolean: Activates printing the iteration number and euler errors at each
                                                step of the TPI process.
-            - self.PinInitialValues = Boolean: REDUNDANT, WILL REMOVE SOON
             - self.PrintAges        = Boolean: Prints the ages calculated in the demographics
             - self.Print_cabqTimepaths = Boolean: Prints the assests and consumption matrices we are filling
             - self.Print_HH_Eulers  = Boolean: Prints the Euler Errors for households
@@ -84,39 +68,40 @@ class OLG(object):
             - self.ShowSSGraphs     = Boolean: Activates showing the graphs that result from the steady state
             - self.TPIGraphs        = Boolean: Activates the final TPI graph
             - self.UseDiffDemog     = Boolean: Allows each country to have different demographics.
-            - self.UsePrev_c0       = Boolean:
-            - self.UseStaggeredAges = Boolean:
+            
             - self.I_dict           = Dictionary: [I], Associates a country with a number
 
-            - self.agestopull       = Scalar:
             - self.alpha            = Scalar: Capital share of production
-            - self.beta             = Scalar: calculated overall future discount rate
-            - self.chi              = Scalar:
-            - self.delta            = Scalar: calulated overall depreciation rate
-            - self.demog_ss_tol     = Scalar:
-            - self.FirstDyingAge    = Scalar: From the Auxiliary Demographics module, see that page for details
-            - self.FirstFertilityAge= Scalar: From the Auxiliary Demographics module, see that page for details
-            - self.g_A              = Scalar:
+            - self.beta             = Scalar: Calculated overall future discount rate
+            - self.chi              = Scalar: TODO
+            - self.delta            = Scalar: Calulated overall depreciation rate
+            - self.FirstDyingAge    = Scalar: First age where mortality rates effect agents
+            - self.FirstFertilityAge= Scalar: First age where agents give birth
+            - self.g_A              = Scalar: Growth rate of technology
             - self.I                = Scalar: Number of Countries
-            - self.LastFertilityAge = Scalar: From the Auxiliary Demographics module, see that page for details
-            - self.LeaveHouseAge    = Scalar: From the Auxiliary Demographics module, see that page for details
-
+            - self.LastFertilityAge = Scalar: Last age where agents give birth
+            - self.LeaveHouseAge    = Scalar: First age where agents don't count as children in utility function
             - self.MaxImmigrantAge  = Scalar: From the Auxiliary Demographics module, see that page for details
-            - self.rho              = Scalar:
+            - self.rho              = Scalar: TODO
             - self.S                = Scalar: Number of Cohorts
             - self.T                = Scalar: of the total amount of time periods
             - self.T_1              = Scalar: Transition year for the demographics
-            - self.Timepath_counter = Scalar:
-            - self.IterationsToShow = Set: A set of user inputs of iteration TPI graphs to show 
+            - self.Timepath_counter = Scalar: Counter that keeps track of the number of iterations in solving for the time paths
+            - self.IterationsToShow = Set: A set of user inputs of iteration of TPI graphs to show
+
+        Other Functions Called:
+            - getkeyages:TODO
+            - Importdata:TODO
 
         Objects in Function:
-            - beta_annual           = Scalar:
-            - delta_annual          = Scalar:
+            - beta_annual           = Scalar: Original value for beta. Adjusted by S and stored as self.beta
+            - delta_annual          = Scalar: Original value for delta. Adjusted by S and stored as self.delta
         """
+
         #PARAMETER SET UP
 
         #HH Parameters
-        (self.S, self.I, beta_annual,self.sigma) = HH_Params
+        (self.S, self.I, beta_annual, self.sigma) = HH_Params
         
         self.beta=beta_annual**(70/self.S)
 
@@ -128,32 +113,20 @@ class OLG(object):
             self.T_1 = 50
 
         #Demographics Parameters
-
         self.I_dict, self.I_touse = countries
-        self.Nhat = np.ones((self.I, self.S, self.T))
-        self.Nhat_ss = np.ones((self.I, self.S))
-        self.MortalityRates = np.zeros((self.I, self.S, self.T+self.S))
-        self.Mortality_ss = np.zeros((self.I, self.S))
-
 
         #Firm Parameters
         (self.alpha,delta_annual,self.chi,self.rho, self.g_A)= Firm_Params
         self.delta=1-(1-delta_annual)**(70/self.S)
 
         #Lever Parameters
-        (self.CalcTPI,self.PrintAges,self.PrintLoc,self.PrintSSEulErrors,self.PrintSS,self.ShowSSGraphs,self.Print_cabqTimepaths,\
-         self.Print_HH_Eulers, self.CheckerMode,self.Iterate,self.DemogGraphs,self.TPIGraphs,self.UseStaggeredAges,self.UseDiffDemog,\
-         self.UseSSDemog,self.UseDiffProductivities,self.UseTape,self.ADJUSTKOREAIMMIGRATION, self.VectorizeHouseholdSolver,\
-         self.PinInitialValues,self.UsePrev_c0) = Lever_Params
+        (PrintAges,self.PrintLoc,self.PrintSSEulErrors,self.PrintSS,self.ShowSSGraphs,self.Print_cabqTimepaths,\
+         self.Print_HH_Eulers,self.CheckerMode,self.Iterate,self.TPIGraphs,self.UseDiffDemog,\
+         self.UseDiffProductivities,self.UseTape,self.ADJUSTKOREAIMMIGRATION,self.VectorizeHouseholdSolver) = Lever_Params
 
-        self.IterationsToShow = set([])
-
-        #Tolerance Parameters
-
-        (self.demog_ss_tol) = Tol_Params
-
-        self.LeaveHouseAge, self.FirstFertilityAge, self.LastFertilityAge, self.MaxImmigrantAge, self.FirstDyingAge,\
-                self.agestopull = demog.getkeyages(self.S,self.PrintAges,self.UseStaggeredAges)
+        #Getting key ages for calculating demographic dynamics
+        self.LeaveHouseAge, self.FirstFertilityAge, self.LastFertilityAge,\
+        self.MaxImmigrantAge, self.FirstDyingAge, self.agestopull = demog.getkeyages(self.S,PrintAges)
 
         if self.UseDiffDemog:
             self.A = np.ones(self.I)+np.cumsum(np.ones(self.I)*.05)-.05 #Techonological Change, used for when countries are different
@@ -175,45 +148,51 @@ class OLG(object):
         self.lbar[:self.T] = np.ones(self.T)
         self.lbar_ss=self.lbar[-1]
 
+        #Imports all of the data from .CSV files needed for the model
+        self.Import_Data()
+
         self.Timepath_counter = 1
-
-        self.c0_alive = np.ones((self.I, self.S-1))*.3
-
-        self.c0_future = np.ones((self.I,self.T))*.3
 
     #DEMOGRAPHICS SET-UP
 
     def Import_Data(self):
         """
         Description:
-            - This function activates importing the .CSV files that contain our demographics.
+            - This function activates importing the .CSV files that contain our demographics data
 
         Variables Called from Object:
-            - self.S                = Scalar: Number of Cohorts
-            - self.T                = Scalar: of the total amount of time periods
-            - self.I                = Scalar: Number of Countries
-
-
+            - self.agestopull             = Array: [S], Contains which ages to be used from the data when S<80
+            - self.S                      = Scalar: Number of Cohorts
+            - self.T                      = Scalar: Number of Time Periods
+            - self.I                      = Scalar: Number of Countries
+            - self.FirstFertilityAge      = Scalar: First age where agents give birth
+            - self.LastFertilityAge       = Scalar: Last age where agents give birth
+            - self.UseDiffDemog           = Boolean: True activates using unique country demographic data
+            - self.PrintLoc               = Boolean: True prints the location of the code, used for debugging purposes
+            - self.ADJUSTKOREAIMMIGRATION = Boolean: True will correctly adjust Korea's immigration, which is off by a factor of 100
 
         Variables Stored in Object:
-            - self.N                = Scalar: Number of Countries
-            - self.Nhat             = Scalar: Number of Countries
-            - self.all_FertilityAges= Scalar: Number of Countries
-            - self.FertilityRates   = Scalar: Number of Countries
-            - self.MortalityRates   = Scalar: Number of Countries
-            - self.Migrants         = Scalar: Number of Countries
-            - self.g_N              = Scalar: Number of Countries
-
+            - self.N                      = Array: [I,S,T], Population of each country for each age cohort and year
+            - self.Nhat                   = Array: [I,S,T], World opulation share of each country for each age cohort and year
+            - self.all_FertilityAges      = Array: [I,S,f_range+T], Fertility rates from a f_range years ago to year T
+            - self.FertilityRates         = Array: [I,S,T], Fertility rates from the present time to year T
+            - self.MortalityRates         = Array: [I,S,T], Mortality rates of each country for each age cohort and year
+            - self.Migrants               = Array: [I,S,T], Number of immigrants
+            - self.g_N                    = Array: [T], Population growth rate for each year
 
         Other Functions Called:
-            -
+            - None
 
         Objects in Function:
-            - f_range              = Scalar: Range of fertilities, based on start age
-            - I_all
+            - f_range                     = Scalar: Number of fertile years, will be used to correctly store the fertilty data
+            - index                       = Scalar: Unique index for a given country that corresponds to the I_dict
+            - f_bar                       = Array: [I,S], Average fertility rate across all countries and cohorts in year T_1, 
+                                            used to get the SS demographics
+            - rho_bar                     = Array: [I,S], Average mortality rate across all countries and cohorts in year T_1, 
+                                            used to get the SS demographics
 
         Outputs:
-            -
+            - None
 
         """
 
@@ -228,47 +207,32 @@ class OLG(object):
         self.Migrants = np.zeros((self.I, self.S, self.T))
         self.g_N = np.zeros(self.T)
 
-        I_all = ["usa", "eu", "japan", "china", "india", "russia", "korea"]
+        I_all = list(sorted(self.I_dict, key=self.I_dict.get))
 
+        #We loop over each country to import its demographic data
         for i in xrange(self.I):
 
+            #If the bool UseDiffDemog == True, we get the unique country index number for importing from the .CSVs
             if self.UseDiffDemog:
-                index = I_all.index(self.I_touse[i])
-                if self.I > len(I_all):
-                    sys.exit("Error! There can't be more than", len(I_all),"countries without\
-                            unique data. \n You must change I so it's less than", len(I_all),\
-                            "or change DiffDemog to False")
+                index = self.I_dict[self.I_touse[i]]
+
+            #Otherwise we just only use the data for one specific country
             else:
                 index = 0
 
+            #Importing the data and correctly storing it in our demographics matrices
+            self.N[i,:,0] = np.loadtxt(("Data_Files/population.csv"),delimiter=',',\
+                    skiprows=1, usecols=[index+1])[self.agestopull]*1000
 
-            if self.UseStaggeredAges:
-                self.N[i,:,0] = np.loadtxt(("Data_Files/population.csv"),delimiter=',',\
-                        skiprows=1, usecols=[index+1])[self.agestopull]*1000
+            self.all_FertilityRates[i,self.FirstFertilityAge:self.LastFertilityAge+1,\
+                    :f_range+self.T_1] =  np.transpose(np.loadtxt(str("Data_Files/" + I_all[index] + "_fertility.csv"),delimiter=',',skiprows=1\
+                    ,usecols=(self.agestopull[self.FirstFertilityAge:self.LastFertilityAge+1]-22))[48-f_range:48+self.T_1,:])
 
-                self.all_FertilityRates[i,self.FirstFertilityAge:self.LastFertilityAge+1,\
-                        :f_range+self.T_1] =  np.transpose(np.loadtxt(str("Data_Files/" + I_all[index] + "_fertility.csv"),delimiter=',',skiprows=1\
-                        , usecols=(self.agestopull[self.FirstFertilityAge:self.LastFertilityAge+1]-22))[48-f_range:48+self.T_1,:])
+            self.MortalityRates[i,self.FirstDyingAge:,:self.T_1] = np.transpose(np.loadtxt(str("Data_Files/" + I_all[index] + "_mortality.csv")\
+                    ,delimiter=',',skiprows=1, usecols=(self.agestopull[self.FirstDyingAge:]-67))[:self.T_1,:])
 
-                self.MortalityRates[i,self.FirstDyingAge:,:self.T_1] = np.transpose(np.loadtxt(str("Data_Files/" + I_all[index] + "_mortality.csv"),delimiter=','\
-                        ,skiprows=1, usecols=(self.agestopull[self.FirstDyingAge:]-67))[:self.T_1,:])
-
-                self.Migrants[i,:self.MaxImmigrantAge,:self.T_1] = np.einsum("s,t->st",np.loadtxt(("Data_Files/net_migration.csv"),delimiter=','\
-                        ,skiprows=1, usecols=[index+1])[self.agestopull[:self.MaxImmigrantAge]]*100, np.ones(self.T_1))
-
-            else:
-                self.N[i,:,0] = np.loadtxt(("Data_Files/population.csv"),delimiter=',',skiprows=1, usecols=[index+1])[:self.S]*1000
-
-                self.all_FertilityRates[i,self.FirstFertilityAge:self.LastFertilityAge+1,:f_range+self.T_1] = \
-                        np.transpose(np.loadtxt(str("Data_Files/" + I_all[index] + "_fertility.csv"),delimiter=','\
-                        ,skiprows=1, usecols=range(1,f_range+1))[48-f_range:48+self.T_1,:])
-
-                self.MortalityRates[i,self.FirstDyingAge:-1,:self.T_1] = \
-                        np.transpose(np.loadtxt(str("Data_Files/" + I_all[index] + "_mortality.csv"),delimiter=','\
-                        ,skiprows=1, usecols=range(1,self.S-self.FirstDyingAge))[:self.T_1,:])
-
-                self.Migrants[i,:self.MaxImmigrantAge,:self.T_1] = np.einsum("s,t->st",np.loadtxt(("Data_Files/net_migration.csv"),delimiter=','\
-                        ,skiprows=1, usecols=[index+1])[:self.MaxImmigrantAge]*100, np.ones(self.T_1))
+            self.Migrants[i,:self.MaxImmigrantAge,:self.T_1] = np.einsum("s,t->st",np.loadtxt(("Data_Files/net_migration.csv"),delimiter=','\
+                    ,skiprows=1, usecols=[index+1])[self.agestopull[:self.MaxImmigrantAge]]*100, np.ones(self.T_1))
 
             if self.PrintLoc: print "Got Demographics for", I_all[index]
 
@@ -282,12 +246,12 @@ class OLG(object):
         self.MortalityRates[:,-1,:] = np.ones((self.I, self.T))
 
         #Gets steady-state values for all countries by taking the mean at year T_1-1 across countries
-        self.f_bar = np.mean(self.all_FertilityRates[:,:,f_range+self.T_1-1], axis=0)
-        self.rho_bar = np.mean(self.MortalityRates[:,:,self.T_1-1], axis=0)
+        f_bar = np.mean(self.all_FertilityRates[:,:,f_range+self.T_1-1], axis=0)
+        rho_bar = np.mean(self.MortalityRates[:,:,self.T_1-1], axis=0)
 
         #Set to the steady state for every year beyond year T_1
-        self.all_FertilityRates[:,:,f_range+self.T_1:] = np.tile(np.expand_dims(self.f_bar, axis=2), (self.I,1,self.T-self.T_1))
-        self.MortalityRates[:,:,self.T_1:] = np.tile(np.expand_dims(self.rho_bar, axis=2), (self.I,1,self.T-self.T_1))
+        self.all_FertilityRates[:,:,f_range+self.T_1:] = np.tile(np.expand_dims(f_bar, axis=2), (self.I,1,self.T-self.T_1))
+        self.MortalityRates[:,:,self.T_1:] = np.tile(np.expand_dims(rho_bar, axis=2), (self.I,1,self.T-self.T_1))
 
         #FertilityRates is exactly like all_FertilityRates except it begins at time t=0 rather than time t=-f_range
         self.FertilityRates[:,self.FirstFertilityAge:self.LastFertilityAge+1,:] = self.all_FertilityRates[:,self.FirstFertilityAge:self.LastFertilityAge+1,f_range:]
@@ -295,61 +259,83 @@ class OLG(object):
         #Gets initial world population growth rate
         self.g_N[0] = 0.
 
-    def Demographics(self):
+    def Demographics(self, demog_ss_tol, UseSSDemog=False):
 
         """
         Description:
             -Description of the Function
 
         Inputs:
-            -
+            - demog_ss_tol
+            - UseSSDemog
 
         Variables Called from Object:
-            -
+            - self.I
+            - self.S
+            - self.T
+            - self.T_1
+
+            - self.N
+            - self.FertilityRates
+            - self.Nhat
+            - self.Migrants
+            - self.MortalityRates
+            - self.UseSSDemog
+            - self.PrintLoc
 
         Variables Stored in Object:
-            -
+            - self.ImmigrationRates
+            - self.N
+            - self.N_hat
+            - self.g_N
+            - self.Nhat_ss
+            - self.Mortality_ss
+            - self.MortalityRates
 
         Other Functions Called:
-            -
+            -None
 
         Objects in Function:
-            -
+            - N_temp
+            - pop_old
+            - pop_new
+            - iteration
+
 
         Outputs:
-            -
+            - None
 
         """
 
-
-
-
+        #Initializes immigration rates
         self.ImmigrationRates = np.zeros((self.I,self.S,self.T))
 
+        #Initialize helper matrix in calculating population dynamics
         N_temp = np.ones((self.I,self.S))/(self.I*self.S)
 
+        #Getting the population and population shares from the present to year T
         for t in xrange(1,self.T):
 
+            #Gets new babies born this year (Equation 3.11)
             self.N[:,0,t] = np.sum((self.N[:,:,t-1]*self.FertilityRates[:,:,t-1]), axis=1)
             N_temp[:,0] = np.sum((self.Nhat[:,:,t-1]*self.FertilityRates[:,:,t-1]), axis=1)
 
-
+            #Get the immigration RATES for the past year
+            #If before the transition year T_1, just divide total migrants by population
             if t <= self.T_1:
                 self.ImmigrationRates[:,:,t-1] = self.Migrants[:,:,t-1]/self.N[:,:,t-1]
 
+            #If beyond the transition year T_1, average the immigration rates in year T_1 itself
             else:
                 self.ImmigrationRates[:,:,t-1] = np.mean(self.ImmigrationRates[:,:,self.T_1-1],\
                         axis=0)
 
-            self.N[:,1:,t] = self.N[:,:-1,t-1]*(1+self.ImmigrationRates[:,:-1,t-1]-\
-                    self.MortalityRates[:,:-1,t-1])
-            N_temp[:,1:] = self.Nhat[:,:-1,t-1]*(1+self.ImmigrationRates[:,:-1,t-1]-\
-                    self.MortalityRates[:,:-1,t-1])
+            self.N[:,1:,t] = self.N[:,:-1,t-1]*(1+self.ImmigrationRates[:,:-1,t-1]-self.MortalityRates[:,:-1,t-1])
+            N_temp[:,1:] = self.Nhat[:,:-1,t-1]*(1+self.ImmigrationRates[:,:-1,t-1]-self.MortalityRates[:,:-1,t-1])
             
             self.Nhat[:,:,t] = self.N[:,:,t]/np.sum(self.N[:,:,t])
 
-            self.g_N[t] = np.sum(N_temp[:,:])-1
-
+            self.g_N[t] = np.sum(N_temp)-1
 
         self.ImmigrationRates[:,:,t] = self.Migrants[:,:,t]/self.N[:,:,t]
 
@@ -358,7 +344,7 @@ class OLG(object):
 
         iteration = 0
 
-        while np.max(np.abs(self.Nhat[:,:,-1] - self.Nhat[:,:,-2])) > self.demog_ss_tol:
+        while np.max(np.abs(self.Nhat[:,:,-1] - self.Nhat[:,:,-2])) > demog_ss_tol:
             pop_new[:,0] = np.sum((pop_old[:,:]*self.FertilityRates[:,:,-1]),axis=1)
             pop_new[:,1:] = pop_old[:,:-1]*(1+self.ImmigrationRates[:,:-1,-1]\
                     -self.MortalityRates[:,:-1,-1])
@@ -367,11 +353,6 @@ class OLG(object):
 
         if self.PrintLoc: print "The SS Population Share converged in", iter, "years beyond year T"
 
-
-        if self.CheckerMode==False:
-            print "\nDemographics obtained!"
-
-
         self.Nhat_ss = self.Nhat[:,:,-1]
         self.Nhat = self.Nhat[:,:,:self.T]
 
@@ -379,19 +360,19 @@ class OLG(object):
         self.Nhat = np.dstack((  self.Nhat[:,:,:self.T], np.einsum("is,t->ist",self.Nhat_ss,np.ones(self.S))  ))
 
         self.Mortality_ss=self.MortalityRates[:,:,-1]
-        #Imposing the ss for years after self.T
-        self.MortalityRates = np.dstack((  self.MortalityRates[:,:,:self.T], np.einsum("is,t->ist",self.Mortality_ss,np.ones(self.S))  ))        
 
-        if self.UseSSDemog == True:
+        #Imposing the ss for years after self.T
+        self.MortalityRates = np.dstack((  self.MortalityRates[:,:,:self.T], np.einsum("is,t->ist",self.Mortality_ss, np.ones(self.S))  ))        
+
+        if UseSSDemog == True:
             self.Nhat = np.einsum("is,t->ist",self.Nhat_ss,np.ones(self.T+self.S))
             self.MortalityRates = np.einsum("is,t->ist",self.Mortality_ss,np.ones(self.T+self.S))
 
-        if self.DemogGraphs:
-            ages = self.FirstFertilityAge, self.LastFertilityAge, self.FirstDyingAge, \
-                    self.MaxImmigrantAge
-            datasets = self.FertilityRates, self.MortalityRates, self.ImmigrationRates, self.Nhat
-            demog.plotDemographics(ages, datasets, self.I, self.S, self.T, self.I_touse, T_touse = [0,1,2,3,20]\
-                    , compare_across="T", data_year=0)
+    def plotDemographics(self, T_touse="default", compare_across="T", data_year=0):
+        #TODO: READ ALL! Have way to display which years to plot in Main file along with which to compare across and the data_year. This should also take away the need to even have the ages in this funtion in the first place
+        ages = self.FirstFertilityAge, self.LastFertilityAge, self.FirstDyingAge, self.MaxImmigrantAge
+        datasets = self.FertilityRates, self.MortalityRates, self.ImmigrationRates, self.Nhat
+        demog.plotDemographics(ages, datasets, self.I, self.S, self.T, self.I_touse, T_touse, compare_across, data_year)
 
     #STEADY STATE
 
@@ -1282,20 +1263,15 @@ class OLG(object):
             #Will solve the household matrices using vectorization if = True and by agent if = False
             if self.VectorizeHouseholdSolver:
             
-                if self.UsePrev_c0:
-                    c0alive_guess = self.c0_alive
-                else:
-                    c0alive_guess = np.ones((self.I, self.S-1))*.3
+                c0alive_guess = np.ones((self.I, self.S-1))*.3
 
                 opt.fsolve(get_upper_triangle_Euler_TEST, c0alive_guess, args=(c_matrix, a_matrix, w_path, r_path, psi, bqvec_path))
 
                 #Initializes a guess for the first vector for the fsolve to use
-                if self.UsePrev_c0:
-                    c0future_guess = self.c0_future
-                else:
-                    c0future_guess = np.zeros((self.I,self.T))
-                    for i in range(self.I):
-                        c0future_guess[i,:] = np.linspace(c_matrix[i,1,0], self.cvec_ss[i,-1], self.T)
+
+                c0future_guess = np.zeros((self.I,self.T))
+                for i in range(self.I):
+                    c0future_guess[i,:] = np.linspace(c_matrix[i,1,0], self.cvec_ss[i,-1], self.T)
 
                 #Solves for the entire consumption and assets matrices
                 opt.fsolve(get_lower_triangle_Euler_TEST, c0future_guess, args=(c_matrix, a_matrix, w_path, r_path, psi, bqvec_path))
@@ -1445,21 +1421,9 @@ class OLG(object):
 
         """
 
-
-        if self.PinInitialValues:
-            guess = np.expand_dims(guess, axis=1).reshape((self.I+1,self.T-1))
-            r_path = np.zeros(self.T)
-            r_path[0] = self.r_init
-            r_path[1:] = guess[0,:]
-
-            bq_path = np.zeros((self.I,self.T))
-            bq_path[:,0] = self.bq_init
-            bq_path[:,1:] = guess[1:,:]
-
-        else:
-            guess = np.expand_dims(guess, axis=1).reshape((self.I+1,self.T))
-            r_path = guess[0,:]
-            bq_path = guess[1:,:]
+        guess = np.expand_dims(guess, axis=1).reshape((self.I+1,self.T))
+        r_path = guess[0,:]
+        bq_path = guess[1:,:]
 
         r_path = np.hstack((r_path, np.ones(self.S)*self.r_ss))
         bq_path = np.column_stack((  bq_path,   np.outer(self.bq_ss,np.ones(self.S))  ))
@@ -1478,10 +1442,7 @@ class OLG(object):
 
         Euler_kf = np.sum(kf_path,axis=0)
 
-        if self.PinInitialValues:
-            Euler_all = np.append(Euler_bq[:,1:], Euler_kf[1:])
-        else:
-            Euler_all = np.append(Euler_bq, Euler_kf)
+        Euler_all = np.append(Euler_bq, Euler_kf)
 
         if self.Iterate: 
             print "Iteration:", self.Timepath_counter, "Min Euler:", np.min(np.absolute(Euler_all)), "Mean Euler:", np.mean(np.absolute(Euler_all)), "Max Euler_bq:", np.max(np.absolute(Euler_bq)), "Max Euler_kf", np.max(np.absolute(Euler_kf))
@@ -1523,27 +1484,13 @@ class OLG(object):
 
         rpath_guess, bqpath_guess = self.get_initialguesses()
 
-        if self.PinInitialValues:
-            rpath_guess = rpath_guess[1:]
-            bqpath_guess = bqpath_guess[:,1:]
-
         guess = np.append(rpath_guess, bqpath_guess)
 
         paths = opt.fsolve(self.EulerSystemTPI, guess)
 
-        if self.PinInitialValues:
-            paths = np.expand_dims(paths, axis=1).reshape((self.I+1,self.T-1))
-            r_path = np.zeros(self.T)
-            r_path[0] = self.r_init
-            r_path[1:] = paths[0,:]
-
-            bq_path = np.zeros((self.I, self.T))
-            bq_path[:,0] = self.bq_init
-            bq_path[:,1:] = paths[1:,:]
-        else:
-            paths = np.expand_dims(paths, axis=1).reshape((self.I+1,self.T))
-            r_path = paths[0,:]
-            bq_path = paths[1:,:]           
+        paths = np.expand_dims(paths, axis=1).reshape((self.I+1,self.T))
+        r_path = paths[0,:]
+        bq_path = paths[1:,:]           
         
         self.r_path = np.hstack((r_path, np.ones(self.S)*self.r_ss))
 

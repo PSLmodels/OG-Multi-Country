@@ -1,8 +1,6 @@
 import time
 import numpy as np
 import AuxiliaryClass as AUX
-from scipy.sparse import spdiags as spdiags
-import scipy.sparse as sparse
 
 np.set_printoptions(threshold = 3000, linewidth=2000, suppress=True)
 
@@ -16,8 +14,8 @@ def Multi_Country(S,I,sigma):
     #THIS SETS ALL OF THE USER PARAMETERS
 
     #Country Rosters
-    I_dict = {"usa":0,"eu":1,"japan":2,"china":3,"india":4,"russia":5,"korea":6}
-    I_touse = ["eu","russia","usa","japan","korea","china","india"] 
+    I_dict = {"usa":0,"eu":1,"japan":2,"china":3,"india":4,"russia":5,"korea":6} #DONT CHANGE
+    I_touse = ["eu","russia","usa","japan","korea","china","india"] #CAN CHANGE
 
     #Parameters Zone
     g_A = 0.015 #Technical growth rate
@@ -30,10 +28,7 @@ def Multi_Country(S,I,sigma):
     #Convergence Tolerances
     demog_ss_tol = 1e-8 #Used in getting ss for population share
 
-
     #PROGRAM LEVERS:
-    CalcTPI = True #Activates the calculation of Time Path Iteration
-
     #For terminal output
     PrintAges = False #Prints the different key ages in the demographics
     PrintLoc = False #Displays the current locations of the program inside key TPI functions
@@ -45,13 +40,12 @@ def Multi_Country(S,I,sigma):
     Iterate = True #Shows the current iteration number and the associated Eulers
 
     #For plots to display or save
-    DemogGraphs = False #Activates graphing graphs with demographic data and population shares
+    DemogGraphs = True #Activates graphing graphs with demographic data and population shares
     ShowSSGraphs = False #Activates graphs for steady-state solutions for consumption, assets, and bequests
     TPIGraphs = False #Activates showing the final graphs
-    iterations_to_plot = set([257]) #Which iterations of the timepath fsolve you want to plot
+    iterations_to_plot = set([]) #Which iterations of the timepath fsolve you want to plot
 
     #For using differing ways to solve the model
-    UseStaggeredAges = True #Activates using staggered ages
     UseDiffDemog = True #Turns on different demographics for each country
     UseSSDemog = False #Activates using only steady state demographics for TPI calculation
     UseDiffProductivities = False #Activates having e vary across cohorts
@@ -59,8 +53,6 @@ def Multi_Country(S,I,sigma):
     ADJUSTKOREAIMMIGRATION = True #Activates dividing Korean immigration by 100 to correctly scale with other countrys' immigration rates
     
     VectorizeHouseholdSolver = True #Activates solving the household decision equations for all agents of a single age instead of each agent seperatly
-    PinInitialValues = False
-    UsePrev_c0 = False
 
     #Adjusts the country list if we are using less than 7 Countries
     if len(I_touse) < I:
@@ -81,19 +73,19 @@ def Multi_Country(S,I,sigma):
 
     Firm_Params = (alpha, delta_ann, chi, rho, g_A)
 
-    Tolerances = (demog_ss_tol)
+    Levers = (PrintAges,PrintLoc,PrintSSEulErrors,PrintSS,ShowSSGraphs,Print_cabqTimepaths,Print_HH_Eulers,\
+              CheckerMode,Iterate,TPIGraphs,UseDiffDemog,UseDiffProductivities,UseTape,\
+              ADJUSTKOREAIMMIGRATION,VectorizeHouseholdSolver)
 
-    Levers = (CalcTPI, PrintAges,PrintLoc,PrintSSEulErrors,PrintSS,ShowSSGraphs,Print_cabqTimepaths,Print_HH_Eulers,\
-              CheckerMode,Iterate,DemogGraphs,TPIGraphs,UseStaggeredAges,UseDiffDemog,UseSSDemog,UseDiffProductivities,\
-              UseTape,ADJUSTKOREAIMMIGRATION,VectorizeHouseholdSolver,PinInitialValues,UsePrev_c0)
 
     ##WHERE THE MAGIC HAPPENS ##
 
-    Model = AUX.OLG(Country_Roster,HH_params,Firm_Params,Levers,Tolerances)
+    Model = AUX.OLG(Country_Roster,HH_params,Firm_Params,Levers)
 
     #Demographics
-    Model.Import_Data()
-    Model.Demographics()
+    Model.Demographics(demog_ss_tol, UseSSDemog=UseSSDemog)
+    if DemogGraphs:
+        Model.plotDemographics(T_touse="default", compare_across="T", data_year=0)
 
     #Steady State
 
@@ -110,7 +102,7 @@ def Multi_Country(S,I,sigma):
     a_init = Model.avec_ss*.7
     Model.set_initial_values(r_init, bq_init, a_init)
 
-    if CalcTPI: Model.Timepath_fsolve(to_plot = iterations_to_plot)
+    Model.Timepath_fsolve(to_plot = iterations_to_plot)
 
     pass
 
@@ -118,7 +110,7 @@ def Multi_Country(S,I,sigma):
 #run the model.
 
 start = time.time()
-Multi_Country(20,2,4)
+Multi_Country(80,7,4)
 tottime=time.time()-start
 
 if TimeModel==True:
@@ -127,3 +119,4 @@ if TimeModel==True:
     seconds=tottime-minutes*60
     minutes=minutes-hours*60
     print "The code took:", hours, "hours,", minutes, "minutes and", seconds, "seconds to complete"
+
