@@ -742,8 +742,9 @@ class OLG(object):
         Euler_kf = np.sum(self.kf_ss)
 
         print "\n\nSTEADY STATE FOUND!"
-        print "-Euler for bq satisfied:", np.isclose(np.max(np.absolute(Euler_bq)), 0)
-        print "-Euler for r satisfied:", np.isclose(Euler_kf, 0), "\n\n"
+        if self.CheckerMode==False:
+            print "-Euler for bq satisfied:", np.isclose(np.max(np.absolute(Euler_bq)), 0)
+            print "-Euler for r satisfied:", np.isclose(Euler_kf, 0), "\n\n"
 
         if self.PrintSS:
             if self.ShowSSGraphs:
