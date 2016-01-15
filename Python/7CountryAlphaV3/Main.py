@@ -4,7 +4,11 @@ import AuxiliaryClass as AUX
 
 np.set_printoptions(threshold = 3000, linewidth=2000, suppress=True)
 
-TimeModel=True #Activates timing the model
+TimeModel=False #Activates timing the model
+
+S=20
+I=2
+sigma=3
 
 def Multi_Country(S,I,sigma):
 
@@ -36,11 +40,11 @@ def Multi_Country(S,I,sigma):
     PrintSS = False #Prints the result of the Steady State functions
     Print_cabqTimepaths = False #Prints the consumption, assets, and bequests timepath as it gets filled in for each iteration of TPI
     Print_HH_Eulers = False #Prints whether the equations for the household decisions are satisfied (Equations 3.22, 3.19, and sum(assets) = 0)
-    CheckerMode = False #Activates not printing much of anything, used in conjunction with RobustChecker.py
-    Iterate = True #Shows the current iteration number and the associated Eulers
+    CheckerMode = True #Activates not printing much of anything, used in conjunction with RobustChecker.py
+    Iterate = False #Shows the current iteration number and the associated Eulers
 
     #For plots to display or save
-    DemogGraphs = True #Activates graphing graphs with demographic data and population shares
+    DemogGraphs = False #Activates graphing graphs with demographic data and population shares
     ShowSSGraphs = False #Activates graphs for steady-state solutions for consumption, assets, and bequests
     TPIGraphs = False #Activates showing the final graphs
     iterations_to_plot = set([]) #Which iterations of the timepath fsolve you want to plot
@@ -55,15 +59,16 @@ def Multi_Country(S,I,sigma):
     VectorizeHouseholdSolver = True #Activates solving the household decision equations for all agents of a single age instead of each agent seperatly
 
     #Adjusts the country list if we are using less than 7 Countries
-    if len(I_touse) < I:
-        print "WARNING: We are changing I from", I, "to", len(I_touse), "to fit the length of I_touse. So the countries we are using now are", I_touse
-        I = len(I_touse)
-        time.sleep(2)
+    if CheckerMode==False:
+        if len(I_touse) < I:
+            print "WARNING: We are changing I from", I, "to", len(I_touse), "to fit the length of I_touse. So the countries we are using now are", I_touse
+            I = len(I_touse)
+            time.sleep(2)
 
-    elif len(I_touse) > I:
-        print "WARNING: We are changing I_touse from", I_touse, "to", I_touse[:I], "so there are", I, "regions"
-        I_touse = I_touse[:I]
-        time.sleep(2)
+        elif len(I_touse) > I:
+            print "WARNING: We are changing I_touse from", I_touse, "to", I_touse[:I], "so there are", I, "regions"
+            I_touse = I_touse[:I]
+            time.sleep(2)
 
     ##INPUTS INTO THE CLASS###
 
@@ -109,9 +114,9 @@ def Multi_Country(S,I,sigma):
 #Input parameters for S, I and sigma here then execute this file to
 #run the model.
 
-start = time.time()
-Multi_Country(80,7,4)
-tottime=time.time()-start
+#start = time.time()
+#Multi_Country(S,I,sigma)
+#tottime=time.time()-start
 
 if TimeModel==True:
     minutes=int(tottime/60)
