@@ -41,7 +41,7 @@ def Multi_Country(S,I,sigma):
     Print_cabqTimepaths = False #Prints the consumption, assets, and bequests timepath as it gets filled in for each iteration of TPI
     Print_HH_Eulers = False #Prints whether the equations for the household decisions are satisfied (Equations 3.22, 3.19, and sum(assets) = 0)
     CheckerMode = True #Activates not printing much of anything, used in conjunction with RobustChecker.py
-    Iterate = False #Shows the current iteration number and the associated Eulers
+    Iterate = True #Shows the current iteration number and the associated Eulers
 
     #For plots to display or save
     DemogGraphs = False #Activates graphing graphs with demographic data and population shares
@@ -114,9 +114,9 @@ def Multi_Country(S,I,sigma):
 #Input parameters for S, I and sigma here then execute this file to
 #run the model.
 
-#start = time.time()
-#Multi_Country(S,I,sigma)
-#tottime=time.time()-start
+start = time.time()
+Multi_Country(20,2,4)
+tottime=time.time()-start
 
 if TimeModel==True:
     minutes=int(tottime/60)

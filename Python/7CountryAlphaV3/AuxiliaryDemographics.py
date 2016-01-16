@@ -15,7 +15,7 @@ def getkeyages(S, PrintAges):
 
     Inputs:
         S                = Int in [10,80], Number of cohorts
-        PrintAges        = Bool, Prints key ages if true
+        PrintAges        = Boolean, Prints key ages if true
 
     Functions called:
         -None
@@ -55,35 +55,42 @@ def getkeyages(S, PrintAges):
 def plotDemographics(ages, datasets, I, S, T, I_touse, T_touse = None, compare_across = "T", data_year = 0):
     """
     Description:
-        -Description of the Function
+        - Displays two plots that show the following:
+            plot1: For each country: Mortality, fertility, and immigration rates, 
+                                     initial and steady state population shares, 
+                                     and the transition path of the total population
+
+            plot2: Will show 2 different plots depending on the input value 'compare_across'.
+                     If compare_across == "T": plot2 will display a plot of Nhat for each year in the function input T_touse with each country 
+                     If compare_across == "I": plot2 will display a plot for each country of Nhat in whatever year in input value 'data_year' is
 
     Inputs:
-        - ages
-        - datasets
-        - I
-        - S
-        - T
-        - I_touse
-        - T_touse
-        - compare_across
-        - data_year
+        - ages                  = tuple: Contains FirstFertilityAge, LastFertilityAge, FirstDyingAge, and MaxImmigrantAge from the OLG class
+        - datasets              = tuple: Contains the arrays FertilityRates, MortalityRates, ImmigrationRates, and Nhat from the OLG class
+        - I                     = Int: Number of Countries
+        - S                     = Int: Number of Cohorts
+        - T                     = Int: Number of the total amount of time periods
+        - I_touse               = List: [I], Roster of countries that are being used
+        - T_touse               = List: [Unknown], List of years in plot2 given from user input
+        - compare_across        = String: (Either "T" or "I"), changes the output of plot2 (see function description)
+        - data_year             = Int: The year plot1 will display for each countries demographic data
 
     Variables Called from Object:
-        - FirstFertilityAge
-        - LastFertilityAge
-        - FirstDyingAge
-        - MaxImmigrantAge
-        - FertilityRates
-        - MortalityRates
-        - ImmigrationRates
-        - Nhat
+        - FirstFertilityAge     = Int: First age where agents give birth
+        - LastFertilityAge      = Int: Last age where agents give birth
+        - FirstDyingAge         = Int: First age where mortality rates effect agents
+        - MaxImmigrantAge       = Int: No immigration takes place for cohorts older than this age
+        - FertilityRates        = Array: [I,S,T], Fertility rates for each country, cohort, and year
+        - MortalityRates        = Array: [I,S,T], Mortality rates for each country, cohort, and year
+        - ImmigrationRates      = Array: [I,S,T], Immigration rates for each country, cohort, and year
+        - Nhat                  = Array: [I,S,T], Population shares for each country, cohort, and year
 
     Other Functions Called:
         -None
 
     Objects in Function:
-        - subplotdim_dict
-        - magic_int
+        - subplotdim_dict       = Dictionary: [6], Contains keys for each int 2-7 that maps to a dimensionality of the subplots of plot2
+        - magic_int             = Int: Value from subplotdim_dict that indicates the number and dimensionality of subplots of plot2
 
     Outputs:
         - None
@@ -150,7 +157,7 @@ def plotDemographics(ages, datasets, I, S, T, I_touse, T_touse = None, compare_a
     def secondPlot():
 
         #Dictionary that contains ideal dimensions of the subplot depending on how many countries are being used
-        subplotdim_dict = {2:222, 3:222, 4:222, 5:232, 6:232, 7:242, 8:242}
+        subplotdim_dict = {2:222, 3:222, 4:222, 5:232, 6:232, 7:242}
 
         #If we want to compare each country in a given year...
         if compare_across == "T":
