@@ -1612,7 +1612,7 @@ class OLG(object):
 
 
         if SAVE:
-            name= "OLGresult_Iter"+str(self.Timepath_counter)+"_"+str(self.I)+"_"+str(self.S)+"_"+str(self.sigma)+".png"
+            name= "Graphs/OLGresult_Iter"+str(self.Timepath_counter)+"_"+str(self.I)+"_"+str(self.S)+"_"+str(self.sigma)+".png"
             plt.savefig(name)
             plt.clf()
 
