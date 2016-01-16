@@ -50,7 +50,6 @@ class OLG(object):
             - self.A                = Array: [I,1], Technology level for each country
             - self.agestopull       = Array: [S], Contains which ages to be used from the data when S<80
             - self.e                = Array: [I,S,T], Labor Productivities
-            - self.I_touse          = Array: [I], Roster of countries that are being used
             - self.lbar             = Array: [T+S], Time endowment in each year
 
             - self.CheckerMode      = Boolean: Used in conjunction with Checker.py, a MPI code that checks the
@@ -70,23 +69,25 @@ class OLG(object):
             - self.UseDiffDemog     = Boolean: Allows each country to have different demographics.
             
             - self.I_dict           = Dictionary: [I], Associates a country with a number
+            - self.I_touse          = List: [I], Roster of countries that are being used
 
             - self.alpha            = Scalar: Capital share of production
             - self.beta             = Scalar: Calculated overall future discount rate
             - self.chi              = Scalar: TODO
             - self.delta            = Scalar: Calulated overall depreciation rate
-            - self.FirstDyingAge    = Scalar: First age where mortality rates effect agents
-            - self.FirstFertilityAge= Scalar: First age where agents give birth
             - self.g_A              = Scalar: Growth rate of technology
-            - self.I                = Scalar: Number of Countries
-            - self.LastFertilityAge = Scalar: Last age where agents give birth
-            - self.LeaveHouseAge    = Scalar: First age where agents don't count as children in utility function
-            - self.MaxImmigrantAge  = Scalar: From the Auxiliary Demographics module, see that page for details
             - self.rho              = Scalar: TODO
-            - self.S                = Scalar: Number of Cohorts
-            - self.T                = Scalar: of the total amount of time periods
-            - self.T_1              = Scalar: Transition year for the demographics
-            - self.Timepath_counter = Scalar: Counter that keeps track of the number of iterations in solving for the time paths
+            - self.sigma            = Scalar: TODO
+            - self.FirstDyingAge    = Int: First age where mortality rates effect agents
+            - self.FirstFertilityAge= Int: First age where agents give birth
+            - self.I                = Int: Number of Countries
+            - self.LastFertilityAge = Int: Last age where agents give birth
+            - self.LeaveHouseAge    = Int: First age where agents don't count as children in utility function
+            - self.MaxImmigrantAge  = Int: No immigration takes place for cohorts older than this age
+            - self.S                = Int: Number of Cohorts
+            - self.T                = Int: Number of time periods
+            - self.T_1              = Int: Transition year for the demographics
+            - self.Timepath_counter = Int: Counter that keeps track of the number of iterations in solving for the time paths
             - self.IterationsToShow = Set: A set of user inputs of iteration of TPI graphs to show
 
         Other Functions Called:
@@ -162,11 +163,11 @@ class OLG(object):
 
         Variables Called from Object:
             - self.agestopull             = Array: [S], Contains which ages to be used from the data when S<80
-            - self.S                      = Scalar: Number of Cohorts
-            - self.T                      = Scalar: Number of Time Periods
-            - self.I                      = Scalar: Number of Countries
-            - self.FirstFertilityAge      = Scalar: First age where agents give birth
-            - self.LastFertilityAge       = Scalar: Last age where agents give birth
+            - self.I                      = Int: Number of Countries
+            - self.S                      = Int: Number of Cohorts
+            - self.T                      = Int: Number of Time Periods
+            - self.FirstFertilityAge      = Int: First age where agents give birth
+            - self.LastFertilityAge       = Int: Last age where agents give birth
             - self.UseDiffDemog           = Boolean: True activates using unique country demographic data
             - self.PrintLoc               = Boolean: True prints the location of the code, used for debugging purposes
             - self.ADJUSTKOREAIMMIGRATION = Boolean: True will correctly adjust Korea's immigration, which is off by a factor of 100
@@ -184,8 +185,8 @@ class OLG(object):
             - None
 
         Objects in Function:
-            - f_range                     = Scalar: Number of fertile years, will be used to correctly store the fertilty data
-            - index                       = Scalar: Unique index for a given country that corresponds to the I_dict
+            - f_range                     = Int: Number of fertile years, will be used to correctly store the fertilty data
+            - index                       = Int: Unique index for a given country that corresponds to the I_dict
             - f_bar                       = Array: [I,S], Average fertility rate across all countries and cohorts in year T_1, 
                                             used to get the SS demographics
             - rho_bar                     = Array: [I,S], Average mortality rate across all countries and cohorts in year T_1, 
@@ -263,44 +264,54 @@ class OLG(object):
 
         """
         Description:
-            -Description of the Function
+            - This function calculates the population dynamics and steady state from the imported data by doing the following:
+                1. For each year from now until year T, uses equations 3.11 and 3.12 to find the net population in a new year.
+                    (Note however that after year T_1 the fertility, mortality, and immigration rates are set to be the same across countries)
+                2. Divides the new population by the world population to get the population share for each country and cohort
+                3. While doing steps 1-2, finds the immigration rate since the data only gives us net migration
+                4. After getting the population dynamics until year T, we continue to get population shares of future years beyond time T 
+                    as explained in steps 1-2 until it converges to a steady state
+                5. Stores the new steady state and non-steady state variables of population shares and mortality in the OLG object
 
         Inputs:
-            - demog_ss_tol
-            - UseSSDemog
+            - demog_ss_tol              = Scalar: The tolerance for the greatest absolute difference between 2 years' population shares 
+                                                   before it is considered to be the steady state
+            - UseSSDemog                = Boolean: True uses the steady state demographics in calculating the transition path. Mostly used for debugging purposes
 
         Variables Called from Object:
-            - self.I
-            - self.S
-            - self.T
-            - self.T_1
+            - self.I                    = Int: Number of Countries
+            - self.S                    = Int: Number of Cohorts
+            - self.T                    = Int: Number of Time Periods
+            - self.T_1                  = Int: Transition year for the demographics
 
-            - self.N
-            - self.FertilityRates
-            - self.Nhat
-            - self.Migrants
-            - self.MortalityRates
-            - self.UseSSDemog
-            - self.PrintLoc
+            - self.N                    = Array: [I,S,T], Population of each country for each age cohort and year
+            - self.Nhat                 = Array: [I,S,T], World opulation share of each country for each age cohort and year
+            - self.FertilityRates       = Array: [I,S,T], Fertility rates from the present time to year T
+            - self.Migrants             = Array: [I,S,T], Number of immigrants
+            - self.MortalityRates       = Array: [I,S,T], Mortality rates of each country for each age cohort and year
+
+            - self.PrintLoc             = Boolean: True prints the location of the code, used for debugging purposes
 
         Variables Stored in Object:
-            - self.ImmigrationRates
-            - self.N
-            - self.N_hat
-            - self.g_N
-            - self.Nhat_ss
-            - self.Mortality_ss
-            - self.MortalityRates
+            - self.ImmigrationRates     = Array: [I,S,T], Immigration rates of each country for each age cohort and year
+            - self.N                    = Array: [I,S,T], UPDATED population of each country for each age cohort and year
+            - self.Nhat                 = Array: [I,S,T+S], UPDATED world opulation share of each country for each age cohort and year
+            - self.g_N                  = Array: [T], Population growth rate each year
+            - self.Nhat_ss              = Array: [I,S], Population of each country for each age cohort in the steady state
+            - self.Mortality_ss         = Array: [I,S], Mortality rates of each country for each age cohort in the steady state
+            - self.MortalityRates       = Array: [I,S,T+S], UPDATED mortality rates of each country for each age cohort and year
 
         Other Functions Called:
-            -None
+            - None
 
         Objects in Function:
-            - N_temp
-            - pop_old
-            - pop_new
-            - iteration
-
+            - N_temp                    = Array: [I,S,T], Matrix created to help calculate the population dynamics TODO: CHANGE StepbyStep to have this way of using the equations
+            - pop_old                   = Array: [I,S,T], Population shares in a given year beyond T
+                                                          that is compared with pop_new to determine the steady state
+            - pop_new                   = Array: [I,S,T], Population shares in a given year beyond T
+                                                          that is compared with pop_old to determine the steady state
+            - future_year_iter          = Int: Counter that keeps track of how many years beyond T it takes 
+                                               for the population shares to converge to the steady state
 
         Outputs:
             - None
@@ -330,48 +341,61 @@ class OLG(object):
                 self.ImmigrationRates[:,:,t-1] = np.mean(self.ImmigrationRates[:,:,self.T_1-1],\
                         axis=0)
 
+            #Gets the non-newborn population for the next year (Equation 3.12)
             self.N[:,1:,t] = self.N[:,:-1,t-1]*(1+self.ImmigrationRates[:,:-1,t-1]-self.MortalityRates[:,:-1,t-1])
             N_temp[:,1:] = self.Nhat[:,:-1,t-1]*(1+self.ImmigrationRates[:,:-1,t-1]-self.MortalityRates[:,:-1,t-1])
             
+            #Gets the population share by taking a fraction of the total world population this year
             self.Nhat[:,:,t] = self.N[:,:,t]/np.sum(self.N[:,:,t])
 
+            #Getting the growth rate
             self.g_N[t] = np.sum(N_temp)-1
 
+        #Gets Immigration rates for the final year
         self.ImmigrationRates[:,:,t] = self.Migrants[:,:,t]/self.N[:,:,t]
 
+        #Initialize iterating variables to find the steady state population shares
         pop_old = self.N[:,:,-1]
         pop_new = self.N[:,:,-1]
+        future_year_iter = 0
 
-        iteration = 0
-
+        #Calculates new years of population shares until the greatest absolute difference between 2 consecutive years is less than demog_ss_tol
         while np.max(np.abs(self.Nhat[:,:,-1] - self.Nhat[:,:,-2])) > demog_ss_tol:
             pop_new[:,0] = np.sum((pop_old[:,:]*self.FertilityRates[:,:,-1]),axis=1)
             pop_new[:,1:] = pop_old[:,:-1]*(1+self.ImmigrationRates[:,:-1,-1]\
                     -self.MortalityRates[:,:-1,-1])
             self.Nhat = np.dstack((self.Nhat,pop_new/np.sum(pop_new)))
-            iteration += 1
+            future_year_iter += 1
 
-        if self.PrintLoc: print "The SS Population Share converged in", iter, "years beyond year T"
+        if self.PrintLoc: print "The SS Population Share converged in", future_year_iter, "years beyond year T"
 
+        #Stores the steady state year in a seperate matrix
         self.Nhat_ss = self.Nhat[:,:,-1]
+        self.Mortality_ss=self.MortalityRates[:,:,-1]
+        
+        #Deletes all the years between t=T and the steady state calculated in the while loop
         self.Nhat = self.Nhat[:,:,:self.T]
 
         #Imposing the ss for years after self.T
         self.Nhat = np.dstack((  self.Nhat[:,:,:self.T], np.einsum("is,t->ist",self.Nhat_ss,np.ones(self.S))  ))
 
-        self.Mortality_ss=self.MortalityRates[:,:,-1]
-
         #Imposing the ss for years after self.T
         self.MortalityRates = np.dstack((  self.MortalityRates[:,:,:self.T], np.einsum("is,t->ist",self.Mortality_ss, np.ones(self.S))  ))        
 
+        #Overwrites all the years in the transition path with the steady state if UseSSDemog == True
         if UseSSDemog == True:
             self.Nhat = np.einsum("is,t->ist",self.Nhat_ss,np.ones(self.T+self.S))
             self.MortalityRates = np.einsum("is,t->ist",self.Mortality_ss,np.ones(self.T+self.S))
 
     def plotDemographics(self, T_touse="default", compare_across="T", data_year=0):
-        #TODO: READ ALL! Have way to display which years to plot in Main file along with which to compare across and the data_year. This should also take away the need to even have the ages in this funtion in the first place
+        """
+        Description: This just calls the plotDemographics function from the AuxiliaryDemographics.py file. See it for details
+        """
+
         ages = self.FirstFertilityAge, self.LastFertilityAge, self.FirstDyingAge, self.MaxImmigrantAge
         datasets = self.FertilityRates, self.MortalityRates, self.ImmigrationRates, self.Nhat
+
+        #Calls the Auxiliary Demographics file for this function
         demog.plotDemographics(ages, datasets, self.I, self.S, self.T, self.I_touse, T_touse, compare_across, data_year)
 
     #STEADY STATE
@@ -380,37 +404,42 @@ class OLG(object):
 
         """
         Description:
-            -Description of the Function
+            - Calculates the variable Psi using equation 3.21 for the steady state and for transition path functions
 
         Inputs:
-            -
+            - w          = Array: [I,T] or [I], Wage rate for each country and year if called from transition path.
+                                                Otherwise it is the steady state wage rate
+            - e          = Array: [I,S,T] or [I,S], Labor Productivities for each country, cohort and year if called from transition path. 
+                                                    Otherwise it is the steady state labor productivities
 
         Variables Called from Object:
-            -
+            - self.chi   = Scalar: TODO
+            - self.rho   = Scalar: TODO
+            - self.sigma = Scalar: TODO
 
         Variables Stored in Object:
-            -
+            - None
 
         Other Functions Called:
-            -
+            - None
 
         Objects in Function:
-            -
+            - we         = Array: [I,S,T] or [I,S], Matrix product of w and e
+            - psi        = Array: [I,S,T] or [I,S], Variable made just to simplify calculation of household decision equations
 
         Outputs:
-            -
+            - psi
 
         """
-
+        #If getting the SS
         if e.ndim == 2:
             we =  np.einsum("i,is->is",w,e)
 
+        #If getting transition path
         elif e.ndim == 3:
             we = np.einsum("it, ist -> ist", w, e)
 
-        part1 = (self.chi/we)**(self.rho-1)
-
-        psi = (1+self.chi*part1)**( (1-self.rho*self.sigma)/(self.rho-1) )
+        psi = ( 1 + self.chi*( (self.chi/we)**(self.rho-1) ) )**( (1-self.rho*self.sigma)/(self.rho-1) )
 
         return psi
 
@@ -418,28 +447,30 @@ class OLG(object):
 
         """
         Description:
-            -Description of the Function
+            - Gets household leisure based on equation 3.20
 
         Inputs:
-            -
+            - c             = Array: [I,S,T] or [I,S], Consumption for either the transition path or the steady steady-state
+            - w             = Array: [I,T] or [I], Wage rate for either the transition path or the steady steady-state
+            - e             = Array: [I,S,T] or [I,S], Labor productivities for either the transition path or the steady steady-state
 
         Variables Called from Object:
-            -
+            - self.chi TODO
+            - self.rho TODO
 
         Variables Stored in Object:
-            -
+            - None
 
         Other Functions Called:
-            -
+            - None
 
         Objects in Function:
-            -
+            - lhat          = Array: [I,S,T] or [I,S], Leisure for either the transition path or the steady steady-state
 
         Outputs:
-            -
+            - lhat
 
         """
-
 
         if e.ndim == 2:
             lhat=c*(self.chi/np.einsum("i,is->is",w,e))**self.rho
