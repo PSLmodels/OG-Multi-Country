@@ -73,11 +73,11 @@ class OLG(object):
 
             - self.alpha            = Scalar: Capital share of production
             - self.beta             = Scalar: Calculated overall future discount rate
-            - self.chi              = Scalar: TODO
+            - self.chi              = Scalar: Leisure preference Parameter
             - self.delta            = Scalar: Calulated overall depreciation rate
             - self.g_A              = Scalar: Growth rate of technology
-            - self.rho              = Scalar: TODO
-            - self.sigma            = Scalar: TODO
+            - self.rho              = Scalar: The intratemporal elasticity of substitution between consumption and leisure
+            - self.sigma            = Scalar: Rate of Time Preference
             - self.FirstDyingAge    = Int: First age where mortality rates effect agents
             - self.FirstFertilityAge= Int: First age where agents give birth
             - self.I                = Int: Number of Countries
@@ -295,7 +295,7 @@ class OLG(object):
         Variables Stored in Object:
             - self.ImmigrationRates     = Array: [I,S,T], Immigration rates of each country for each age cohort and year
             - self.N                    = Array: [I,S,T], UPDATED population of each country for each age cohort and year
-            - self.Nhat                 = Array: [I,S,T+S], UPDATED world opulation share of each country for each age cohort and year
+            - self.Nhat                 = Array: [I,S,T+S], UPDATED world population share of each country for each age cohort and year
             - self.g_N                  = Array: [T], Population growth rate each year
             - self.Nhat_ss              = Array: [I,S], Population of each country for each age cohort in the steady state
             - self.Mortality_ss         = Array: [I,S], Mortality rates of each country for each age cohort in the steady state
@@ -413,9 +413,9 @@ class OLG(object):
                                                     Otherwise it is the steady state labor productivities
 
         Variables Called from Object:
-            - self.chi   = Scalar: TODO
-            - self.rho   = Scalar: TODO
-            - self.sigma = Scalar: TODO
+            - self.chi   = Scalar: Leisure Preference Parameter
+            - self.rho   = Scalar: The intratemporal elasticity of substitution between consumption and leisure
+            - self.sigma = Scalar: Rate of Time Preference
 
         Variables Stored in Object:
             - None
@@ -455,8 +455,8 @@ class OLG(object):
             - e             = Array: [I,S,T] or [I,S], Labor productivities for either the transition path or the steady steady-state
 
         Variables Called from Object:
-            - self.chi TODO
-            - self.rho TODO
+            - self.chi      = Scalar: Leisure preference parameter
+            - self.rho      = Scalar: The intratemporal elasticity of substitution between consumption and leisure
 
         Variables Stored in Object:
             - None
@@ -465,10 +465,10 @@ class OLG(object):
             - None
 
         Objects in Function:
-            - lhat          = Array: [I,S,T] or [I,S], Leisure for either the transition path or the steady steady-state
+            - None
 
         Outputs:
-            - lhat
+            - lhat          = Array: [I,S,T] or [I,S], Leisure for either the transition path or the steady steady-state
 
         """
 
@@ -482,25 +482,32 @@ class OLG(object):
     def get_n(self, lhat):
         """
         Description:
-            -Description of the Function
+            -Calculates the aggregate labor productivity based on equation (3.14)
 
         Inputs:
-            -
+            - lhat          = Array: [I,S,T] or [I,S], Leisure for either the transition path or the steady steady-state
 
         Variables Called from Object:
-            -
+            - e             = Array: [I,S,T], Labor productivities for the transition path  
+            - self.e_ss     = Array: [I,S], Labor produtivities for the Steady State
+            - self.lbar     = Array: [T+S], Time endowment in each year
+            - self.Nhat     = Array: [I,S,T+S], UPDATED world population share of each country for each age cohort and year
+            - self.Nhat_ss  = Array: [I,S], Population of each country for each age cohort in the steady state
+            - self.lbar_ss  = Int: Steady state time endowment. Normalized to 1.0
+            - self.T        = Int: Number of Time Periods
 
         Variables Stored in Object:
-            -
+            - None
 
         Other Functions Called:
-            -
+            - None
 
         Objects in Function:
-            -
+            - None
 
         Outputs:
-            -
+            - n          = Array: [I,S,T] or [I,S], Aggregate labor productivity for either the transition path or the steady steady-state
+
 
         """
 
@@ -514,25 +521,28 @@ class OLG(object):
     def get_Y(self, kd, n):
         """
         Description:
-            -Description of the Function
+            -Calculates the aggregate output based on equation (3.15)
 
         Inputs:
-            -
+            - kd         = Array: [I,S,T] or [I,S], Domestic owned Domestic capital path for either the transition path or steady-state.
+            - n          = Array: [I,S,T] or [I,S], Aggregate labor productivity for either the transition path or the steady steady-state
 
         Variables Called from Object:
-            -
+            - self.A     = Array: [I,1], Technology level for each country
+            - self.alpha = Scalar: Capital share of production
 
         Variables Stored in Object:
-            -
+            - None
 
         Other Functions Called:
-            -
+            - None
 
         Objects in Function:
-            -
+            - None
 
         Outputs:
-            -
+            - Y          = Array: [I,S,T] or [I,S], Total output from firms for either the transition path or the steady steady-state
+
 
         """
 
@@ -842,25 +852,30 @@ class OLG(object):
     def set_initial_values(self, r_init, bq_init, a_init):
         """
         Description:
-            -Description of the Function
+            - Saves the initial guesses of r, bq and a given by the user into the object
 
         Inputs:
-            -
+            - r_init        = Scalar: Initial interest rate given by User
+            - bq_init       = Array: [I], Initial bequests given by User
+            - a_init        = Array: [I,S], Initial asset distribution given by User
 
         Variables Called from Object:
-            -
+            - None
+
 
         Variables Stored in Object:
-            -
+            - self.r_init   = Scalar: Initial interest rate given by User
+            - self.bq_init  = Array: [I], Initial bequests given by User
+            - self.a_init   = Array: [I,S], Initial asset distribution given by Users
 
         Other Functions Called:
-            -
+            - None
 
         Objects in Function:
-            -
+            - None
 
         Outputs:
-            -
+            - None
 
         """
 
@@ -871,25 +886,35 @@ class OLG(object):
     def get_initialguesses(self):
         """
         Description:
-            -Description of the Function
+            - Generates an initial guess path used for beginning TPI calculation. It follows the form
+              of a quadratic function:
+
+              y = aa x^2 + bb x + cc
 
         Inputs:
-            -
+            - None
 
         Variables Called from Object:
-            -
-
+            - self.bq_init  = Array: [I], Initial bequests given by User
+            - self.I        = Int: Number of Countries
+            - self.T        = Int: Number of Time Periods
+            - self.r_init   = Scalar: Initial interest rate given by User
+            - self.r_ss     = Scalar: Steady state interest rate
+  
         Variables Stored in Object:
-            -
+            - None
 
         Other Functions Called:
-            -
+            - None
 
         Objects in Function:
-            -
+            - aa            = coefficient for x^2 term
+            - bb            = coefficient for x term
+            - cc            = coefficient for constant term
 
         Outputs:
-            -
+            - rpath_guess   = Array: [T], Initial path of interest rates in quadratic form
+            - bqpath_guess  = Array: [I,T], Initial path of bequests in quadratic form
 
         """
 
@@ -1538,27 +1563,45 @@ class OLG(object):
     def plot_timepaths(self, r_path, bq_path, w_path, c_matrix, lhat_path, n_path, kd_path, kf_path, SAVE=False):
         """
         Description:
-            -Description of the Function
+            - Take the timepaths and plots them into one sheet of graphs
 
         Inputs:
-            -
+            - r_path                = Array:[], Given interest rate path
+            - bq_path               = Array:[], Given bequests path
+            - c_matrix              = Array:[], Given consumption matrix
+            - lhat_path             = Array:[], Given time endowment
+            - n_path                = Array:[], Given aggregate labor productivity
+            - kd_path               = Array:[], Given domestic capital path
+            - kf_path               = Array:[], Given foreign capital path
+            - SAVE                  = Boolean:[], Switch that determines whether we save the graphs or simply show it.
 
         Variables Called from Object:
-            -
+            - self.S                = Int: Number of Cohorts
+            - self.T                = Int: Number of time periods
+            - self.I                = Int: Number of Countries
+            - self.Timepath_counter = Int: Counter that keeps track of the number of iterations in solving for the time paths
+            - self.I_touse          = List: [I], Roster of countries that are being used
+            - self.cvec_ss          = Array:[],
+            - self.lhat_ss          = Array:[],
+            - self.n_ss             = Array:[],
+            - self.kd_ss            = Array:[],
 
         Variables Stored in Object:
-            -
+            - None
 
         Other Functions Called:
-            -
+            - None
 
         Objects in Function:
-            -
+            - title                 = String: Overall title of the sheet of graphs
+            - name                  = String: Name of the .png file that will save the graphs.
+            - ax                    = String: TODO
 
         Outputs:
-            -
+            - None
 
         """
+        print "rpath shape",r_path.shape
 
 
         title = str("S = " + str(self.S) + ", T = " + str(self.T))
