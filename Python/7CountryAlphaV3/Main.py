@@ -6,9 +6,11 @@ np.set_printoptions(threshold = 3000, linewidth=2000, suppress=True)
 
 TimeModel=False #Activates timing the model
 
+"""
 S=20
 I=2
 sigma=3
+"""
 
 def Multi_Country(S,I,sigma):
 
@@ -46,16 +48,14 @@ def Multi_Country(S,I,sigma):
     #For plots to display or save
     DemogGraphs = False #Activates graphing graphs with demographic data and population shares
     ShowSSGraphs = False #Activates graphs for steady-state solutions for consumption, assets, and bequests
-    TPIGraphs = False #Activates showing the final graphs
     iterations_to_plot = set([]) #Which iterations of the timepath fsolve you want to plot
+    SaveFinalTPIPlot = True #Saves the final (and hopefully converged) time path plot as a .png file
 
     #For using differing ways to solve the model
     UseDiffDemog = True #Turns on different demographics for each country
     UseSSDemog = False #Activates using only steady state demographics for TPI calculation
     UseDiffProductivities = False #Activates having e vary across cohorts
-    UseTape = True #Activates setting any value of kd<0 to 0.001 in TPI calculation
     ADJUSTKOREAIMMIGRATION = True #Activates dividing Korean immigration by 100 to correctly scale with other countrys' immigration rates
-    
     VectorizeHouseholdSolver = True #Activates solving the household decision equations for all agents of a single age instead of each agent seperatly
 
     #Adjusts the country list if we are using less than 7 Countries
@@ -78,27 +78,26 @@ def Multi_Country(S,I,sigma):
 
     Firm_Params = (alpha, delta_ann, chi, rho, g_A)
 
-    Levers = (PrintAges,PrintLoc,PrintSSEulErrors,PrintSS,ShowSSGraphs,Print_cabqTimepaths,Print_HH_Eulers,\
-              CheckerMode,Iterate,TPIGraphs,UseDiffDemog,UseDiffProductivities,UseTape,\
-              ADJUSTKOREAIMMIGRATION,VectorizeHouseholdSolver)
+    Levers = (PrintAges,PrintLoc,CheckerMode,Iterate,UseDiffDemog,
+    		  UseDiffProductivities,ADJUSTKOREAIMMIGRATION,VectorizeHouseholdSolver)
 
 
-    ##WHERE THE MAGIC HAPPENS ##
-
+    #Initialize the class instance
     Model = AUX.OLG(Country_Roster,HH_params,Firm_Params,Levers)
 
     #Demographics
-    Model.Demographics(demog_ss_tol, UseSSDemog=UseSSDemog)
-    if DemogGraphs:
-        Model.plotDemographics(T_touse="default", compare_across="T", data_year=0)
+    Model.Demographics(demog_ss_tol, UseSSDemog)
+    if DemogGraphs: Model.plotDemographics(T_touse="default", compare_across="T", data_year=0)
 
-    #Steady State
 
     #STEADY STATE INITIAL GUESSES
-
     r_ss_guess = .2
     bq_ss_guess = np.ones(I)*.2
-    Model.SteadyState(r_ss_guess, bq_ss_guess)
+
+    #Steady State
+    Model.SteadyState(r_ss_guess, bq_ss_guess, PrintSSEulErrors)
+    if PrintSS: Model.PrintSSResults()
+    if ShowSSGraphs: Model.plotSSResults()
 
     #Timepath Iteration
     
@@ -107,8 +106,9 @@ def Multi_Country(S,I,sigma):
     a_init = Model.avec_ss*.7
     Model.set_initial_values(r_init, bq_init, a_init)
 
-    Model.Timepath_fsolve(to_plot = iterations_to_plot)
-
+    Model.Timepath_fsolve(Print_HH_Eulers, Print_cabqTimepaths, iterations_to_plot)
+    if SaveFinalTPIPlot: Model.plot_timepaths(SAVE=True)
+    
     pass
 
 #Input parameters for S, I and sigma here then execute this file to
