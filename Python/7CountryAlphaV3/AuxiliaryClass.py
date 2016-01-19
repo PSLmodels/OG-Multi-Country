@@ -573,7 +573,7 @@ class OLG(object):
             - opt_c1                    = Array: [I,S], Optimal consumption of the youngest cohort 
             - cvec_ss                   = Array: [I,S], Steady state consumption for each country and cohort
             - avec_ss                   = Array: [I,S], Steady state assets holdings for each country and cohort
-            - lhat_ss                   = Array: [I,S], Steady state leisure decision for each country and cohort.
+            - lhat_ss                   = Array: [I,S], Steady state leisure decision for each country and cohort
             - n_ss                      = Array: [I], Steady state labor supply
             - kd_ss                     = Array: [I], Steady state total capital holdings for each country
             - y_ss                      = Array: [I], Steady state output of each country
@@ -586,24 +586,25 @@ class OLG(object):
         def get_lifetime_decisionsSS(c_1, w_ss, r_ss, psi_ss):
             """
             Description:
-                -Description of the Function
+                - 1. Solves for future consumption decisions as a function of initial consumption (Equation 3.22)
+                - 2. Solves for savings decisions as a function of consumption decisions and previous savings decisions (Equation 3.19)
 
             Inputs:
-                - c_1
+                - c_1                        = Array:, [I], Consumption of first cohort for each country
                 - w_ss                       = Array: [I], Steady state wage rate
                 - r_ss                       = Scalar: Steady-state intrest rate
-                - psi_ss
+                - psi_ss                     = Array: [I,S], Psi variable, used in Equation 3.21
 
             Variables Called from Object:
-                - self.I                 = Int: Number of Countries
+                - self.I                     = Int: Number of Countries
                 - self.S                     = Int: Number of Cohorts
-                - self.beta              = Scalar: Calculated overall future discount rate
+                - self.beta                  = Scalar: Calculated overall future discount rate
                 - self.Mortality_ss          = Array: [I,S], Mortality rates of each country for each age cohort in the steady state
-                - self.delta             = Scalar: Calulated overall depreciation rate
-                - self.sigma             = Scalar: Rate of Time Preference
-                - self.g_A              = Scalar: Growth rate of technology
-                - self.e_ss              = Array: [I,S], Labor produtivities for the Steady State
-                - self.chi       = Scalar: Leisure preference parameter
+                - self.delta                 = Scalar: Calulated overall depreciation rate
+                - self.sigma                 = Scalar: Rate of Time Preference
+                - self.g_A                   = Scalar: Growth rate of technology
+                - self.e_ss                  = Array: [I,S], Labor produtivities for the Steady State
+                - self.chi                   = Scalar: Leisure preference parameter
 
             Variables Stored in Object:
                 - None
@@ -615,8 +616,8 @@ class OLG(object):
                 - None
 
             Outputs:
-                - cvec_ss               = Array: [I,S], Vector of steady state consumption
-                - avec_ss               = Array: [I,S+1], Vector of steady state assets
+                - cvec_ss                    = Array: [I,S], Vector of steady state consumption
+                - avec_ss                    = Array: [I,S+1], Vector of steady state assets
             """
 
 
@@ -625,13 +626,16 @@ class OLG(object):
             cvec_ss[:,0] = c_1
 
             for s in xrange(self.S-1):
+                #Equation 3.21
                 cvec_ss[:,s+1] = (self.beta * (1-self.Mortality_ss[:,s]) * (1 + r_ss - self.delta)\
                         *psi_ss[:,s+1]/psi_ss[:,s])**(1/self.sigma) * cvec_ss[:,s]*np.exp(-self.g_A)
 
+                #Equation 3.19
                 avec_ss[:,s+1] = (w_ss*self.e_ss[:,s] + (1 + r_ss - self.delta)*avec_ss[:,s] + \
                         bq_ss[:,s] - cvec_ss[:,s]*(1+w_ss*self.e_ss[:,s]*\
                         (self.chi/(w_ss*self.e_ss[:,s]))**self.rho))*np.exp(-self.g_A)
 
+            #Equation 3.19 for final assets
             avec_ss[:,s+2] = (w_ss*self.e_ss[:,s+1] + (1 + r_ss - self.delta)*avec_ss[:,s+1] \
                     - cvec_ss[:,s+1]*(1+w_ss*self.e_ss[:,s+1]*(self.chi/(w_ss*self.e_ss[:,s+1]))\
                     **self.rho))*np.exp(-self.g_A)
@@ -641,13 +645,15 @@ class OLG(object):
         def householdEuler_SS(c_1, w_ss, r_ss, psi_ss):
             """
             Description:
-                -Description of the Function
+                - This is the function called by opt.fsolve.
+                  Will stop iterating until a correct value of initial 
+                  consumption for each country makes the final assets holdings of each country equal to 0
 
             Inputs:
-                - c_1
+                - c_1                        = Array:, [I], Consumption of first cohort for each country
                 - w_ss                       = Array: [I], Steady state wage rate
                 - r_ss                       = Scalar: Steady-state intrest rate
-                - psi_ss
+                - psi_ss                     = Array: [I,S], Psi variable, used in Equation 3.21
 
             Variables Called from Object:
                 - None
@@ -662,13 +668,13 @@ class OLG(object):
                 - None
 
             Outputs:
-                - Euler
+                - Euler                     = Array: [I], Final assets for each country. Must = 0 for system to solve
             """
 
 
             cpath, assets_path = get_lifetime_decisionsSS(c_1, w_ss, r_ss, psi_ss)
 
-            Euler = np.ravel(assets_path[:,-1])
+            Euler = assets_path[:,-1]
 
             if np.any(cpath<0):
                 print "WARNING! The fsolve for initial optimal consumption guessed a negative number"
@@ -719,7 +725,7 @@ class OLG(object):
         Inputs:
             - guess                     = Array: [I+1], Contains guesses for individual bequests in each country 
                                                         and the guess for the world intrest rate
-             - PrintSSEulErrors          = Boolean, True prints the Euler Errors in each iteration of calculating the steady state
+            - PrintSSEulErrors          = Boolean: True prints the Euler Errors in each iteration of calculating the steady state
 
         Variables Called from Object:
             - self.I                    = Int: Number of Countries
@@ -772,13 +778,15 @@ class OLG(object):
         #Calls self.GetSSComponents, which solves for all the other ss variables in terms of bequests and intrest rate
         w_ss, cvec_ss, avec_ss, kd_ss, kf_ss, n_ss, y_ss, lhat_ss = self.GetSSComponents(bq_ss, r_ss)
 
-        #Sum 
+        #Sum of all assets holdings of dead agents to be distributed evenly among all eligible agents
         alldeadagent_assets = np.sum(avec_ss[:,self.FirstDyingAge:]*\
                 self.Mortality_ss[:,self.FirstDyingAge:]*self.Nhat_ss[:,self.FirstDyingAge:], axis=1)
 
+        #Equation 3.29
         Euler_bq = bqindiv_ss - alldeadagent_assets/np.sum(self.Nhat_ss[:,self.FirstFertilityAge:self.FirstDyingAge],\
                 axis=1)
 
+        #Equation 3.24
         Euler_kf = np.sum(kf_ss)
 
         Euler_all = np.append(Euler_bq, Euler_kf)
@@ -790,70 +798,84 @@ class OLG(object):
     def SteadyState(self, rss_guess, bqss_guess, PrintSSEulErrors=False):
         """
         Description:
-            -Description of the Function
+            - Finds the steady state of the OLG Model by doing the following:
+                1. Searches over values of r and bq that satisfy Equations 3.19 and 3.24
+                2. Uses the correct ss values of r and bq to find all the other ss variables
+                3. Checks to see of the system has correctly solved
 
         Inputs:
-            - rss_guess
-            - bqss_guess
-            - PrintSSEulErrors
+            - rss_guess                 = Scalar: Initial guess for the ss intrest rate
+            - bqindiv_ss_guess          = Array: [I], Initial guess for ss bequests that each eligible-aged individual will receive
+            - PrintSSEulErrors          = Boolean: True prints the Euler Errors in each iteration of calculating the steady state
 
         Variables Called from Object:
-            - self.I                  = Int: Number of Countries
-            - self.S                  = Int: Number of Cohorts
-            - self.FirstFertilityAge  = Int: First age where agents give birth
-            - self.FirstDyingAge      = Int: First age where agents begin to die
-            - self.bqvec_ss
-            - self.r_ss
+            - self.I                    = Int: Number of Countries
+            - self.S                    = Int: Number of Cohorts
+            - self.FirstFertilityAge    = Int: First age where agents give birth
+            - self.FirstDyingAge        = Int: First age where agents begin to die
 
         Variables Stored in Object:
-            - self.bq_ss
-            - self.r_ss
-            - self.bqvec_ss
-            - self.w_ss
-            - self.cvec_ss
-            - self.avec_ss
-            - self.kd_ss
-            - self.kf_ss
-            - self.n_ss
-            - self.y_ss
-            - self.lhat_ss
+            - self.r_ss                 = Scalar: Steady state intrest rate
+            - self.bqindiv_ss           = Array: [I], Bequests that each eligible-aged individual will receive in the steady state
+            - self.bqvec_ss             = Array: [I,S], Distribution of bequests in the steady state
+            - self.w_ss                 = Array: [I], Steady state wage rate
+            - self.cvec_ss              = Array: [I,S], Steady state consumption
+            - self.avec_ss              = Array: [I,S], Steady state consumption
+            - self.kd_ss                = Array: [I], Steady state total capital holdings for each country
+            - self.kf_ss                = Array: [I], Steady state foreign capital in each country
+            - self.n_ss                 = Array: [I], Steady state labor supply
+            - self.y_ss                 = Array: [I], Steady state output of each country
+            - self.lhat_ss              = Array: [I,S], Steady state leisure decision for each country and cohort
 
         Other Functions Called:
+            - self.EulerSystemSS
             - self.GetSSComponenets
 
         Objects in Function:
-            - alldeadagent_assets
-            - Euler_bq
-            - Euler_kf
+            - alldeadagent_assets       = Array: [I], Sum of assets of all the individuals who die in the steady state. 
+                                                      Evenly distributed to eligible-aged cohorts.
+            - Euler_bq                  = Array: [I], Distance between bqindiv_ss and the actual bqindiv_ss calculated in the system. 
+                                                      Must = 0 for the ss to correctly solve.
+            - Euler_kf                  = Scalar: Sum of the foreign capital stocks. Must = 0 for the ss to correctly solve
 
         Outputs:
             - None
         """
 
+        #Prepares the initial guess for the fsolve
         guess = np.append(bqss_guess, rss_guess)
 
+        #Searches over bq and r to find values that satisfy the Euler Equations (3.19 and 3.24)
         ss = opt.fsolve(self.EulerSystemSS, guess, args=PrintSSEulErrors)
 
-        self.bq_ss = ss[:-1]
+        #Breaking up the output into its 2 components
+        self.bqindiv_ss = ss[:-1]
         self.r_ss = ss[-1]
 
+        #Initializes a vector for bequests distribution. Will be = 0 for a block of young and a block of old cohorts who don't get bequests
         self.bqvec_ss = np.zeros((self.I,self.S))
-        self.bqvec_ss[:,self.FirstFertilityAge:self.FirstDyingAge] = np.einsum("i,s->is",self.bq_ss,\
+        self.bqvec_ss[:,self.FirstFertilityAge:self.FirstDyingAge] = np.einsum("i,s->is",self.bqindiv_ss,\
                 np.ones(self.FirstDyingAge-self.FirstFertilityAge))
 
+        #Calls self.GetSSComponents, which solves for all the other ss variables in terms of bequests and intrest rate
         self.w_ss, self.cvec_ss, self.avec_ss, self.kd_ss, self.kf_ss, self.n_ss, self.y_ss, self.lhat_ss \
                 = self.GetSSComponents(self.bqvec_ss,self.r_ss)
 
-
+        #Sum of all assets holdings of dead agents to be distributed evenly among all eligible agents
         alldeadagent_assets = np.sum(self.avec_ss[:,self.FirstDyingAge:]*self.Mortality_ss[:,self.FirstDyingAge:]*\
                 self.Nhat_ss[:,self.FirstDyingAge:], axis=1)
 
-        Euler_bq = self.bq_ss - alldeadagent_assets/np.sum(self.Nhat_ss[:,self.FirstFertilityAge:self.FirstDyingAge],\
-                axis=1)
-        Euler_kf = np.sum(self.kf_ss)
 
         print "\n\nSTEADY STATE FOUND!"
+        #Checks to see if the Euler_bq and Euler_kf equations are sufficiently close to 0
         if self.CheckerMode==False:
+
+            #Equation 3.29
+            Euler_bq = self.bqindiv_ss - alldeadagent_assets/np.sum(self.Nhat_ss[:,self.FirstFertilityAge:self.FirstDyingAge],\
+                axis=1)
+
+            #Equation 3.24
+            Euler_kf = np.sum(self.kf_ss)
             print "-Euler for bq satisfied:", np.isclose(np.max(np.absolute(Euler_bq)), 0)
             print "-Euler for r satisfied:", np.isclose(Euler_kf, 0), "\n\n"
 
@@ -1063,7 +1085,7 @@ class OLG(object):
         rpath_guess[:self.T] = aa * np.arange(0,self.T)**2 + bb*np.arange(0,self.T) + cc
 
         for i in range(self.I):
-            bqpath_guess[i,:self.T] = np.linspace(self.bq_init[i], self.bq_ss[i], self.T)
+            bqpath_guess[i,:self.T] = np.linspace(self.bq_init[i], self.bqindiv_ss[i], self.T)
 
         return rpath_guess, bqpath_guess
 
@@ -1735,7 +1757,7 @@ class OLG(object):
 
         Objects in Function:
             - r_path
-            - bq_path
+            - bqindiv_path
             - bqvec_path
             - w_path
             - c_matrix
@@ -1758,7 +1780,7 @@ class OLG(object):
         bq_path = guess[1:,:]
 
         r_path = np.hstack((r_path, np.ones(self.S)*self.r_ss))
-        bq_path = np.column_stack((  bq_path,   np.outer(self.bq_ss,np.ones(self.S))  ))
+        bq_path = np.column_stack((  bq_path,   np.outer(self.bqindiv_ss,np.ones(self.S))  ))
 
         bqvec_path = np.zeros((self.I,self.S,self.T+self.S))
         bqvec_path[:,self.FirstFertilityAge:self.FirstDyingAge,:] = np.einsum("it,s->ist", bq_path, \
@@ -1811,7 +1833,7 @@ class OLG(object):
 
         Variables Stored in Object:
             - self.r_path
-            - self.bq_path
+            - self.bqindiv_path
             - self.bqvec_path
             - self.w_path
             - self.c_matrix
@@ -1852,9 +1874,9 @@ class OLG(object):
         
         self.r_path = np.hstack((r_path, np.ones(self.S)*self.r_ss))
 
-        self.bq_path = np.column_stack(( bq_path,  np.outer(self.bq_ss,np.ones(self.S)) ))
+        self.bq_path = np.column_stack(( bq_path,  np.outer(self.bqindiv_ss,np.ones(self.S)) ))
         self.bqvec_path = np.zeros((self.I,self.S,self.T+self.S))
-        self.bqvec_path[:,self.FirstFertilityAge:self.FirstDyingAge,:] = np.einsum("it,s->ist", self.bq_path, \
+        self.bqvec_path[:,self.FirstFertilityAge:self.FirstDyingAge,:] = np.einsum("it,s->ist", self.bqindiv_path, \
                 np.ones(self.FirstDyingAge-self.FirstFertilityAge))
 
         self.w_path, self.c_matrix, self.a_matrix, self.kd_path, self.kf_path, self.n_path, self.y_path, self.lhat_path = \
