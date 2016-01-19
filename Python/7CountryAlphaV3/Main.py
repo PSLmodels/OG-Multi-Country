@@ -102,7 +102,7 @@ def Multi_Country(S,I,sigma):
     #Timepath Iteration
     
     r_init = Model.r_ss*1.05
-    bq_init = Model.bq_ss*.95
+    bq_init = Model.bqindiv_ss*.95
     a_init = Model.avec_ss*.7
     Model.set_initial_values(r_init, bq_init, a_init)
 
@@ -115,7 +115,7 @@ def Multi_Country(S,I,sigma):
 #run the model.
 
 start = time.time()
-Multi_Country(20,2,4)
+Multi_Country(80,2,4)
 tottime=time.time()-start
 
 if TimeModel==True:
