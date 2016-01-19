@@ -419,10 +419,10 @@ class OLG(object):
 
         Objects in Function:
             - we         = Array: [I,S,T] or [I,S], Matrix product of w and e
-            - psi        = Array: [I,S,T] or [I,S], Variable made just to simplify calculation of household decision equations
 
         Outputs:
-            - psi
+            - psi        = Array: [I,S,T] or [I,S], Variable made just to simplify calculation of household decision equations
+
         """
         #If getting the SS
         if e.ndim == 2:
@@ -590,19 +590,19 @@ class OLG(object):
 
             Inputs:
                 - c_1
-                - w_ss
-                - r_ss
+                - w_ss                       = Array: [I], Steady state wage rate
+                - r_ss                       = Scalar: Steady-state intrest rate
                 - psi_ss
 
             Variables Called from Object:
                 - self.I                 = Int: Number of Countries
                 - self.S                     = Int: Number of Cohorts
                 - self.beta              = Scalar: Calculated overall future discount rate
-                - self.Mortality_ss
+                - self.Mortality_ss          = Array: [I,S], Mortality rates of each country for each age cohort in the steady state
                 - self.delta             = Scalar: Calulated overall depreciation rate
                 - self.sigma             = Scalar: Rate of Time Preference
                 - self.g_A              = Scalar: Growth rate of technology
-                - self.e_ss
+                - self.e_ss              = Array: [I,S], Labor produtivities for the Steady State
                 - self.chi       = Scalar: Leisure preference parameter
 
             Variables Stored in Object:
@@ -615,8 +615,8 @@ class OLG(object):
                 - None
 
             Outputs:
-                - cvec_ss
-                - avec_ss
+                - cvec_ss               = Array: [I,S], Vector of steady state consumption
+                - avec_ss               = Array: [I,S+1], Vector of steady state assets
             """
 
 
@@ -645,8 +645,8 @@ class OLG(object):
 
             Inputs:
                 - c_1
-                - w_ss
-                - r_ss
+                - w_ss                       = Array: [I], Steady state wage rate
+                - r_ss                       = Scalar: Steady-state intrest rate
                 - psi_ss
 
             Variables Called from Object:
@@ -793,22 +793,41 @@ class OLG(object):
             -Description of the Function
 
         Inputs:
-            -
+            - rss_guess
+            - bqss_guess
+            - PrintSSEulErrors
 
         Variables Called from Object:
-            -
+            - self.I                  = Int: Number of Countries
+            - self.S                  = Int: Number of Cohorts
+            - self.FirstFertilityAge  = Int: First age where agents give birth
+            - self.FirstDyingAge      = Int: First age where agents begin to die
+            - self.bqvec_ss
+            - self.r_ss
 
         Variables Stored in Object:
-            -
+            - self.bq_ss
+            - self.r_ss
+            - self.bqvec_ss
+            - self.w_ss
+            - self.cvec_ss
+            - self.avec_ss
+            - self.kd_ss
+            - self.kf_ss
+            - self.n_ss
+            - self.y_ss
+            - self.lhat_ss
 
         Other Functions Called:
-            -
+            - self.GetSSComponenets
 
         Objects in Function:
-            -
+            - alldeadagent_assets
+            - Euler_bq
+            - Euler_kf
 
         Outputs:
-            -
+            - None
         """
 
         guess = np.append(bqss_guess, rss_guess)
@@ -848,13 +867,12 @@ class OLG(object):
 
         Variables Called from Object:
             - self.w_ss
-            - self.e_ss
+            - self.e_ss              = Array: [I,S], Labor produtivities for the Steady State
             - self.psi_ss
             - self.cvec_ss
             - self.sigma             = Scalar: Rate of Time Preference
             - self.beta              = Scalar: Calculated overall future discount rate
-            - self.Mortality_ss
-            - self.psi_ss
+            - self.Mortality_ss          = Array: [I,S], Mortality rates of each country for each age cohort in the steady state
             - self.g_A              = Scalar: Growth rate of technology
             - self.r_ss
             - self.delta             = Scalar: Calulated overall depreciation rate
@@ -868,7 +886,7 @@ class OLG(object):
             - None
 
         Objects in Function:
-            - we
+            - we          = Array: [I,S,T] or [I,S], Matrix product of w and e
 
         Outputs:
             - None
@@ -1105,10 +1123,10 @@ class OLG(object):
             Variables Called from Object:
                 - self.I                 = Int: Number of Countries
                 - self.T                 = Int: Number of time periods
-                - self.e
+                - self.e                 = Array: [I,S,T], Labor Productivities
                 - self.S                     = Int: Number of Cohorts
                 - self.beta              = Scalar: Calculated overall future discount rate
-                - self.MortalityRates
+                - self.MortalityRates          = Array: [I,S,T], Mortality rates of each country for each age cohort and year
                 - self.delta             = Scalar: Calulated overall depreciation rate
                 - self.sigma             = Scalar: Rate of Time Preference
                 - self.g_A              = Scalar: Growth rate of technology
@@ -1122,7 +1140,7 @@ class OLG(object):
                 - None
 
             Objects in Function:
-                - None
+                - we          = Array: [I,S,T] or [I,S], Matrix product of w and e
 
             Outputs:
                 - c_matrix
@@ -1214,7 +1232,7 @@ class OLG(object):
 
             Variables Called from Object:
                 - self.beta              = Scalar: Calculated overall future discount rate
-                - self.MortalityRates
+                - self.MortalityRates          = Array: [I,S,T], Mortality rates of each country for each age cohort and year
                 - self.delta             = Scalar: Calulated overall depreciation rate
                 - self.sigma             = Scalar: Rate of Time Preference
                 - self.g_A              = Scalar: Growth rate of technology
@@ -1228,7 +1246,7 @@ class OLG(object):
                 - None
 
             Objects in Function:
-                - we
+                - we          = Array: [I,S,T] or [I,S], Matrix product of w and e
 
             Outputs:
                 - c_matrix
@@ -1316,9 +1334,9 @@ class OLG(object):
             Variables Called from Object:
                 - self.beta              = Scalar: Calculated overall future discount rate
                 - self.delta             = Scalar: Calulated overall depreciation rate
-                - self.g_A              = Scalar: Growth rate of technology
-                - self.rho       = Scalar: The intratemporal elasticity of substitution between consumption and leisure
-                - self.chi       = Scalar: Leisure preference parameter
+                - self.g_A               = Scalar: Growth rate of technology
+                - self.rho               = Scalar: The intratemporal elasticity of substitution between consumption and leisure
+                - self.chi               = Scalar: Leisure preference parameter
 
             Variables Stored in Object:
                 - None
@@ -1429,7 +1447,7 @@ class OLG(object):
 
             Variables Called from Object:
                 - self.T                 = Int: Number of time periods
-                - self.e
+                - self.e                 = Array: [I,S,T], Labor Productivities
                 - self.sigma             = Scalar: Rate of Time Preference
                 - self.beta              = Scalar: Calculated overall future discount rate
                 - self.g_A              = Scalar: Growth rate of technology
@@ -1444,7 +1462,7 @@ class OLG(object):
                 - None
 
             Objects in Function:
-                - we
+                - we          = Array: [I,S,T] or [I,S], Matrix product of w and e
 
             Outputs:
                 - Chained_C_Condition
@@ -1500,14 +1518,14 @@ class OLG(object):
                 - self.I                 = Int: Number of Countries
                 - self.S                     = Int: Number of Cohorts
                 - self.T                 = Int: Number of time periods
-                - self.e
+                - self.e                 = Array: [I,S,T], Labor Productivities
                 - self.delta             = Scalar: Calulated overall depreciation rate
                 - self.a_init
                 - self.chi       = Scalar: Leisure preference parameter
                 - self.rho       = Scalar: The intratemporal elasticity of substitution between consumption and leisure
                 - self.VectorizeHouseholdSolver
                 - self.cvec_ss
-                - self.MortalityRates
+                - self.MortalityRates          = Array: [I,S,T], Mortality rates of each country for each age cohort and year
 
 
             Variables Stored in Object:
@@ -1703,7 +1721,7 @@ class OLG(object):
             - self.FirstDyingAge     = Int: First age where mortality rates effect agents
             - self.FirstFertilityAge = Int: First age where agents give birth
             - self.Nhat
-            - self.MortalityRates
+            - self.MortalityRates          = Array: [I,S,T], Mortality rates of each country for each age cohort and year
             - self.Timepath_counter
             - self.IterationsToShow
             -
