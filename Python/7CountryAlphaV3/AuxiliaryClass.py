@@ -10,7 +10,9 @@ import AuxiliaryDemographics as demog
 
 class OLG(object):
     """
-    TODO: SOME SORT OF DESCRIPTION OF WHAT THE OLG CLASS DOES
+    This object takes all of the parts of calculating this OLG model and stores it into a centralized object. This
+    has a huge advantage over previous versions as we are now able to quickly access stored parts when we are trying
+    to expand the code.
 
     For each function there are the following categories:
         Description:                    Brief description of what the function does
@@ -21,8 +23,6 @@ class OLG(object):
         Objects in Function:            Lists the variables that are exclusive to that function
         Outputs:                        Lists the outputs that the function puts out.
 
-    Note that if a category isn't listed, then there aren't any variables/functions that fit that category in that
-        particular function.
     """
 
     def __init__(self, countries, HH_Params, Firm_Params, Lever_Params):
@@ -159,23 +159,23 @@ class OLG(object):
 
         Variables Called from Object:
             - self.agestopull             = Array: [S], Contains which ages to be used from the data when S<80
+            - self.UseDiffDemog           = Boolean: True activates using unique country demographic data
+            - self.PrintLoc               = Boolean: True prints the location of the code, used for debugging purposes
+            - self.ADJUSTKOREAIMMIGRATION = Boolean: True will correctly adjust Korea's immigration, which is off by a factor of 100
             - self.I                      = Int: Number of Countries
             - self.S                      = Int: Number of Cohorts
             - self.T                      = Int: Number of Time Periods
             - self.FirstFertilityAge      = Int: First age where agents give birth
             - self.LastFertilityAge       = Int: Last age where agents give birth
-            - self.UseDiffDemog           = Boolean: True activates using unique country demographic data
-            - self.PrintLoc               = Boolean: True prints the location of the code, used for debugging purposes
-            - self.ADJUSTKOREAIMMIGRATION = Boolean: True will correctly adjust Korea's immigration, which is off by a factor of 100
 
         Variables Stored in Object:
-            - self.N                      = Array: [I,S,T], Population of each country for each age cohort and year
-            - self.Nhat                   = Array: [I,S,T], World opulation share of each country for each age cohort and year
             - self.all_FertilityAges      = Array: [I,S,f_range+T], Fertility rates from a f_range years ago to year T
             - self.FertilityRates         = Array: [I,S,T], Fertility rates from the present time to year T
-            - self.MortalityRates         = Array: [I,S,T], Mortality rates of each country for each age cohort and year
-            - self.Migrants               = Array: [I,S,T], Number of immigrants
             - self.g_N                    = Array: [T], Population growth rate for each year
+            - self.Migrants               = Array: [I,S,T], Number of immigrants
+            - self.MortalityRates         = Array: [I,S,T], Mortality rates of each country for each age cohort and year
+            - self.N                      = Array: [I,S,T], Population of each country for each age cohort and year
+            - self.Nhat                   = Array: [I,S,T], World opulation share of each country for each age cohort and year
 
         Other Functions Called:
             - None
@@ -269,23 +269,22 @@ class OLG(object):
                 5. Stores the new steady state and non-steady state variables of population shares and mortality in the OLG object
 
         Inputs:
+            - UseSSDemog                = Boolean: True uses the steady state demographics in calculating the transition path. Mostly used for debugging purposes
             - demog_ss_tol              = Scalar: The tolerance for the greatest absolute difference between 2 years' population shares 
                                                   before it is considered to be the steady state
-            - UseSSDemog                = Boolean: True uses the steady state demographics in calculating the transition path. Mostly used for debugging purposes
 
         Variables Called from Object:
-            - self.I                    = Int: Number of Countries
-            - self.S                    = Int: Number of Cohorts
-            - self.T                    = Int: Number of Time Periods
-            - self.T_1                  = Int: Transition year for the demographics
 
             - self.N                    = Array: [I,S,T], Population of each country for each age cohort and year
             - self.Nhat                 = Array: [I,S,T], World opulation share of each country for each age cohort and year
             - self.FertilityRates       = Array: [I,S,T], Fertility rates from the present time to year T
             - self.Migrants             = Array: [I,S,T], Number of immigrants
             - self.MortalityRates       = Array: [I,S,T], Mortality rates of each country for each age cohort and year
-
             - self.PrintLoc             = Boolean: True prints the location of the code, used for debugging purposes
+            - self.I                    = Int: Number of Countries
+            - self.S                    = Int: Number of Cohorts
+            - self.T                    = Int: Number of Time Periods
+            - self.T_1                  = Int: Transition year for the demographics
 
         Variables Stored in Object:
             - self.ImmigrationRates     = Array: [I,S,T], Immigration rates of each country for each age cohort and year
@@ -384,7 +383,7 @@ class OLG(object):
 
     def plotDemographics(self, T_touse="default", compare_across="T", data_year=0):
         """
-        Description: This just calls the plotDemographics function from the AuxiliaryDemographics.py file. See it for details
+        Description: This calls the plotDemographics function from the AuxiliaryDemographics.py file. See it for details
         """
 
         ages = self.FirstFertilityAge, self.LastFertilityAge, self.FirstDyingAge, self.MaxImmigrantAge
@@ -550,34 +549,35 @@ class OLG(object):
             - r_ss                      = Scalar: Steady-state intrest rate
 
         Variables Called from Object:
-            - self.alpha             = Scalar: Capital share of production
             - self.A                    = Array: [I], Technology level for each country
             - self.e_ss                 = Array: [I,S], Labor produtivities for the Steady State
-            - self.I                    = Int: Number of Countries
             - self.Nhat_ss              = Array: [I,S,T+S], World population share of each country for each age cohort and year
+            - self.I                    = Int: Number of Countries
+            - self.alpha                = Scalar: Capital share of production
+
 
         Variables Stored in Object:
             - None
 
         Other Functions Called:
-            - householdEuler_SS = System of Euler equations to solve the household problem. Used by opt.fsolve
-            - get_Psi = Solves for the Psi variable as in Equation 3.21
             - get_lhat = Solves for leisure as in Equation 3.20
             - get_n = Solves for labor supply as in Equation 3.14
+            - get_Psi = Solves for the Psi variable as in Equation 3.21
             - get_Y = Solves for output as in Equation 3.15
+            - householdEuler_SS = System of Euler equations to solve the household problem. Used by opt.fsolve
 
         Objects in Function:
-            - w_ss                      = Array: [I], Steady state wage rate
-            - psi_ss                    = Array: [I,S], Steady state Psi variable (see equation 3.21)
-            - c1_guess                  = Array: [I,S], Initial guess for consumption of the youngest cohort 
-            - opt_c1                    = Array: [I,S], Optimal consumption of the youngest cohort 
-            - cvec_ss                   = Array: [I,S], Steady state consumption for each country and cohort
             - avec_ss                   = Array: [I,S], Steady state assets holdings for each country and cohort
+            - cvec_ss                   = Array: [I,S], Steady state consumption for each country and cohort
+            - c1_guess                  = Array: [I,S], Initial guess for consumption of the youngest cohort
+            - kd_ss                     = Array: [I], Steady state total capital holdings for each country
+            - kf_ss                     = Array: [I], Steady state foreign capital in each country
             - lhat_ss                   = Array: [I,S], Steady state leisure decision for each country and cohort
             - n_ss                      = Array: [I], Steady state labor supply
-            - kd_ss                     = Array: [I], Steady state total capital holdings for each country
+            - opt_c1                    = Array: [I,S], Optimal consumption of the youngest cohort 
+            - psi_ss                    = Array: [I,S], Steady state Psi variable (see equation 3.21)
+            - w_ss                      = Array: [I], Steady state wage rate
             - y_ss                      = Array: [I], Steady state output of each country
-            - kf_ss                     = Array: [I], Steady state foreign capital in each country
 
         Outputs:
             - w_ss, cvec_ss, avec_ss, kd_ss, kf_ss, n_ss, y_ss, and lhat_ss
@@ -591,20 +591,22 @@ class OLG(object):
 
             Inputs:
                 - c_1                        = Array:, [I], Consumption of first cohort for each country
+                - psi_ss                     = Array: [I,S], Psi variable, used in Equation 3.21
                 - w_ss                       = Array: [I], Steady state wage rate
                 - r_ss                       = Scalar: Steady-state intrest rate
-                - psi_ss                     = Array: [I,S], Psi variable, used in Equation 3.21
+
 
             Variables Called from Object:
+                - self.e_ss                  = Array: [I,S], Labor produtivities for the Steady State
+                - self.Mortality_ss          = Array: [I,S], Mortality rates of each country for each age cohort in the steady state
                 - self.I                     = Int: Number of Countries
                 - self.S                     = Int: Number of Cohorts
                 - self.beta                  = Scalar: Calculated overall future discount rate
-                - self.Mortality_ss          = Array: [I,S], Mortality rates of each country for each age cohort in the steady state
-                - self.delta                 = Scalar: Calulated overall depreciation rate
-                - self.sigma                 = Scalar: Rate of Time Preference
-                - self.g_A                   = Scalar: Growth rate of technology
-                - self.e_ss                  = Array: [I,S], Labor produtivities for the Steady State
                 - self.chi                   = Scalar: Leisure preference parameter
+                - self.delta                 = Scalar: Calulated overall depreciation rate
+                - self.g_A                   = Scalar: Growth rate of technology
+                - self.sigma                 = Scalar: Rate of Time Preference
+
 
             Variables Stored in Object:
                 - None
@@ -616,8 +618,8 @@ class OLG(object):
                 - None
 
             Outputs:
-                - cvec_ss                    = Array: [I,S], Vector of steady state consumption
                 - avec_ss                    = Array: [I,S+1], Vector of steady state assets
+                - cvec_ss                    = Array: [I,S], Vector of steady state consumption
             """
 
 
@@ -650,10 +652,10 @@ class OLG(object):
                   consumption for each country makes the final assets holdings of each country equal to 0
 
             Inputs:
-                - c_1                        = Array:, [I], Consumption of first cohort for each country
+                - c_1                        = Array: [I], Consumption of first cohort for each country
+                - psi_ss                     = Array: [I,S], Psi variable, used in Equation 3.21
                 - w_ss                       = Array: [I], Steady state wage rate
                 - r_ss                       = Scalar: Steady-state intrest rate
-                - psi_ss                     = Array: [I,S], Psi variable, used in Equation 3.21
 
             Variables Called from Object:
                 - None
@@ -662,7 +664,8 @@ class OLG(object):
                 - None
 
             Other Functions Called:
-                - get_lifetimedecisionsSS
+                - get_lifetimedecisionsSS = calls the above function for the purpose of solving for its roots
+                                            in an fsolve.
 
             Objects in Function:
                 - None
@@ -728,12 +731,12 @@ class OLG(object):
             - PrintSSEulErrors          = Boolean: True prints the Euler Errors in each iteration of calculating the steady state
 
         Variables Called from Object:
-            - self.I                    = Int: Number of Countries
-            - self.S                    = Int: Number of Cohorts
-            - self.FirstFertilityAge    = Int: First age where agents give birth
-            - self.FirstDyingAge        = Int: First age where mortality rates effect agents
             - self.Mortality_ss         = Array: [I,S], Mortality rates of each country for each age cohort in the steady state
             - self.Nhat_ss              = Array: [I,S,T+S], World population share of each country for each age cohort and year
+            - self.FirstDyingAge        = Int: First age where mortality rates effect agents
+            - self.FirstFertilityAge    = Int: First age where agents give birth
+            - self.I                    = Int: Number of Countries
+            - self.S                    = Int: Number of Cohorts
 
         Variables Stored in Object:
             - None
@@ -744,24 +747,26 @@ class OLG(object):
                                 of the world intrest rate and bequests
 
         Objects in Function:
-            - bqindiv_ss                = Array: [I], Current guess for the amount of bequests each eligible-aged 
-                                                      individual will receive in each country
-            - r_ss                      = Scalar: Current guess for the steady-state intrest rate
-            - bq_ss                     = Array: [I,S], Vector of bequests received for each cohort and country.
-                                                        Basically bqindiv_ss copied for each eligible-aged individual.
-            - w_ss                      = Array: [I], Current guess for each countries ss wage rate as a function of r_ss and bqvec_ss
-            - cvec_ss                   = Array: [I,S], Current guess for ss consumption for each country and cohort
-            - avec_ss                   = Array: [I,S], Current guess for the ss assets holdings for each country and cohort
-            - kd_ss                     = Array: [I], Current guess for ss total capital holdings for each country
-            - kf_ss                     = Array: [I], Current guess for ss foreign capital in each country
-            - n_ss                      = Array: [I], Current guess for ss labor supply
-            - y_ss                      = Array: [I], Current guess for ss output of each country
-            - lhat_ss                   = Array: [I,S], Current guess for ss leisure decision for each country and cohort.
             - alldeadagent_assets       = Array: [I], Sum of assets of all the individuals who die in the steady state. 
                                                       Evenly distributed to eligible-aged cohorts.
+            - avec_ss                   = Array: [I,S], Current guess for the ss assets holdings for each country and cohort
+
+            - bqindiv_ss                = Array: [I], Current guess for the amount of bequests each eligible-aged 
+                                                      individual will receive in each country
+            - bq_ss                     = Array: [I,S], Vector of bequests received for each cohort and country.
+                                                        Basically bqindiv_ss copied for each eligible-aged individual.
+            - cvec_ss                   = Array: [I,S], Current guess for ss consumption for each country and cohort
             - Euler_bq                  = Array: [I], Distance between bqindiv_ss and the actual bqindiv_ss calculated in the system. 
                                                       Must = 0 for the ss to correctly solve.
+            - kd_ss                     = Array: [I], Current guess for ss total capital holdings for each country
+            - kf_ss                     = Array: [I], Current guess for ss foreign capital in each country
+            - lhat_ss                   = Array: [I,S], Current guess for ss leisure decision for each country and cohort.
+            - n_ss                      = Array: [I], Current guess for ss labor supply
+            - w_ss                      = Array: [I], Current guess for each countries ss wage rate as a function of r_ss and bqvec_ss
+            - y_ss                      = Array: [I], Current guess for ss output of each country
             - Euler_kf                  = Scalar: Sum of the foreign capital stocks. Must = 0 for the ss to correctly solve
+            - r_ss                      = Scalar: Current guess for the steady-state intrest rate
+
 
         Outputs:
             - Euler_all                 = Array: [I+1], Euler_bq and Euler_kf stacked together. Must = 0 for the ss to correctly solve
@@ -804,32 +809,35 @@ class OLG(object):
                 3. Checks to see of the system has correctly solved
 
         Inputs:
-            - rss_guess                 = Scalar: Initial guess for the ss intrest rate
             - bqindiv_ss_guess          = Array: [I], Initial guess for ss bequests that each eligible-aged individual will receive
             - PrintSSEulErrors          = Boolean: True prints the Euler Errors in each iteration of calculating the steady state
+            - rss_guess                 = Scalar: Initial guess for the ss intrest rate
 
         Variables Called from Object:
             - self.I                    = Int: Number of Countries
-            - self.S                    = Int: Number of Cohorts
             - self.FirstFertilityAge    = Int: First age where agents give birth
             - self.FirstDyingAge        = Int: First age where agents begin to die
+            - self.S                    = Int: Number of Cohorts
 
         Variables Stored in Object:
-            - self.r_ss                 = Scalar: Steady state intrest rate
+            - self.avec_ss              = Array: [I,S], Steady state assets
             - self.bqindiv_ss           = Array: [I], Bequests that each eligible-aged individual will receive in the steady state
             - self.bqvec_ss             = Array: [I,S], Distribution of bequests in the steady state
-            - self.w_ss                 = Array: [I], Steady state wage rate
             - self.cvec_ss              = Array: [I,S], Steady state consumption
-            - self.avec_ss              = Array: [I,S], Steady state consumption
             - self.kd_ss                = Array: [I], Steady state total capital holdings for each country
             - self.kf_ss                = Array: [I], Steady state foreign capital in each country
-            - self.n_ss                 = Array: [I], Steady state labor supply
-            - self.y_ss                 = Array: [I], Steady state output of each country
             - self.lhat_ss              = Array: [I,S], Steady state leisure decision for each country and cohort
+            - self.n_ss                 = Array: [I], Steady state aggregate labor productivity in each country
+            - self.psi_ss               = Array: [I,S], Steady state value of shorthand calculation variable
+            - self.w_ss                 = Array: [I], Steady state wage rate
+            - self.y_ss                 = Array: [I], Steady state output in each country
+            - self.r_ss                 = Scalar: Steady state intrest rate
+
 
         Other Functions Called:
-            - self.EulerSystemSS
-            - self.GetSSComponenets
+            - self.EulerSystemSS = Initiates the whole process of solving for the steady state, starting with this function
+            - self.GetSSComponenets = Once the bequests and interest rates are solved for, this function gives us what
+                                      the implied individual pieces would be. Then, we have those pieces stored in the object.
 
         Objects in Function:
             - alldeadagent_assets       = Array: [I], Sum of assets of all the individuals who die in the steady state. 
@@ -861,6 +869,10 @@ class OLG(object):
         self.w_ss, self.cvec_ss, self.avec_ss, self.kd_ss, self.kf_ss, self.n_ss, self.y_ss, self.lhat_ss \
                 = self.GetSSComponents(self.bqvec_ss,self.r_ss)
 
+
+        #CALCULATION AND STORAGE OF PSI_SS IS SHOEHORNED HERE!!!!!!!!!!!!!!!!!!!!
+        self.psi_ss = self.get_Psi(self.w_ss,self.e_ss)
+
         #Sum of all assets holdings of dead agents to be distributed evenly among all eligible agents
         alldeadagent_assets = np.sum(self.avec_ss[:,self.FirstDyingAge:]*self.Mortality_ss[:,self.FirstDyingAge:]*\
                 self.Nhat_ss[:,self.FirstDyingAge:], axis=1)
@@ -888,18 +900,19 @@ class OLG(object):
             - None
 
         Variables Called from Object:
-            - self.w_ss
+            - self.avec_ss           = Array: [I,S], Steady state assets
+            - self.bqvec_ss          = Array: [I,S], Distribution of bequests in the steady state
+            - self.cvec_ss           = Array: [I,S], Steady state consumption
             - self.e_ss              = Array: [I,S], Labor produtivities for the Steady State
-            - self.psi_ss
-            - self.cvec_ss
-            - self.sigma             = Scalar: Rate of Time Preference
+            - self.Mortality_ss      = Array: [I,S], Mortality rates of each country for each age cohort in the steady state
+            - self.psi_ss            = Array: [I,S], Steady state value of shorthand calculation variable
+            - self.w_ss              = Array: [I], Steady state wage rate
             - self.beta              = Scalar: Calculated overall future discount rate
-            - self.Mortality_ss          = Array: [I,S], Mortality rates of each country for each age cohort in the steady state
-            - self.g_A              = Scalar: Growth rate of technology
-            - self.r_ss
             - self.delta             = Scalar: Calulated overall depreciation rate
-            - self.avec_ss
-            - self.bqvec_ss
+            - self.g_A               = Scalar: Growth rate of technology
+            - self.r_ss              = Scalar: Steady state intrest rate
+            - self.sigma             = Scalar: Rate of Time Preference
+
 
         Variables Stored in Object:
             - None
@@ -908,7 +921,7 @@ class OLG(object):
             - None
 
         Objects in Function:
-            - we          = Array: [I,S,T] or [I,S], Matrix product of w and e
+            - we                     = Array: [I,S,T] or [I,S], Matrix product of w and e
 
         Outputs:
             - None
@@ -931,14 +944,15 @@ class OLG(object):
             - None
 
         Variables Called from Object:
-            - self.avec_ss
-            - self.kf_ss
-            - self.kd_ss
-            - self.n_ss
-            - self.y_ss
-            - self.r_ss
-            - self.w_ss
-            - self.cvec_ss
+            - self.avec_ss              = Array: [I,S], Steady state assets
+            - self.cvec_ss              = Array: [I,S], Steady state consumption
+            - self.kf_ss                = Array: [I], Steady state foreign capital in each country
+            - self.kd_ss                = Array: [I], Steady state total capital holdings for each country
+            - self.n_ss                 = Array: [I], Steady state aggregate productivity in each country
+            - self.w_ss                 = Array: [I], Steady state wage rate
+            - self.y_ss                 = Array: [I], Steady state output in each country
+            - self.r_ss                 = Scalar: Steady state intrest rate
+
 
         Variables Stored in Object:
             - None
@@ -970,11 +984,11 @@ class OLG(object):
             - None
 
         Variables Called from Object:
-            - self.I                 = Int: Number of Countries
-            - self.S                     = Int: Number of Cohorts
-            - self.cvec_ss
-            - self.avec_ss
-            - self.bqvec_ss
+            - self.avec_ss              = Array: [I,S], Steady state assets
+            - self.bqvec_ss             = Array: [I,S], Distribution of bequests in the steady state
+            - self.cvec_ss              = Array: [I,S], Steady state consumption
+            - self.I                    = Int: Number of Countries
+            - self.S                    = Int: Number of Cohorts
 
         Variables Stored in Object:
             - None
@@ -1546,7 +1560,7 @@ class OLG(object):
                 - self.chi       = Scalar: Leisure preference parameter
                 - self.rho       = Scalar: The intratemporal elasticity of substitution between consumption and leisure
                 - self.VectorizeHouseholdSolver
-                - self.cvec_ss
+                - self.cvec_ss               = Array: [I,S], Steady state consumption
                 - self.MortalityRates          = Array: [I,S,T], Mortality rates of each country for each age cohort and year
 
 
@@ -1821,7 +1835,7 @@ class OLG(object):
 
         Variables Called from Object:
             - self.S                     = Int: Number of Cohorts
-            - self.r_ss
+            - self.r_ss                  = Scalar: Steady state intrest rate
             - self.I                 = Int: Number of Countries
             - self.T                 = Int: Number of time periods
             - self.bq_ss
@@ -1905,10 +1919,10 @@ class OLG(object):
             - self.I                = Int: Number of Countries
             - self.Timepath_counter = Int: Counter that keeps track of the number of iterations in solving for the time paths
             - self.I_touse          = List: [I], Roster of countries that are being used
-            - self.cvec_ss          = Array:[],
-            - self.lhat_ss          = Array:[],
-            - self.n_ss             = Array:[],
-            - self.kd_ss            = Array:[],
+            - self.cvec_ss              = Array: [I,S], Steady state consumption
+            - self.lhat_ss              = Array: [I,S], Steady state leisure decision for each country and cohort          
+            - self.n_ss                 = Array: [I], Steady state foreign capital in each country
+            - self.kd_ss                = Array: [I], Steady state total capital holdings for each country
 
         Variables Stored in Object:
             - None
