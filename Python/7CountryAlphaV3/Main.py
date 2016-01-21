@@ -6,11 +6,6 @@ np.set_printoptions(threshold = 3000, linewidth=2000, suppress=True)
 
 TimeModel=False #Activates timing the model
 
-"""
-S=20
-I=2
-sigma=3
-"""
 
 def Multi_Country(S,I,sigma):
 
@@ -40,7 +35,7 @@ def Multi_Country(S,I,sigma):
     PrintLoc = False #Displays the current locations of the program inside key TPI functions
     PrintSSEulErrors = False #Prints the euler errors in each attempt of calculating the steady state
     PrintSS = False #Prints the result of the Steady State functions
-    Print_cabqTimepaths = False #Prints the consumption, assets, and bequests timepath as it gets filled in for each iteration of TPI
+    Print_caTimepaths = False #Prints the consumption, assets, and bequests timepath as it gets filled in for each iteration of TPI
     Print_HH_Eulers = False #Prints whether the equations for the household decisions are satisfied (Equations 3.22, 3.19, and sum(assets) = 0)
     CheckerMode = True #Activates not printing much of anything, used in conjunction with RobustChecker.py
     Iterate = True #Shows the current iteration number and the associated Eulers
@@ -56,7 +51,6 @@ def Multi_Country(S,I,sigma):
     UseSSDemog = False #Activates using only steady state demographics for TPI calculation
     UseDiffProductivities = False #Activates having e vary across cohorts
     ADJUSTKOREAIMMIGRATION = True #Activates dividing Korean immigration by 100 to correctly scale with other countrys' immigration rates
-    VectorizeHouseholdSolver = True #Activates solving the household decision equations for all agents of a single age instead of each agent seperatly
 
     #Adjusts the country list if we are using less than 7 Countries
     if CheckerMode==False:
@@ -79,8 +73,7 @@ def Multi_Country(S,I,sigma):
     Firm_Params = (alpha, delta_ann, chi, rho, g_A)
 
     Levers = (PrintAges,PrintLoc,CheckerMode,Iterate,UseDiffDemog,
-    		  UseDiffProductivities,ADJUSTKOREAIMMIGRATION,VectorizeHouseholdSolver)
-
+    		  UseDiffProductivities,ADJUSTKOREAIMMIGRATION)
 
     #Initialize the class instance
     Model = AUX.OLG(Country_Roster,HH_params,Firm_Params,Levers)
@@ -106,7 +99,7 @@ def Multi_Country(S,I,sigma):
     a_init = Model.avec_ss*.7
     Model.set_initial_values(r_init, bq_init, a_init)
 
-    Model.Timepath_fsolve(Print_HH_Eulers, Print_cabqTimepaths, iterations_to_plot)
+    Model.Timepath_fsolve(Print_HH_Eulers, Print_caTimepaths, iterations_to_plot)
     if SaveFinalTPIPlot: Model.plot_timepaths(SAVE=True)
     
     pass
@@ -115,7 +108,7 @@ def Multi_Country(S,I,sigma):
 #run the model.
 
 start = time.time()
-Multi_Country(80,2,4)
+Multi_Country(40,2,4)
 tottime=time.time()-start
 
 if TimeModel==True:

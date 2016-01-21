@@ -10,7 +10,9 @@ import AuxiliaryDemographics as demog
 
 class OLG(object):
     """
-    TODO: SOME SORT OF DESCRIPTION OF WHAT THE OLG CLASS DOES
+    This object takes all of the parts of calculating this OLG model and stores it into a centralized object. This
+    has a huge advantage over previous versions as we are now able to quickly access stored parts when we are trying
+    to expand the code.
 
     For each function there are the following categories:
         Description:                    Brief description of what the function does
@@ -21,8 +23,6 @@ class OLG(object):
         Objects in Function:            Lists the variables that are exclusive to that function
         Outputs:                        Lists the outputs that the function puts out.
 
-    Note that if a category isn't listed, then there aren't any variables/functions that fit that category in that
-        particular function.
     """
 
     def __init__(self, countries, HH_Params, Firm_Params, Lever_Params):
@@ -41,8 +41,8 @@ class OLG(object):
             -Firm_Params            = tuple: contains alpha, annualized delta, chi, rho and g_A
             -HH_Params              = tuple: contains S, I, annualized Beta and sigma.
             -Lever_Params           = tuple: contains the following boolean levers indicated by the users:
-                                             PrintAges,self.PrintLoc,self.Print_cabqTimepaths,self.Iterate,self.UseDiffDemog,
-                                             self.UseDiffProductivities,self.ADJUSTKOREAIMMIGRATION,self.VectorizeHouseholdSolver
+                                             PrintAges,self.PrintLoc,self.Print_caTimepaths,self.Iterate,self.UseDiffDemog,
+                                             self.UseDiffProductivities,self.ADJUSTKOREAIMMIGRATION
 
         Variables Stored in Object:
 
@@ -116,7 +116,7 @@ class OLG(object):
 
         #Lever Parameters
         (PrintAges,self.PrintLoc,self.CheckerMode,self.Iterate,self.UseDiffDemog,\
-         self.UseDiffProductivities,self.ADJUSTKOREAIMMIGRATION,self.VectorizeHouseholdSolver) = Lever_Params
+         self.UseDiffProductivities,self.ADJUSTKOREAIMMIGRATION) = Lever_Params
 
         #Getting key ages for calculating demographic dynamics
         self.LeaveHouseAge, self.FirstFertilityAge, self.LastFertilityAge,\
@@ -159,23 +159,23 @@ class OLG(object):
 
         Variables Called from Object:
             - self.agestopull             = Array: [S], Contains which ages to be used from the data when S<80
+            - self.UseDiffDemog           = Boolean: True activates using unique country demographic data
+            - self.PrintLoc               = Boolean: True prints the location of the code, used for debugging purposes
+            - self.ADJUSTKOREAIMMIGRATION = Boolean: True will correctly adjust Korea's immigration, which is off by a factor of 100
             - self.I                      = Int: Number of Countries
             - self.S                      = Int: Number of Cohorts
             - self.T                      = Int: Number of Time Periods
             - self.FirstFertilityAge      = Int: First age where agents give birth
             - self.LastFertilityAge       = Int: Last age where agents give birth
-            - self.UseDiffDemog           = Boolean: True activates using unique country demographic data
-            - self.PrintLoc               = Boolean: True prints the location of the code, used for debugging purposes
-            - self.ADJUSTKOREAIMMIGRATION = Boolean: True will correctly adjust Korea's immigration, which is off by a factor of 100
 
         Variables Stored in Object:
-            - self.N                      = Array: [I,S,T], Population of each country for each age cohort and year
-            - self.Nhat                   = Array: [I,S,T], World opulation share of each country for each age cohort and year
             - self.all_FertilityAges      = Array: [I,S,f_range+T], Fertility rates from a f_range years ago to year T
             - self.FertilityRates         = Array: [I,S,T], Fertility rates from the present time to year T
-            - self.MortalityRates         = Array: [I,S,T], Mortality rates of each country for each age cohort and year
-            - self.Migrants               = Array: [I,S,T], Number of immigrants
             - self.g_N                    = Array: [T], Population growth rate for each year
+            - self.Migrants               = Array: [I,S,T], Number of immigrants
+            - self.MortalityRates         = Array: [I,S,T], Mortality rates of each country for each age cohort and year
+            - self.N                      = Array: [I,S,T], Population of each country for each age cohort and year
+            - self.Nhat                   = Array: [I,S,T], World opulation share of each country for each age cohort and year
 
         Other Functions Called:
             - None
@@ -269,23 +269,22 @@ class OLG(object):
                 5. Stores the new steady state and non-steady state variables of population shares and mortality in the OLG object
 
         Inputs:
+            - UseSSDemog                = Boolean: True uses the steady state demographics in calculating the transition path. Mostly used for debugging purposes
             - demog_ss_tol              = Scalar: The tolerance for the greatest absolute difference between 2 years' population shares 
                                                   before it is considered to be the steady state
-            - UseSSDemog                = Boolean: True uses the steady state demographics in calculating the transition path. Mostly used for debugging purposes
 
         Variables Called from Object:
-            - self.I                    = Int: Number of Countries
-            - self.S                    = Int: Number of Cohorts
-            - self.T                    = Int: Number of Time Periods
-            - self.T_1                  = Int: Transition year for the demographics
 
             - self.N                    = Array: [I,S,T], Population of each country for each age cohort and year
             - self.Nhat                 = Array: [I,S,T], World opulation share of each country for each age cohort and year
             - self.FertilityRates       = Array: [I,S,T], Fertility rates from the present time to year T
             - self.Migrants             = Array: [I,S,T], Number of immigrants
             - self.MortalityRates       = Array: [I,S,T], Mortality rates of each country for each age cohort and year
-
             - self.PrintLoc             = Boolean: True prints the location of the code, used for debugging purposes
+            - self.I                    = Int: Number of Countries
+            - self.S                    = Int: Number of Cohorts
+            - self.T                    = Int: Number of Time Periods
+            - self.T_1                  = Int: Transition year for the demographics
 
         Variables Stored in Object:
             - self.ImmigrationRates     = Array: [I,S,T], Immigration rates of each country for each age cohort and year
@@ -384,7 +383,7 @@ class OLG(object):
 
     def plotDemographics(self, T_touse="default", compare_across="T", data_year=0):
         """
-        Description: This just calls the plotDemographics function from the AuxiliaryDemographics.py file. See it for details
+        Description: This calls the plotDemographics function from the AuxiliaryDemographics.py file. See it for details
         """
 
         ages = self.FirstFertilityAge, self.LastFertilityAge, self.FirstDyingAge, self.MaxImmigrantAge
@@ -550,34 +549,35 @@ class OLG(object):
             - r_ss                      = Scalar: Steady-state intrest rate
 
         Variables Called from Object:
-            - self.alpha             = Scalar: Capital share of production
             - self.A                    = Array: [I], Technology level for each country
             - self.e_ss                 = Array: [I,S], Labor produtivities for the Steady State
-            - self.I                    = Int: Number of Countries
             - self.Nhat_ss              = Array: [I,S,T+S], World population share of each country for each age cohort and year
+            - self.I                    = Int: Number of Countries
+            - self.alpha                = Scalar: Capital share of production
+
 
         Variables Stored in Object:
             - None
 
         Other Functions Called:
-            - householdEuler_SS = System of Euler equations to solve the household problem. Used by opt.fsolve
-            - get_Psi = Solves for the Psi variable as in Equation 3.21
             - get_lhat = Solves for leisure as in Equation 3.20
             - get_n = Solves for labor supply as in Equation 3.14
+            - get_Psi = Solves for the Psi variable as in Equation 3.21
             - get_Y = Solves for output as in Equation 3.15
+            - householdEuler_SS = System of Euler equations to solve the household problem. Used by opt.fsolve
 
         Objects in Function:
-            - w_ss                      = Array: [I], Steady state wage rate
-            - psi_ss                    = Array: [I,S], Steady state Psi variable (see equation 3.21)
-            - c1_guess                  = Array: [I,S], Initial guess for consumption of the youngest cohort 
-            - opt_c1                    = Array: [I,S], Optimal consumption of the youngest cohort 
-            - cvec_ss                   = Array: [I,S], Steady state consumption for each country and cohort
             - avec_ss                   = Array: [I,S], Steady state assets holdings for each country and cohort
+            - cvec_ss                   = Array: [I,S], Steady state consumption for each country and cohort
+            - c1_guess                  = Array: [I,S], Initial guess for consumption of the youngest cohort
+            - kd_ss                     = Array: [I], Steady state total capital holdings for each country
+            - kf_ss                     = Array: [I], Steady state foreign capital in each country
             - lhat_ss                   = Array: [I,S], Steady state leisure decision for each country and cohort
             - n_ss                      = Array: [I], Steady state labor supply
-            - kd_ss                     = Array: [I], Steady state total capital holdings for each country
+            - opt_c1                    = Array: [I,S], Optimal consumption of the youngest cohort 
+            - psi_ss                    = Array: [I,S], Steady state Psi variable (see equation 3.21)
+            - w_ss                      = Array: [I], Steady state wage rate
             - y_ss                      = Array: [I], Steady state output of each country
-            - kf_ss                     = Array: [I], Steady state foreign capital in each country
 
         Outputs:
             - w_ss, cvec_ss, avec_ss, kd_ss, kf_ss, n_ss, y_ss, and lhat_ss
@@ -591,20 +591,22 @@ class OLG(object):
 
             Inputs:
                 - c_1                        = Array:, [I], Consumption of first cohort for each country
+                - psi_ss                     = Array: [I,S], Psi variable, used in Equation 3.21
                 - w_ss                       = Array: [I], Steady state wage rate
                 - r_ss                       = Scalar: Steady-state intrest rate
-                - psi_ss                     = Array: [I,S], Psi variable, used in Equation 3.21
+
 
             Variables Called from Object:
+                - self.e_ss                  = Array: [I,S], Labor produtivities for the Steady State
+                - self.Mortality_ss          = Array: [I,S], Mortality rates of each country for each age cohort in the steady state
                 - self.I                     = Int: Number of Countries
                 - self.S                     = Int: Number of Cohorts
                 - self.beta                  = Scalar: Calculated overall future discount rate
-                - self.Mortality_ss          = Array: [I,S], Mortality rates of each country for each age cohort in the steady state
-                - self.delta                 = Scalar: Calulated overall depreciation rate
-                - self.sigma                 = Scalar: Rate of Time Preference
-                - self.g_A                   = Scalar: Growth rate of technology
-                - self.e_ss                  = Array: [I,S], Labor produtivities for the Steady State
                 - self.chi                   = Scalar: Leisure preference parameter
+                - self.delta                 = Scalar: Calulated overall depreciation rate
+                - self.g_A                   = Scalar: Growth rate of technology
+                - self.sigma                 = Scalar: Rate of Time Preference
+
 
             Variables Stored in Object:
                 - None
@@ -616,8 +618,8 @@ class OLG(object):
                 - None
 
             Outputs:
-                - cvec_ss                    = Array: [I,S], Vector of steady state consumption
                 - avec_ss                    = Array: [I,S+1], Vector of steady state assets
+                - cvec_ss                    = Array: [I,S], Vector of steady state consumption
             """
 
 
@@ -650,10 +652,10 @@ class OLG(object):
                   consumption for each country makes the final assets holdings of each country equal to 0
 
             Inputs:
-                - c_1                        = Array:, [I], Consumption of first cohort for each country
+                - c_1                        = Array: [I], Consumption of first cohort for each country
+                - psi_ss                     = Array: [I,S], Psi variable, used in Equation 3.21
                 - w_ss                       = Array: [I], Steady state wage rate
                 - r_ss                       = Scalar: Steady-state intrest rate
-                - psi_ss                     = Array: [I,S], Psi variable, used in Equation 3.21
 
             Variables Called from Object:
                 - None
@@ -662,7 +664,8 @@ class OLG(object):
                 - None
 
             Other Functions Called:
-                - get_lifetimedecisionsSS
+                - get_lifetimedecisionsSS = calls the above function for the purpose of solving for its roots
+                                            in an fsolve.
 
             Objects in Function:
                 - None
@@ -728,12 +731,12 @@ class OLG(object):
             - PrintSSEulErrors          = Boolean: True prints the Euler Errors in each iteration of calculating the steady state
 
         Variables Called from Object:
-            - self.I                    = Int: Number of Countries
-            - self.S                    = Int: Number of Cohorts
-            - self.FirstFertilityAge    = Int: First age where agents give birth
-            - self.FirstDyingAge        = Int: First age where mortality rates effect agents
             - self.Mortality_ss         = Array: [I,S], Mortality rates of each country for each age cohort in the steady state
             - self.Nhat_ss              = Array: [I,S,T+S], World population share of each country for each age cohort and year
+            - self.FirstDyingAge        = Int: First age where mortality rates effect agents
+            - self.FirstFertilityAge    = Int: First age where agents give birth
+            - self.I                    = Int: Number of Countries
+            - self.S                    = Int: Number of Cohorts
 
         Variables Stored in Object:
             - None
@@ -744,24 +747,26 @@ class OLG(object):
                                 of the world intrest rate and bequests
 
         Objects in Function:
-            - bqindiv_ss                = Array: [I], Current guess for the amount of bequests each eligible-aged 
-                                                      individual will receive in each country
-            - r_ss                      = Scalar: Current guess for the steady-state intrest rate
-            - bq_ss                     = Array: [I,S], Vector of bequests received for each cohort and country.
-                                                        Basically bqindiv_ss copied for each eligible-aged individual.
-            - w_ss                      = Array: [I], Current guess for each countries ss wage rate as a function of r_ss and bqvec_ss
-            - cvec_ss                   = Array: [I,S], Current guess for ss consumption for each country and cohort
-            - avec_ss                   = Array: [I,S], Current guess for the ss assets holdings for each country and cohort
-            - kd_ss                     = Array: [I], Current guess for ss total capital holdings for each country
-            - kf_ss                     = Array: [I], Current guess for ss foreign capital in each country
-            - n_ss                      = Array: [I], Current guess for ss labor supply
-            - y_ss                      = Array: [I], Current guess for ss output of each country
-            - lhat_ss                   = Array: [I,S], Current guess for ss leisure decision for each country and cohort.
             - alldeadagent_assets       = Array: [I], Sum of assets of all the individuals who die in the steady state. 
                                                       Evenly distributed to eligible-aged cohorts.
+            - avec_ss                   = Array: [I,S], Current guess for the ss assets holdings for each country and cohort
+
+            - bqindiv_ss                = Array: [I], Current guess for the amount of bequests each eligible-aged 
+                                                      individual will receive in each country
+            - bq_ss                     = Array: [I,S], Vector of bequests received for each cohort and country.
+                                                        Basically bqindiv_ss copied for each eligible-aged individual.
+            - cvec_ss                   = Array: [I,S], Current guess for ss consumption for each country and cohort
+            - kd_ss                     = Array: [I], Current guess for ss total domestically-held capital for each country
+            - kf_ss                     = Array: [I], Current guess for ss foreign capital in each country
+            - lhat_ss                   = Array: [I,S], Current guess for ss leisure decision for each country and cohort.
+            - n_ss                      = Array: [I], Current guess for ss labor supply
+            - w_ss                      = Array: [I], Current guess for each countries ss wage rate as a function of r_ss and bqvec_ss
+            - y_ss                      = Array: [I], Current guess for ss output of each country
+            - r_ss                      = Scalar: Current guess for the steady-state intrest rate
             - Euler_bq                  = Array: [I], Distance between bqindiv_ss and the actual bqindiv_ss calculated in the system. 
                                                       Must = 0 for the ss to correctly solve.
             - Euler_kf                  = Scalar: Sum of the foreign capital stocks. Must = 0 for the ss to correctly solve
+
 
         Outputs:
             - Euler_all                 = Array: [I+1], Euler_bq and Euler_kf stacked together. Must = 0 for the ss to correctly solve
@@ -804,32 +809,35 @@ class OLG(object):
                 3. Checks to see of the system has correctly solved
 
         Inputs:
-            - rss_guess                 = Scalar: Initial guess for the ss intrest rate
             - bqindiv_ss_guess          = Array: [I], Initial guess for ss bequests that each eligible-aged individual will receive
             - PrintSSEulErrors          = Boolean: True prints the Euler Errors in each iteration of calculating the steady state
+            - rss_guess                 = Scalar: Initial guess for the ss intrest rate
 
         Variables Called from Object:
             - self.I                    = Int: Number of Countries
-            - self.S                    = Int: Number of Cohorts
             - self.FirstFertilityAge    = Int: First age where agents give birth
             - self.FirstDyingAge        = Int: First age where agents begin to die
+            - self.S                    = Int: Number of Cohorts
 
         Variables Stored in Object:
-            - self.r_ss                 = Scalar: Steady state intrest rate
+            - self.avec_ss              = Array: [I,S], Steady state assets
             - self.bqindiv_ss           = Array: [I], Bequests that each eligible-aged individual will receive in the steady state
             - self.bqvec_ss             = Array: [I,S], Distribution of bequests in the steady state
-            - self.w_ss                 = Array: [I], Steady state wage rate
             - self.cvec_ss              = Array: [I,S], Steady state consumption
-            - self.avec_ss              = Array: [I,S], Steady state consumption
-            - self.kd_ss                = Array: [I], Steady state total capital holdings for each country
+            - self.kd_ss                = Array: [I], Steady state total domestically-owned capital holdings for each country
             - self.kf_ss                = Array: [I], Steady state foreign capital in each country
-            - self.n_ss                 = Array: [I], Steady state labor supply
-            - self.y_ss                 = Array: [I], Steady state output of each country
             - self.lhat_ss              = Array: [I,S], Steady state leisure decision for each country and cohort
+            - self.n_ss                 = Array: [I], Steady state aggregate labor productivity in each country
+            - self.psi_ss               = Array: [I,S], Steady state value of shorthand calculation variable
+            - self.w_ss                 = Array: [I], Steady state wage rate
+            - self.y_ss                 = Array: [I], Steady state output in each country
+            - self.r_ss                 = Scalar: Steady state intrest rate
+
 
         Other Functions Called:
-            - self.EulerSystemSS
-            - self.GetSSComponenets
+            - self.EulerSystemSS = Initiates the whole process of solving for the steady state, starting with this function
+            - self.GetSSComponenets = Once the bequests and interest rates are solved for, this function gives us what
+                                      the implied individual pieces would be. Then, we have those pieces stored in the object.
 
         Objects in Function:
             - alldeadagent_assets       = Array: [I], Sum of assets of all the individuals who die in the steady state. 
@@ -861,6 +869,10 @@ class OLG(object):
         self.w_ss, self.cvec_ss, self.avec_ss, self.kd_ss, self.kf_ss, self.n_ss, self.y_ss, self.lhat_ss \
                 = self.GetSSComponents(self.bqvec_ss,self.r_ss)
 
+
+        #CALCULATION AND STORAGE OF PSI_SS IS SHOEHORNED HERE!!!!!!!!!!!!!!!!!!!!
+        self.psi_ss = self.get_Psi(self.w_ss,self.e_ss)
+
         #Sum of all assets holdings of dead agents to be distributed evenly among all eligible agents
         alldeadagent_assets = np.sum(self.avec_ss[:,self.FirstDyingAge:]*self.Mortality_ss[:,self.FirstDyingAge:]*\
                 self.Nhat_ss[:,self.FirstDyingAge:], axis=1)
@@ -888,18 +900,20 @@ class OLG(object):
             - None
 
         Variables Called from Object:
-            - self.w_ss              = Array: [I], Steady state wage rate
+
+            - self.avec_ss           = Array: [I,S], Steady state assets
+            - self.bqvec_ss          = Array: [I,S], Distribution of bequests in the steady state
+            - self.cvec_ss           = Array: [I,S], Steady state consumption
             - self.e_ss              = Array: [I,S], Labor produtivities for the Steady State
-            - self.psi_ss
-            - self.cvec_ss
-            - self.sigma             = Scalar: Rate of Time Preference
-            - self.beta              = Scalar: Calculated overall future discount rate
             - self.Mortality_ss      = Array: [I,S], Mortality rates of each country for each age cohort in the steady state
-            - self.g_A               = Scalar: Growth rate of technology
-            - self.r_ss
+            - self.psi_ss            = Array: [I,S], Steady state value of shorthand calculation variable
+            - self.w_ss              = Array: [I], Steady state wage rate
+            - self.beta              = Scalar: Calculated overall future discount rate
             - self.delta             = Scalar: Calulated overall depreciation rate
-            - self.avec_ss
-            - self.bqvec_ss
+            - self.g_A               = Scalar: Growth rate of technology
+            - self.r_ss              = Scalar: Steady state intrest rate
+            - self.sigma             = Scalar: Rate of Time Preference
+
 
         Variables Stored in Object:
             - None
@@ -908,7 +922,7 @@ class OLG(object):
             - None
 
         Objects in Function:
-            - we          = Array: [I,S,T] or [I,S], Matrix product of w and e
+            - we                     = Array: [I,S,T] or [I,S], Matrix product of w and e
 
         Outputs:
             - None
@@ -931,14 +945,15 @@ class OLG(object):
             - None
 
         Variables Called from Object:
-            - self.avec_ss
-            - self.kf_ss
-            - self.kd_ss
-            - self.n_ss
-            - self.y_ss
-            - self.r_ss
-            - self.w_ss
-            - self.cvec_ss
+            - self.avec_ss              = Array: [I,S], Steady state assets
+            - self.cvec_ss              = Array: [I,S], Steady state consumption
+            - self.kf_ss                = Array: [I], Steady state foreign capital in each country
+            - self.kd_ss                = Array: [I], Steady state total capital holdings for each country
+            - self.n_ss                 = Array: [I], Steady state aggregate productivity in each country
+            - self.w_ss                 = Array: [I], Steady state wage rate
+            - self.y_ss                 = Array: [I], Steady state output in each country
+            - self.r_ss                 = Scalar: Steady state intrest rate
+
 
         Variables Stored in Object:
             - None
@@ -970,11 +985,11 @@ class OLG(object):
             - None
 
         Variables Called from Object:
-            - self.I                 = Int: Number of Countries
-            - self.S                     = Int: Number of Cohorts
-            - self.cvec_ss
-            - self.avec_ss
-            - self.bqvec_ss
+            - self.avec_ss              = Array: [I,S], Steady state assets
+            - self.bqvec_ss             = Array: [I,S], Distribution of bequests in the steady state
+            - self.cvec_ss              = Array: [I,S], Steady state consumption
+            - self.I                    = Int: Number of Countries
+            - self.S                    = Int: Number of Cohorts
 
         Variables Stored in Object:
             - None
@@ -1043,10 +1058,8 @@ class OLG(object):
     def get_initialguesses(self):
         """
         Description:
-            - Generates an initial guess path used for beginning TPI calculation. It follows the form
-              of a quadratic function:
-
-              y = aa x^2 + bb x + cc
+            - Generates an initial guess path used for beginning TPI calculation. The guess for the transition path for r follows the form
+              of a quadratic function given by y = aa x^2 + bb x + cc, while the guess for the bequests transition path is linear 
 
         Inputs:
             - None
@@ -1089,16 +1102,16 @@ class OLG(object):
 
         return rpath_guess, bqpath_guess
 
-    def GetTPIComponents(self, bqvec_path, r_path, Print_HH_Eulers, Print_cabqTimepaths):
+    def GetTPIComponents(self, bqvec_path, r_path, Print_HH_Eulers, Print_caTimepaths):
         """
         Description:
             -Description of the Function
 
         Inputs:
-            - bqvec_path
-            - r_path
-            - Print_HH_Eulers
-            - Print_cabqTimepaths
+            - bqvec_path               = Array: [I,S,T], Transition path for distribution of bequests for each country
+            - r_path                   = Array: [T], Transition path for the intrest rate
+            - Print_HH_Eulers          = Boolean: True prints out if all of the household equations were satisfied or not
+            - Print_caTimepaths      = Boolean: True prints out the timepaths of consumption and assets. For debugging mostly
 
         Variables Called from Object:
             - None
@@ -1107,28 +1120,28 @@ class OLG(object):
             - None
 
         Other Functions Called:
-            - self.get_Psi
-            - get_c_a_matrices
-            - self.get_lhat
-            - self.get_n
-            - self.get_Y
+            - self.get_Psi = Application of Equation 3.21
+            - get_c_a_matrices = Gets consumption and assets decisions as a function of r, w, and bq
+            - self.get_lhat = Gets leisure as a function of c, w, and e
+            - self.get_n = Gets aggregate labor supply
+            - self.get_Y = Gets output
 
         Objects in Function:
-            - psi
+            - psi                       = Array: [I,S,T], Transition path of shorthand calculation variable Psi (Equation 3.21)
 
         Outputs:
-            - w_path
-            - c_matrix
-            - a_matrix
-            - kd_path
-            - kf_path
-            - n_path
-            - y_path
-            - lhat_path
+            - w_path                    = Array: [I,T], Transition path for the wage rate in each country
+            - c_matrix                  = Array: [I,S,T], Transition path for consumption in each country
+            - a_matrix                  = Array: [I,S,T], Transition path for assets holdings in each country
+            - kd_path                   = Array: [I,T], Transition path for total domestically-owned capital in each country
+            - kf_path                   = Array: [I,T], Transition path for foreign capital in each country
+            - n_path                    = Array: [I,T], Transition path for total labor supply in each country
+            - y_path                    = Array: [I,T], Transition path for output in each country
+            - lhat_path                 = Array: [I,S,T], Transition path for leisure for each cohort and country
         """
 
         #Functions that solve lower-diagonal household decisions in vectors
-        def get_lifetime_decisions_LOWERTRIANGLETEST(c0_guess, c_uppermat, a_uppermat, w_path, r_path, psi, bqvec_path):
+        def get_lifetime_decisions_Future(c0_guess, c_uppermat, a_uppermat, w_path, r_path, psi, bqvec_path):
             """
             Description:
                 -Description of the Function
@@ -1195,50 +1208,8 @@ class OLG(object):
 
             return c_matrix, a_matrix
 
-        def get_lower_triangle_Euler_TEST(c0_guess, c_uppermat, a_uppermat, w_path, r_path, psi, bqvec_path):
-            """
-            Description:
-                -Description of the Function
-
-            Inputs:
-                - c0_guess
-                - c_uppermat
-                - a_uppermat
-                - w_path
-                - r_path
-                - psi
-                - bqvec_path
-
-            Variables Called from Object:
-                - None
-
-            Variables Stored in Object:
-                - None
-
-            Other Functions Called:
-                - get_lifetime_decisions_LOWERTRIANGLETEST
-
-            Objects in Function:
-                - None 
-
-            Outputs:
-                - Euler
-
-            """
-
-            
-            #Gets the decisions paths for each agent
-            c_matrix, a_matrix = get_lifetime_decisions_LOWERTRIANGLETEST(c0_guess, c_uppermat, a_uppermat, w_path, r_path, psi, bqvec_path)
-            
-            #Household Eulers are solved when the agents have no assets at the end of their life
-            Euler = np.ravel(a_matrix[:,-1,self.S:])
-
-            #print np.round(a_matrix[0,-1,self.S:], decimals=3)
-
-            return Euler
-
         #Functions that solve upper-diagonal household decisions in vectors
-        def get_lifetime_decisions_UPPERTRIANGLETEST(c0_guess, c_matrix, a_matrix, w_path, r_path, psi, bqvec_path):
+        def get_lifetime_decisions_Alive(c0_guess, c_matrix, a_matrix, w_path, r_path, psi, bqvec_path):
             """
             Description:
                 -Description of the Function
@@ -1295,131 +1266,21 @@ class OLG(object):
 
             return c_matrix, a_matrix
 
-        def get_upper_triangle_Euler_TEST(c0_guess, c_matrix, a_matrix, w_path, r_path, psi, bqvec_path):
+        #System of Euler Equations that must be satisfied to solve the household problem
+        def HHEulerSystem(c0_guess, c_matrix, a_matrix, w_path, r_path, psi, bqvec_path, Alive):
             """
             Description:
                 -Description of the Function
 
             Inputs:
                 - c0_guess
-                - c_matrix
-                - a_matrix
+                - c_uppermat
+                - a_uppermat
                 - w_path
                 - r_path
                 - psi
                 - bqvec_path
-
-            Variables Called from Object:
-                - self.S                     = Int: Number of Cohorts
-
-            Variables Stored in Object:
-                - None
-
-            Other Functions Called:
-                - get_lifetime_decisions_UPPERTRIANGLETEST
-
-            Objects in Function:
-                - None
-
-            Outputs:
-                - Euler
-            """
-
-            #Gets the decisions paths for each agent
-            c_matrix, a_matrix = get_lifetime_decisions_UPPERTRIANGLETEST(c0_guess, c_matrix, a_matrix, w_path, r_path, psi, bqvec_path)
-            
-            #Household Eulers are solved when the agents have no assets at the end of their life
-            Euler = np.ravel(a_matrix[:,-1,1:self.S])
-
-            #print np.round(a_matrix[0,-1,self.S:], decimals=3)
-
-            return Euler
-
-        #Functions that solve household decisions with for-loops (old)
-        def get_lifetime_decisionsTPI(c_1, w_life, r_life, mort_life, e_life, psi_life, bq_life, a_current, age):
-
-            """
-            Description:
-                -Description of the Function
-
-            Inputs:
-                - c_1
-                - w_life
-                - r_life
-                - mort_life
-                - e_life
-                - psi_life
-                - bq_life
-                - a_current
-                - age
-
-            Variables Called from Object:
-                - self.beta              = Scalar: Calculated overall future discount rate
-                - self.delta             = Scalar: Calulated overall depreciation rate
-                - self.g_A               = Scalar: Growth rate of technology
-                - self.rho               = Scalar: The intratemporal elasticity of substitution between consumption and leisure
-                - self.chi               = Scalar: Leisure preference parameter
-
-            Variables Stored in Object:
-                - None
-
-            Other Functions Called:
-                - None
-
-            Objects in Function:
-                - decisions
-
-            Outputs:
-                - cvec_path
-                - avec_path
-
-            """
-
-            #Number of decisions the agent needs to make in its lifetime
-            decisions = self.S - age -1
-
-            #Initializes the consumption and assets vectors for this agent
-            cvec_path = np.zeros((self.I,decisions+1))
-            avec_path = np.zeros((self.I,decisions+2))
-            cvec_path[:,0] = c_1
-            avec_path[:,0] = a_current
-
-            #Loops through each decision the agent makes
-            for s in range(decisions):
-
-                #Algebraically manipulated version of Equation 3.22
-                cvec_path[:,s+1] = ((self.beta * (1-mort_life[:,s]) * (1 + r_path[s+1] - self.delta)\
-                                   * psi_life[:,s+1])/psi_life[:,s])**(1/self.sigma) * cvec_path[:,s]*np.exp(-self.g_A)
-
-                #Algebraically manipulataed version of Equation 3.19
-                avec_path[:,s+1] = (w_life[:,s]*e_life[:,s] + (1 + r_life[s] - self.delta)*avec_path[:,s] + \
-                        bq_life[:,s] - cvec_path[:,s]*(1+w_life[:,s]*e_life[:,s]*\
-                        (self.chi/(w_life[:,s]*e_life[:,s]))**self.rho))*np.exp(-self.g_A)
-
-            #Gets the remaining assets in the final year of the agent't lifetime
-            avec_path[:,s+2] = (w_life[:,s+1]*e_life[:,s+1] + (1 + r_life[s+1] - self.delta)*avec_path[:,s+1] \
-                    - cvec_path[:,s+1]*(1+w_life[:,s+1]*e_life[:,s+1]*(self.chi/(w_path[:,s+1]*e_life[:,s+1]))\
-                    **self.rho))*np.exp(-self.g_A)
-
-
-            return cvec_path, avec_path
-
-        def optc1_Euler_TPI(c1_guess, w_life, r_life, mort_life, e_life, psi_life, bq_life, a_current, age):
-
-            """
-            Description:
-                -Description of the Function
-
-            Inputs:
-                - c1_guess
-                - w_life
-                - r_life
-                - mort_life
-                - e_life
-                - psi_life
-                - bq_life
-                - a_current
-                - age
+                - Alive
 
             Variables Called from Object:
                 - None
@@ -1428,32 +1289,35 @@ class OLG(object):
                 - None
 
             Other Functions Called:
-                - get_lifetime_decisionsTPI
+                - get_lifetime_decisions_Alive
+                - get_lifetime_decisions_Future
 
             Objects in Function:
-                - cpath_indiv
-                - apath_indiv
+                - None 
 
             Outputs:
                 - Euler
 
             """
 
+            if Alive:
+                #Gets the decisions paths for each agent
+                c_matrix, a_matrix = get_lifetime_decisions_Alive(c0_guess, c_matrix, a_matrix, w_path, r_path, psi, bqvec_path)
+                
+                #Household Eulers are solved when the agents have no assets at the end of their life
+                Euler = np.ravel(a_matrix[:,-1,1:self.S])
 
-            #Gets the individual decisions paths of the agent to check if finals assets are 0
-            cpath_indiv, apath_indiv = get_lifetime_decisionsTPI(c1_guess, w_life, r_life, mort_life, e_life, psi_life, bq_life, a_current, age)
-            
-            #Household Eulers are solved when the agent doesn't have any assets at the end of its life
-            Euler = np.ravel(apath_indiv[:,-1])
-
-            if np.any(cpath_indiv<0):
-                print "WARNING! The fsolve for initial optimal consumption guessed a negative number"
-                Euler = np.ones(Euler.shape[0])*9999.
+            else:
+                #Gets the decisions paths for each agent
+                c_matrix, a_matrix = get_lifetime_decisions_Future(c0_guess, c_matrix, a_matrix, w_path, r_path, psi, bqvec_path)
+                
+                #Household Eulers are solved when the agents have no assets at the end of their life
+                Euler = np.ravel(a_matrix[:,-1,self.S:])
 
             return Euler
 
         #Checks various household condidions
-        def check_household_conditions(w_path, r_path, c_matrix, a_matrix, psi, bqvec_path):  
+        def check_household_conditions(w_path, r_path, c_matrix, a_matrix, psi, bqvec_path):
 
             """
             Description:
@@ -1472,10 +1336,10 @@ class OLG(object):
                 - self.e                 = Array: [I,S,T], Labor Productivities
                 - self.sigma             = Scalar: Rate of Time Preference
                 - self.beta              = Scalar: Calculated overall future discount rate
-                - self.g_A              = Scalar: Growth rate of technology
+                - self.g_A               = Scalar: Growth rate of technology
                 - self.delta             = Scalar: Calulated overall depreciation rate
-                - self.chi       = Scalar: Leisure preference parameter
-                - self.rho       = Scalar: The intratemporal elasticity of substitution between consumption and leisure
+                - self.chi               = Scalar: Leisure preference parameter
+                - self.rho               = Scalar: The intratemporal elasticity of substitution between consumption and leisure
 
             Variables Stored in Object:
                 - None
@@ -1489,12 +1353,10 @@ class OLG(object):
             Outputs:
                 - Chained_C_Condition
                 - Modified_Budget_Constraint
-                - Modified_Budget_Constraint2
                 - Household_Euler
 
             """
 
-            
             #Multiplies wages and productivities ahead of time for easy calculations of the first two equations below
             we = np.einsum("it,ist->ist",w_path[:,:self.T-1],self.e[:,:-1,:self.T-1])
 
@@ -1508,76 +1370,61 @@ class OLG(object):
                                          -  (we + (1+r_path[:self.T-1]-self.delta)*a_matrix[:,:-2,:self.T-1] + bqvec_path[:,:-1,:self.T-1]\
                                          - a_matrix[:,1:-1,1:self.T]*np.exp(self.g_A))\
                                          /(1 + we*(self.chi/we)**self.rho)
-            
-            #Multiplies wages and productivities ahead of time for easy calculations of the two equations below
-            we = np.einsum("it,ist->ist",w_path[:,:self.T],self.e[:,:-1,:self.T])
-            
-            #Disparity between left and right sides of Equation 3.19 algebraically manipulated so assets next period is the left-side variable
-            Modified_Budget_Constraint2 = - a_matrix[:,1:-1,1:self.T+1]\
-                                          + ( we + (1+r_path[:self.T] - self.delta)*a_matrix[:,:-2,:self.T] + bqvec_path[:,:-1,:self.T]\
-                                          - (c_matrix[:,:-1,:self.T]*(1+we*(self.chi/we)**self.rho)) )*np.exp(-self.g_A)
 
             #Any remaining assets each agent has at the end of its lifetime. Should be 0 if other Eulers are solving correctly
             Household_Euler = a_matrix[:,-1,:]
 
-            return Chained_C_Condition, Modified_Budget_Constraint, Modified_Budget_Constraint2, Household_Euler
+            return Chained_C_Condition, Modified_Budget_Constraint, Household_Euler
 
         #Gets consumption and assets matrices using fsolve
-        def get_c_a_matrices(w_path, r_path, psi, bqvec_path, Print_HH_Eulers, Print_cabqTimepaths):
+        def get_c_a_matrices(w_path, r_path, psi, bqvec_path, Print_HH_Eulers, Print_caTimepaths):
             """
             Description:
-                -Description of the Function
+                - Solves for the optimal consumption and assets paths by searching over initial consumptions for agents alive and unborn
 
             Inputs:
-                - w_path
-                - r_path
-                - psi
-                - bqvec_path
-                - Print_HH_Eulers
-                - Print_cabqTimepaths
+                - w_path                         = Array: [I,T], Transition path for the wage rate in each country
+                - r_path                         = Array: [T], Transition path for the intrest rate
+                - psi                            = Array: [I,S,T], Transition path of shorthand calculation variable Psi (Equation 3.21)
+                - bqvec_path                     = Array: [I,S,T], Transition path for distribution of bequests for each country                 
+                - Print_HH_Eulers                = Boolean: True prints out if all of the household equations were satisfied or not
+                - Print_caTimepaths              = Boolean: True prints out the timepaths of consumption and assets. For debugging mostly
 
             Variables Called from Object:
-                - self.I                 = Int: Number of Countries
-                - self.S                     = Int: Number of Cohorts
-                - self.T                 = Int: Number of time periods
-                - self.e                 = Array: [I,S,T], Labor Productivities
-                - self.delta             = Scalar: Calulated overall depreciation rate
-                - self.a_init
-                - self.chi       = Scalar: Leisure preference parameter
-                - self.rho       = Scalar: The intratemporal elasticity of substitution between consumption and leisure
-                - self.VectorizeHouseholdSolver
-                - self.cvec_ss
-                - self.MortalityRates          = Array: [I,S,T], Mortality rates of each country for each age cohort and year
-
+                - self.I                         = Int: Number of Countries
+                - self.S                         = Int: Number of Cohorts
+                - self.T                         = Int: Number of time periods
+                - self.e                         = Array: [I,S,T], Labor Productivities
+                - self.a_init                    = Array: [I,S], Initial asset distribution given by User
+                - self.cvec_ss                   = Array: [I,S], Steady state consumption
+                - self.MortalityRates            = Array: [I,S,T], Mortality rates of each country for each age cohort and year
+                - self.chi                       = Scalar: Leisure preference parameter
+                - self.delta                     = Scalar: Calulated overall depreciation rate
+                - self.rho                       = Scalar: The intratemporal elasticity of substitution between consumption and leisure
 
             Variables Stored in Object:
-                - self.c0_alive
-                - self.c0_future
+                - None
 
             Other Functions Called:
-                - get_upper_traingle_Euler_TEST
-                - get_lower_triangle_Euler_TEST
-                - optc1_Euler_TPI
-                - get_lifetime_decisionsTPI
+                - HHEulerSystem = Objective function for households (final assets at death = 0). Must solve for HH conditions to be satisfied
+                - get_lifetime_decisions_Alive = Gets lifetime consumption and assets decisions for agents alive in the initial time period
+                - get_lifetime_decisions_Future = Gets lifetime consumption and assets decisions for agents to be born in the future
 
             Objects in Function:
-                - c0alive_guess
-                - p
-                - c1_guess
-                - w_life
-                - r_life
-                - mort_life
-                - e_life
-                - psi_life
-                - bq_life
-                - a_current
-                - cpath_indiv
-                - apath_indiv
+                - c0alive_guess                  = Array: [I,S-1], Initial guess for consumption in this period for each agent alive
+                - c0future_guess                 = Array: [I,T], Initial guess for initial consumption for each agent to be born in the future
+                - Chained_C_Condition            = Array: [I,S,T], Disparity between left and right sides of Equation 3.22.
+                                                                   Should be all 0s if the household problem was solved correctly.
+                - Modified_Budget_Constraint     = Array: [I,S,T], Disparity between left and right sides of Equation 3.19.
+                                                                   Should be all 0s if the household problem was solved correctly.
+                - Household_Euler                = Array: [I,T], Leftover assets at the end of the final period each agents lives.
+                                                                 Should be all 0s if the household problem was solved correctly
 
+                TODO: Algebriacally manipulate 3.19 in StepbyStep so it looks like the code
 
             Outputs:
-                - c_matrix[:,:,:self.T]
-                - a_matrix[:,:-1,:self.T]
+                - c_matrix[:,:,:self.T]          = Array: [I,S,T], Consumption transition path for each country and cohort
+                - a_matrix[:,:-1,:self.T]        = Array: [I,S,T], Assets transition path for each country and cohort
 
             """
 
@@ -1590,112 +1437,37 @@ class OLG(object):
             c_matrix[:,self.S-1,0] = (w_path[:,0]*self.e[:,self.S-1,0] + (1 + r_path[0] - self.delta)*self.a_init[:,self.S-1] + bqvec_path[:,self.S-1,0])\
             /(1+w_path[:,0]*self.e[:,self.S-1,0]*(self.chi/(w_path[:,0]*self.e[:,self.S-1,0]))**(self.rho))
 
-            #Will solve the household matrices using vectorization if = True and by agent if = False
-            if self.VectorizeHouseholdSolver:
-            
-                c0alive_guess = np.ones((self.I, self.S-1))*.3
+            #Initial guess for agents currently alive            
+            c0alive_guess = np.ones((self.I, self.S-1))*.3
 
-                opt.fsolve(get_upper_triangle_Euler_TEST, c0alive_guess, args=(c_matrix, a_matrix, w_path, r_path, psi, bqvec_path))
+            #Fills in c_matrix and a_matrix with the correct decisions for agents currently alive
+            opt.fsolve(HHEulerSystem, c0alive_guess, args=(c_matrix, a_matrix, w_path, r_path, psi, bqvec_path, True))
 
-                #Initializes a guess for the first vector for the fsolve to use
+            #Initializes a guess for the first vector for the fsolve to use
+            c0future_guess = np.zeros((self.I,self.T))
+            for i in range(self.I):
+                c0future_guess[i,:] = np.linspace(c_matrix[i,1,0], self.cvec_ss[i,-1], self.T)
 
-                c0future_guess = np.zeros((self.I,self.T))
-                for i in range(self.I):
-                    c0future_guess[i,:] = np.linspace(c_matrix[i,1,0], self.cvec_ss[i,-1], self.T)
+            #Solves for the entire consumption and assets matrices for agents not currently born
+            opt.fsolve(HHEulerSystem, c0future_guess, args=(c_matrix, a_matrix, w_path, r_path, psi, bqvec_path, False))
 
-                #Solves for the entire consumption and assets matrices
-                opt.fsolve(get_lower_triangle_Euler_TEST, c0future_guess, args=(c_matrix, a_matrix, w_path, r_path, psi, bqvec_path))
+            #Prints consumption and assets matrices for country 0. 
+            #NOTE: the output is the transform of the original matrices, so each row is time and each col is cohort
+            if Print_caTimepaths:
+                print "Consumption Matrix for country 0", str("("+self.I_touse[0]+")")
+                print np.round(np.transpose(c_matrix[0,:,:self.T]), decimals=3)
+                print "Assets Matrix for country 0", str("("+self.I_touse[0]+")")
+                print np.round(np.transpose(a_matrix[0,:,:self.T]), decimals=3)
 
-                self.c0_alive = c_matrix[:,:-1,0]
-                self.c0_future = c_matrix[:,0,:self.T]
-
-            else:
-            #Loops over each agent's lifetime decisions who is alive today (Upper triangle)
-                for age in range(self.S-2,0,-1):
-
-                    p = self.S-age #Remaining decisions
-
-                    #Makes a guess for the fsolve for this agent's consumption that is a function of the consumption of the agent one year older
-                    c1_guess = (c_matrix[:,age+1,0]*(psi[:,age,0]/psi[:,age+1,1])\
-                        /((self.beta*(1+r_path[0]-self.delta))**(1/self.sigma)))/np.exp(self.g_A)
-
-                    #All the variables this agent will face during its lifetime. (Note these are diagonal vectors)
-                    w_life = w_path[:,:p]
-                    r_life = r_path[:p+1]
-                    mort_life = np.diagonal(self.MortalityRates[:,age:,age:], axis1=1, axis2=2)
-                    e_life = np.diagonal(self.e[:,age:,:p+1], axis1=1, axis2=2)
-                    psi_life = np.diagonal(psi[:,age:,:p+2], axis1=1, axis2=2)
-                    bq_life = np.diagonal(bqvec_path[:,age:,:p+1], axis1=1, axis2=2)
-                    a_current = self.a_init[:,age]
-
-                    #Solves for this agent's optimal initial consumption in time t=0 using an fsolve
-                    opt_c1 = opt.fsolve(optc1_Euler_TPI, c1_guess, args = (w_life, r_life, mort_life, e_life, psi_life, bq_life, a_current, age))
-
-                    #Solves for all the remaining lifetime decisions for this agent as a function of its optimal initial consumption using Equations 3.19 and 3.22
-                    cpath_indiv, apath_indiv = get_lifetime_decisionsTPI(opt_c1, w_life, r_life, mort_life, e_life, psi_life, bq_life, a_current, age)
-                    
-                    #Fills the agents consumption and assets decision vectors as diagonals in the main matrix
-                    for i in xrange(self.I):
-                        np.fill_diagonal(c_matrix[i,age:,:], cpath_indiv[i,:])
-                        np.fill_diagonal(a_matrix[i,age:,:], apath_indiv[i,:])
-
-                    #Prints Consumption and Assets matrices if Print_cabqTimepaths = True in Main.py
-                    if Print_cabqTimepaths:
-                        print "Consumption for generation of age", age
-                        print np.round(np.transpose(c_matrix[0,:,:self.T]), decimals=3)
-                        print "Assets for generation of age", age
-                        print np.round(np.transpose(a_matrix[0,:,:self.T]), decimals=3)
-
-                #Loops through each agent yet to be born and gets that agents lifetime decisions from age 0 to death (Upper Triangle)
-                for t in range(self.T):
-
-                    age = 0
-
-                    #Guess for initial consumption is based on agent one year older
-                    c1_guess = c_matrix[:,0,t-1]
-
-                    #Variables this agent will face over its lifetime
-                    w_life = w_path[:,t:t+self.S]
-                    r_life = r_path[t:t+self.S+1]
-                    mort_life = np.diagonal(self.MortalityRates[:,:,t:t+self.S+1], axis1=1, axis2=2)
-                    e_life = np.diagonal(self.e[:,:,t:t+self.S+1], axis1=1, axis2=2)
-                    psi_life = np.diagonal(psi[:,:,t:t+self.S+1], axis1=1, axis2=2)
-                    bq_life = np.diagonal(bqvec_path[:,:,t:t+self.S+1], axis1=1, axis2=2)
-                    #Agents are born with no assets
-                    a_current = np.zeros(self.I)
-
-                    #Gets optimal initial consumption for this agent using an fsolve. Solved using equations 3.19 and 3.22
-                    opt_c1 = opt.fsolve(optc1_Euler_TPI, c1_guess, args = (w_life, r_life, mort_life, e_life, psi_life, bq_life, a_current, age))
-
-                    #Gets optimal decisions paths for this agent
-                    cpath_indiv, apath_indiv = get_lifetime_decisionsTPI(opt_c1, w_life, r_life, mort_life, e_life, psi_life, bq_life, a_current, age)
-
-                    #Fills the agents consumption and assets decision vectors as diagonals in the main matrix
-                    for i in xrange(self.I):
-                        np.fill_diagonal(c_matrix[i,:,t:], cpath_indiv[i,:])
-                        np.fill_diagonal(a_matrix[i,:,t:], apath_indiv[i,:])
-
-                    #Prints Consumption and Assets matrices if Print_cabqTimepaths = True in Main.py                    
-                    if Print_cabqTimepaths:
-                        print "Consumption for year", t
-                        print np.round(np.transpose(c_matrix[0,:,:self.T]), decimals=3)
-                        print "Assets for year", t
-                        print np.round(np.transpose(a_matrix[0,:,:self.T]), decimals=3)
-
-            #Gets matrices for the disparities of critical household conditions and constraints
-            Chained_C_Condition, Modified_Budget_Constraint, Modified_Budget_Constraint2, Household_Euler = check_household_conditions(w_path, r_path, c_matrix, a_matrix, psi, bqvec_path)
-            
             #Prints if each set of conditions are satisfied or not
             if Print_HH_Eulers:
+                #Gets matrices for the disparities of critical household conditions and constraints
+                Chained_C_Condition, Modified_Budget_Constraint, Household_Euler = check_household_conditions(w_path, r_path, c_matrix, a_matrix, psi, bqvec_path)
+                
+                #Checks to see if all of the Eulers are close enough to 0
                 print "\nEuler Household satisfied:", np.isclose(np.max(np.absolute(Household_Euler)), 0)
                 print "Equation 3.22 satisfied:", np.isclose(np.max(np.absolute(Chained_C_Condition)), 0)
                 print "Equation 3.19 satisfied:", np.isclose(np.max(np.absolute(Modified_Budget_Constraint)), 0)
-                print "Equation 3.19 (other) satisfied:", np.isclose(np.max(np.absolute(Modified_Budget_Constraint2)), 0)
-
-                #print np.round(np.transpose(100000*Chained_C_Condition[0,:,:self.T]), decimals=4)
-                #print np.round(np.transpose(Modified_Budget_Constraint[0,:,:self.T]), decimals=4) #Eulers
-                #print np.transpose(Chained_C_Condition[0,:,:self.T])
-                #print np.round(np.transpose(self.MortalityRates[0,:,:self.T]), decimals=4)
 
             #Returns only up until time T and not the vector
             return c_matrix[:,:,:self.T], a_matrix[:,:-1,:self.T]
@@ -1707,7 +1479,7 @@ class OLG(object):
         psi = self.get_Psi(w_path,self.e)
 
         #Equations 3.19, 3.22
-        c_matrix, a_matrix = get_c_a_matrices(w_path, r_path, psi, bqvec_path, Print_HH_Eulers, Print_cabqTimepaths)
+        c_matrix, a_matrix = get_c_a_matrices(w_path, r_path, psi, bqvec_path, Print_HH_Eulers, Print_caTimepaths)
 
         #Equation 3.20
         lhat_path = self.get_lhat(c_matrix, w_path[:,:self.T], self.e[:,:,:self.T])
@@ -1726,7 +1498,7 @@ class OLG(object):
 
         return w_path, c_matrix, a_matrix, kd_path, kf_path, n_path, y_path, lhat_path
 
-    def EulerSystemTPI(self, guess, Print_HH_Eulers, Print_cabqTimepaths):
+    def EulerSystemTPI(self, guess, Print_HH_Eulers, Print_caTimepaths):
         """
         Description:
             -Description of the Function
@@ -1734,7 +1506,7 @@ class OLG(object):
         Inputs:
             - guess
             - Print_HH_Eulers
-            - Print_cabqTimepaths
+            - Print_caTimepaths
 
         Variables Called from Object:
             - self.T                 = Int: Number of time periods
@@ -1787,7 +1559,7 @@ class OLG(object):
                 np.ones(self.FirstDyingAge-self.FirstFertilityAge))
 
         w_path, c_matrix, a_matrix, kd_path, \
-        kf_path, n_path, y_path, lhat_path = self.GetTPIComponents(bqvec_path, r_path,Print_HH_Eulers, Print_cabqTimepaths)
+        kf_path, n_path, y_path, lhat_path = self.GetTPIComponents(bqvec_path, r_path,Print_HH_Eulers, Print_caTimepaths)
 
         alldeadagent_assets = np.sum(a_matrix[:,self.FirstDyingAge:,:]*\
                 self.MortalityRates[:,self.FirstDyingAge:,:self.T]*self.Nhat[:,self.FirstDyingAge:,:self.T], axis=1)
@@ -1809,19 +1581,19 @@ class OLG(object):
         
         return Euler_all
 
-    def Timepath_fsolve(self, Print_HH_Eulers, Print_cabqTimepaths, to_plot = set([])):
+    def Timepath_fsolve(self, Print_HH_Eulers, Print_caTimepaths, to_plot = set([])):
         """
         Description:
             -Description of the Function
 
         Inputs:
             - Print_HH_Eulers
-            - Print_cabqTimepaths
+            - Print_caTimepaths
             - to_plot
 
         Variables Called from Object:
             - self.S                     = Int: Number of Cohorts
-            - self.r_ss
+            - self.r_ss                  = Scalar: Steady state intrest rate
             - self.I                 = Int: Number of Countries
             - self.T                 = Int: Number of time periods
             - self.bq_ss
@@ -1866,7 +1638,7 @@ class OLG(object):
 
         guess = np.append(rpath_guess, bqpath_guess)
 
-        paths = opt.fsolve(self.EulerSystemTPI, guess, args=(Print_HH_Eulers, Print_cabqTimepaths) )
+        paths = opt.fsolve(self.EulerSystemTPI, guess, args=(Print_HH_Eulers, Print_caTimepaths) )
 
         paths = np.expand_dims(paths, axis=1).reshape((self.I+1,self.T))
         r_path = paths[0,:]
@@ -1880,7 +1652,7 @@ class OLG(object):
                 np.ones(self.FirstDyingAge-self.FirstFertilityAge))
 
         self.w_path, self.c_matrix, self.a_matrix, self.kd_path, self.kf_path, self.n_path, self.y_path, self.lhat_path = \
-                self.GetTPIComponents(self.bqvec_path, self.r_path, Print_HH_Eulers, Print_cabqTimepaths)
+                self.GetTPIComponents(self.bqvec_path, self.r_path, Print_HH_Eulers, Print_caTimepaths)
 
     def plot_timepaths(self, SAVE=False, Paths = None):
         """
@@ -1905,10 +1677,10 @@ class OLG(object):
             - self.I                = Int: Number of Countries
             - self.Timepath_counter = Int: Counter that keeps track of the number of iterations in solving for the time paths
             - self.I_touse          = List: [I], Roster of countries that are being used
-            - self.cvec_ss          = Array:[],
-            - self.lhat_ss          = Array:[],
-            - self.n_ss             = Array:[],
-            - self.kd_ss            = Array:[],
+            - self.cvec_ss              = Array: [I,S], Steady state consumption
+            - self.lhat_ss              = Array: [I,S], Steady state leisure decision for each country and cohort          
+            - self.n_ss                 = Array: [I], Steady state foreign capital in each country
+            - self.kd_ss                = Array: [I], Steady state total capital holdings for each country
 
         Variables Stored in Object:
             - None
