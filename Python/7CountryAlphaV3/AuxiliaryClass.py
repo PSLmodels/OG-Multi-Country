@@ -888,14 +888,14 @@ class OLG(object):
             - None
 
         Variables Called from Object:
-            - self.w_ss
+            - self.w_ss              = Array: [I], Steady state wage rate
             - self.e_ss              = Array: [I,S], Labor produtivities for the Steady State
             - self.psi_ss
             - self.cvec_ss
             - self.sigma             = Scalar: Rate of Time Preference
             - self.beta              = Scalar: Calculated overall future discount rate
-            - self.Mortality_ss          = Array: [I,S], Mortality rates of each country for each age cohort in the steady state
-            - self.g_A              = Scalar: Growth rate of technology
+            - self.Mortality_ss      = Array: [I,S], Mortality rates of each country for each age cohort in the steady state
+            - self.g_A               = Scalar: Growth rate of technology
             - self.r_ss
             - self.delta             = Scalar: Calulated overall depreciation rate
             - self.avec_ss
@@ -1874,7 +1874,7 @@ class OLG(object):
         
         self.r_path = np.hstack((r_path, np.ones(self.S)*self.r_ss))
 
-        self.bq_path = np.column_stack(( bq_path,  np.outer(self.bqindiv_ss,np.ones(self.S)) ))
+        self.bqindiv_path = np.column_stack(( bq_path,  np.outer(self.bqindiv_ss,np.ones(self.S)) ))
         self.bqvec_path = np.zeros((self.I,self.S,self.T+self.S))
         self.bqvec_path[:,self.FirstFertilityAge:self.FirstDyingAge,:] = np.einsum("it,s->ist", self.bqindiv_path, \
                 np.ones(self.FirstDyingAge-self.FirstFertilityAge))
@@ -1927,7 +1927,7 @@ class OLG(object):
         """
         if Paths is None:
             r_path, bq_path, w_path, c_matrix, lhat_path, n_path, kd_path, kf_path = \
-            self.r_path, self.bq_path, self.w_path, self.c_matrix, self.lhat_path, self.n_path, self.kd_path, self.kf_path
+            self.r_path, self.bqindiv_path, self.w_path, self.c_matrix, self.lhat_path, self.n_path, self.kd_path, self.kf_path
         else:
             r_path, bq_path, w_path, c_matrix, lhat_path, n_path, kd_path, kf_path = Paths
 
