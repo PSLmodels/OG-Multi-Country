@@ -63,7 +63,7 @@ if rank!=0:
                 checkerpiece=np.reshape(checkerpiece,(IUB-Istart,S))
                 checkerpiece[i-Istart,s]=False
                 checkerpiece=np.reshape(checkerpiece, (IUB-Istart)*(S))
-                timerpiece=np.reshape(timeerpiece,(IUB-Istart,S))
+                timerpiece=np.reshape(timerpiece,(IUB-Istart,S))
                 timerpiece[i-Istart,s]=0
                 timerpiece=np.reshape(timerpiece, (IUB-Istart)*(S))
 
