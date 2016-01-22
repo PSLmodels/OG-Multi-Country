@@ -82,7 +82,7 @@ class OLG(object):
             - self.T                = Int: Number of time periods
             - self.T_1              = Int: Transition year for the demographics
             - self.Timepath_counter = Int: Counter that keeps track of the number of iterations in solving for the time paths
-            - self.IterationsToShow = Set: A set of user inputs of iteration of TPI graphs to show
+            - self.IterationsToShow = Set: A set of user inputs of iterations of TPI graphs to show
 
         Other Functions Called:
             - getkeyages = Gets the important ages for calculating demographic dynamics like FirstFertilityAge, etc. 
@@ -175,7 +175,7 @@ class OLG(object):
             - self.Migrants               = Array: [I,S,T], Number of immigrants
             - self.MortalityRates         = Array: [I,S,T], Mortality rates of each country for each age cohort and year
             - self.N                      = Array: [I,S,T], Population of each country for each age cohort and year
-            - self.Nhat                   = Array: [I,S,T], World opulation share of each country for each age cohort and year
+            - self.Nhat                   = Array: [I,S,T], World population share of each country for each age cohort and year
 
         Other Functions Called:
             - None
@@ -1178,8 +1178,8 @@ class OLG(object):
                 - we                     = Array: [I,S,T] or [I,S], Matrix product of w and e
 
             Outputs:
-                - c_matrix               =
-                - a_matrix               =
+                - c_matrix               = Array:
+                - a_matrix               = Array:
             """
 
 
@@ -1242,8 +1242,8 @@ class OLG(object):
                 - we                     = Array: [I,S,T] or [I,S], Matrix product of w and e
 
             Outputs:
-                - c_matrix               =
-                - a_matrix               =
+                - c_matrix               = Array:
+                - a_matrix               = Array:
             """
 
             c_matrix[:,:-1,0] = c0_guess.reshape(self.I,self.S-1)
@@ -1272,14 +1272,14 @@ class OLG(object):
                 -Description of the Function
 
             Inputs:
-                - c0_guess                      =
-                - c_uppermat                    =
-                - a_uppermat                    =
-                - w_path                        =
-                - r_path                        =
-                - psi                           =
-                - bqvec_path                    =
-                - Alive                         =
+                - c0_guess                      = Array:
+                - c_uppermat                    = Array:
+                - a_uppermat                    = Array:
+                - w_path                        = Array:
+                - r_path                        = Array:
+                - psi                           = Array:
+                - bqvec_path                    = Array:
+                - Alive                         = Array:
 
             Variables Called from Object:
                 - None
@@ -1292,11 +1292,11 @@ class OLG(object):
                 - get_lifetime_decisions_Future =
 
             Objects in Function:
-                - a_matrix                      =
-                - c_matrix                      =
+                - a_matrix                      = Array:
+                - c_matrix                      = Array:
 
             Outputs:
-                - Euler                         =
+                - Euler                         = Array:
 
             """
 
@@ -1324,12 +1324,12 @@ class OLG(object):
                 -Description of the Function
 
             Inputs:
-                - w_path                    =
-                - r_path                    =
-                - c_matrix                  =
-                - a_matrix                  =
-                - psi                       =
-                - bqvec_path                =
+                - w_path                    = Array:
+                - r_path                    = Array:
+                - c_matrix                  = Array:
+                - a_matrix                  = Array:
+                - psi                       = Array:
+                - bqvec_path                = Array:
 
             Variables Called from Object:
                 - self.T                    = Int: Number of time periods
@@ -1351,9 +1351,9 @@ class OLG(object):
                 - we                        = Array: [I,S,T] or [I,S], Matrix product of w and e
 
             Outputs:
-                - Chained_C_Condition       =
-                - Modified_Budget_Constraint=
-                - Household_Euler           =
+                - Chained_C_Condition       = Array:
+                - Modified_Budget_Constraint= Array:
+                - Household_Euler           = Array:
 
             """
 
@@ -1504,9 +1504,9 @@ class OLG(object):
             -Description of the Function
 
         Inputs:
-            - guess
-            - Print_HH_Eulers
-            - Print_caTimepaths
+            - guess                     = Array[I+1,T]:
+            - Print_HH_Eulers           = Boolean:
+            - Print_caTimepaths         = Boolean:
 
         Variables Called from Object:
             - self.T                    = Int: Number of time periods
@@ -1514,11 +1514,10 @@ class OLG(object):
             - self.S                    = Int: Number of Cohorts
             - self.FirstDyingAge        = Int: First age where mortality rates effect agents
             - self.FirstFertilityAge    = Int: First age where agents give birth
-            - self.Nhat                 =
+            - self.Nhat                 = Array: [I,S,T], World population share of each country for each age cohort and year
             - self.MortalityRates       = Array: [I,S,T], Mortality rates of each country for each age cohort and year
-            - self.Timepath_counter     =
-            - self.IterationsToShow     =
-            -
+            - self.Timepath_counter     = Int: Counter that keeps track of the number of iterations in solving for the time paths
+            - self.IterationsToShow     = Set: A set of user inputs of iterations of TPI graphs to show
 
         Variables Stored in Object:
             - None
@@ -1528,23 +1527,22 @@ class OLG(object):
             - self.plot_timepaths       =
 
         Objects in Function:
-            - r_path                    =
-            - bqindiv_path              =
-            - bqvec_path                =
-            - w_path                    =
-            - c_matrix                  =
-            - a_matrix                  =
-            - kd_path                   =
-            - kf_path                   =
-            - n_path                    =
-            - y_path                    =
-            - lhat_path                 =
-            - alldeadagent_assets       =
-            - Euler_bq                  =
-            - Euler_kf                  =
+            - r_path                    = Array: [S+T]
+            - bqvec_path                = Array: [I,S,S+T]
+            - w_path                    = Array: [I, S+T]
+            - c_matrix                  = Array: [I,S,T]
+            - a_matrix                  = Array: [I,S,T]
+            - kd_path                   = Array: [I,T]
+            - kf_path                   = Array: [I,T]
+            - n_path                    = Array: [I,T]
+            - y_path                    = Array: [I,T]
+            - lhat_path                 = Array: [I,S,T]
+            - alldeadagent_assets       = Array: [I,T]
+            - Euler_bq                  = Array: [I,T]
+            - Euler_kf                  = Array: [T]
 
         Outputs:
-            - Euler_all                 =
+            - Euler_all                 = Array: [(I+1)*T]
         """
 
         guess = np.expand_dims(guess, axis=1).reshape((self.I+1,self.T))
@@ -1587,34 +1585,33 @@ class OLG(object):
             -Description of the Function
 
         Inputs:
-            - Print_HH_Eulers        =
-            - Print_caTimepaths      =
-            - to_plot                =
+            - Print_HH_Eulers        = Boolean:
+            - Print_caTimepaths      = Boolean:
+            - to_plot                = Set:
 
         Variables Called from Object:
             - self.S                 = Int: Number of Cohorts
             - self.r_ss              = Scalar: Steady state intrest rate
             - self.I                 = Int: Number of Countries
             - self.T                 = Int: Number of time periods
-            - self.bq_ss
             - self.FirstFertilityAge = Int: First age where agents give birth
             - self.FirstDyingAge     = Int: First age where mortality rates effect agents
-            - self.bqvec_path        =
-            - self.r_path            =
-            - self.IterationsToShow  =
+            - self.bqvec_path        = Array: [I,S,S+T],
+            - self.r_path            = Array: [S+T],
+            - self.IterationsToShow  = Set: A set of user inputs of iterations of TPI graphs to show
 
         Variables Stored in Object:
-            - self.r_path            =
-            - self.bqindiv_path      =
-            - self.bqvec_path        =
-            - self.w_path            =
-            - self.c_matrix          =
-            - self.a_matrix          =
-            - self.kd_path           =
-            - self.kf_path           =
-            - self.n_path            =
-            - self.y_path            =
-            - self.lhat_path         =
+            - self.r_path            = Array: [S+T],
+            - self.bqindiv_path      = Array: [I,S+T],
+            - self.bqvec_path        = Array: [I,S,S+T],
+            - self.w_path            = Array: [I,S+T],
+            - self.c_matrix          = Array: [I,S,T],
+            - self.a_matrix          = Array: [I,S,T],
+            - self.kd_path           = Array: [I,T],
+            - self.kf_path           = Array: [I,T],
+            - self.n_path            = Array: [I,T],
+            - self.y_path            = Array: [I,T],
+            - self.lhat_path         = Array: [I,S,T],
 
         Other Functions Called:
             - self.get_initialguesses()
@@ -1622,10 +1619,10 @@ class OLG(object):
             - self.GetTPIComponents
 
         Objects in Function:
-            - guess                  =
-            - paths                  =
-            - r_path                 =
-            - bq_path                =
+            - guess                  = Array: [(I+1)*T],
+            - paths                  = Array: [I+1,T],
+            - r_path                 = Array: [T],
+            - bq_path                = Array: [I,T],
 
         Outputs:
             - None
@@ -1654,22 +1651,22 @@ class OLG(object):
         self.w_path, self.c_matrix, self.a_matrix, self.kd_path, self.kf_path, self.n_path, self.y_path, self.lhat_path = \
                 self.GetTPIComponents(self.bqvec_path, self.r_path, Print_HH_Eulers, Print_caTimepaths)
 
+
     def plot_timepaths(self, SAVE=False, Paths = None):
         """
         Description:
         - Take the timepaths and plots them into one sheet of graphs
-            TODO: Fill in the array sizes
             TODO: Update the inputs so it is one tuple
 
         Inputs:
-            - r_path                = Array:[], Given interest rate path
-            - bq_path               = Array:[], Given bequests path
-            - c_matrix              = Array:[], Given consumption matrix
-            - lhat_path             = Array:[], Given time endowment
-            - n_path                = Array:[], Given aggregate labor productivity
-            - kd_path               = Array:[], Given domestic capital path
-            - kf_path               = Array:[], Given foreign capital path
-            - SAVE                  = Boolean:[], Switch that determines whether we save the graphs or simply show it.
+            - r_path                = Array:[S+T], Given interest rate path
+            - bq_path               = Array:[I,S+T], Given bequests path
+            - c_matrix              = Array:[I,S,T], Given consumption matrix
+            - lhat_path             = Array:[I,S,T], Given time endowment
+            - n_path                = Array:[I,T], Given aggregate labor productivity
+            - kd_path               = Array:[I,T], Given domestic capital path
+            - kf_path               = Array:[I,T], Given foreign capital path
+            - SAVE                  = Boolean: Switch that determines whether we save the graphs or simply show it.
 
         Variables Called from Object:
             - self.cvec_ss          = Array: [I,S], Steady state consumption
@@ -1702,6 +1699,7 @@ class OLG(object):
             self.r_path, self.bqindiv_path, self.w_path, self.c_matrix, self.lhat_path, self.n_path, self.kd_path, self.kf_path
         else:
             r_path, bq_path, w_path, c_matrix, lhat_path, n_path, kd_path, kf_path = Paths
+
 
 
         title = str("S = " + str(self.S) + ", T = " + str(self.T))
