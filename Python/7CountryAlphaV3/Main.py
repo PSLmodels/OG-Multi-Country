@@ -16,7 +16,7 @@ def Multi_Country(S,I,sigma):
 
     #Country Rosters
     I_dict = {"usa":0,"eu":1,"japan":2,"china":3,"india":4,"russia":5,"korea":6} #DONT CHANGE
-    I_touse = ["eu","russia","usa","japan","korea","china","india"] #CAN CHANGE
+    I_touse = ["korea","eu","russia","usa","japan","china","india"] #CAN CHANGE
 
     #Parameters Zone
     g_A = 0.015 #Technical growth rate
@@ -50,7 +50,6 @@ def Multi_Country(S,I,sigma):
     UseDiffDemog = True #Turns on different demographics for each country
     UseSSDemog = False #Activates using only steady state demographics for TPI calculation
     UseDiffProductivities = False #Activates having e vary across cohorts
-    ADJUSTKOREAIMMIGRATION = True #Activates dividing Korean immigration by 100 to correctly scale with other countrys' immigration rates
 
     #Adjusts the country list if we are using less than 7 Countries
     if CheckerMode==False:
@@ -72,8 +71,7 @@ def Multi_Country(S,I,sigma):
 
     Firm_Params = (alpha, delta_ann, chi, rho, g_A)
 
-    Levers = (PrintAges,PrintLoc,CheckerMode,Iterate,UseDiffDemog,
-    		  UseDiffProductivities,ADJUSTKOREAIMMIGRATION)
+    Levers = (PrintAges,PrintLoc,CheckerMode,Iterate,UseDiffDemog,UseDiffProductivities)
 
     #Initialize the class instance
     Model = AUX.OLG(Country_Roster,HH_params,Firm_Params,Levers)
