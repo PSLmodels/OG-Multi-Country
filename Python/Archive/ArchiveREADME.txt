@@ -12,3 +12,5 @@ processors work through different combinations of countries and cohort levels. T
 Stage 1- Basic model
 
 Stage 2- Incorporation of Demographics
+
+Stage 3- Addition of endogenous labor and the vectorization of the code
