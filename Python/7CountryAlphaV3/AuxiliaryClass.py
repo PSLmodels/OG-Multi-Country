@@ -161,7 +161,8 @@ class OLG(object):
             - self.agestopull             = Array: [S], Contains which ages to be used from the data when S<80
             - self.UseDiffDemog           = Boolean: True activates using unique country demographic data
             - self.PrintLoc               = Boolean: True prints the location of the code, used for debugging purposes
-            - self.ADJUSTKOREAIMMIGRATION = Boolean: True will correctly adjust Korea's immigration, which is off by a factor of 100
+            - self.ADJUSTKOREAIMMIGRATION = Boolean: True will correctly adjust Korea's immigration, which is off by a factor of 100 
+                                                        TODO: Delete this variable and shift population manually in Excel file
             - self.I                      = Int: Number of Countries
             - self.S                      = Int: Number of Cohorts
             - self.T                      = Int: Number of Time Periods
@@ -341,7 +342,7 @@ class OLG(object):
             
             #Gets the population share by taking a fraction of the total world population this year
             self.Nhat[:,:,t] = self.N[:,:,t]/np.sum(self.N[:,:,t])
-
+            #TODO: Get rid of growth rates and N_temp
             #Getting the growth rate
             self.g_N[t] = np.sum(N_temp)-1
 
@@ -356,8 +357,7 @@ class OLG(object):
         #Calculates new years of population shares until the greatest absolute difference between 2 consecutive years is less than demog_ss_tol
         while np.max(np.abs(self.Nhat[:,:,-1] - self.Nhat[:,:,-2])) > demog_ss_tol:
             pop_new[:,0] = np.sum((pop_old[:,:]*self.FertilityRates[:,:,-1]),axis=1)
-            pop_new[:,1:] = pop_old[:,:-1]*(1+self.ImmigrationRates[:,:-1,-1]\
-                    -self.MortalityRates[:,:-1,-1])
+            pop_new[:,1:] = pop_old[:,:-1]*(1+self.ImmigrationRates[:,:-1,-1]-self.MortalityRates[:,:-1,-1])
             self.Nhat = np.dstack((self.Nhat,pop_new/np.sum(pop_new)))
             future_year_iter += 1
 
