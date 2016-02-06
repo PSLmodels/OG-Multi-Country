@@ -1,7 +1,6 @@
 import time
 import numpy as np
 import AuxiliaryClass as AUX
-
 np.set_printoptions(threshold = 3000, linewidth=2000, suppress=True)
 
 TimeModel=False #Activates timing the model
@@ -36,8 +35,11 @@ def Multi_Country(S,I,sigma):
     PrintSS = False #Prints the result of the Steady State functions
     Print_caTimepaths = False #Prints the consumption, assets, and bequests timepath as it gets filled in for each iteration of TPI
     Print_HH_Eulers = False #Prints whether the equations for the household decisions are satisfied (Equations 3.22, 3.19, and sum(assets) = 0)
+    Print_Fill_Matricies_Time=False #Activiates Printing the total time it takes to fill the upper and lower diagonal matricies
     CheckerMode = True #Activates not printing much of anything, used in conjunction with RobustChecker.py
     Iterate = True #Shows the current iteration number and the associated Eulers
+
+    WarpSpeed=True #Activates switching to the Fortran Module for lengthy calculations, currently doesn't do anything
 
     #For plots to display or save
     DemogGraphs = False #Activates graphing graphs with demographic data and population shares
@@ -70,7 +72,7 @@ def Multi_Country(S,I,sigma):
 
     Firm_Params = (alpha, delta_ann, chi, rho, g_A)
 
-    Levers = (PrintAges,PrintLoc,CheckerMode,Iterate,UseDiffDemog,UseDiffProductivities)
+    Levers = (PrintAges,PrintLoc,CheckerMode,Iterate,UseDiffDemog,UseDiffProductivities,WarpSpeed,Print_Fill_Matricies_Time)
 
     #Initialize the class instance
     Model = AUX.OLG(Country_Roster,HH_params,Firm_Params,Levers)
