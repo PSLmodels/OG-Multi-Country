@@ -14,7 +14,7 @@ def Multi_Country(S,I,sigma):
 
     #Country Rosters
     I_dict = {"usa":0,"eu":1,"japan":2,"china":3,"india":4,"russia":5,"korea":6} #DONT CHANGE
-    I_touse = ["korea","eu","russia","usa","japan","china","india"] #CAN CHANGE
+    I_touse = ["eu","russia","usa","japan","korea","china","india"] #CAN CHANGE
 
     #Parameters Zone
     g_A = 0.015 #Technical growth rate
@@ -22,14 +22,14 @@ def Multi_Country(S,I,sigma):
     delta_ann=.08 #Annual depreciation rate
     alpha = .3 #Capital Share of production
     chi = 1.5 #Preference for lesiure
-    rho = 1.3 #Other New Parameter
+    rho = 1.4 #Intratemporal elasticity of substitution
 
     #Convergence Tolerances
     demog_ss_tol = 1e-8 #Used in getting ss for population share
 
     #PROGRAM LEVERS:
     #For terminal output
-    PrintAges = True #Prints the different key ages in the demographics
+    PrintAges = False #Prints the different key ages in the demographics
     PrintLoc = False #Displays the current locations of the program inside key TPI functions
     PrintSSEulErrors = False #Prints the euler errors in each attempt of calculating the steady state
     PrintSS = False #Prints the result of the Steady State functions
@@ -43,7 +43,7 @@ def Multi_Country(S,I,sigma):
 
     #For plots to display or save
     DemogGraphs = False #Activates graphing graphs with demographic data and population shares
-    ShowSSGraphs = False #Activates graphs for steady-state solutions for consumption, assets, and bequests
+    ShowSSGraphs = True #Activates graphs for steady-state solutions for consumption, assets, and bequests
     iterations_to_plot = set([]) #Which iterations of the timepath fsolve you want to plot
     SaveFinalTPIPlot = True #Saves the final (and hopefully converged) time path plot as a .png file
 
@@ -65,7 +65,6 @@ def Multi_Country(S,I,sigma):
             time.sleep(2)
 
     ##INPUTS INTO THE CLASS###
-
     Country_Roster = (I_dict, I_touse)
 
     HH_params = (S,I,beta_ann,sigma)
@@ -96,18 +95,19 @@ def Multi_Country(S,I,sigma):
     r_init = Model.r_ss*1.05
     bq_init = Model.bqindiv_ss*.95
     a_init = Model.avec_ss*.7
+    print "Timepath not ready yet! Uncomment it from the main file when the SS code works"
+    """
     Model.set_initial_values(r_init, bq_init, a_init)
 
     Model.Timepath_fsolve(Print_HH_Eulers, Print_caTimepaths, iterations_to_plot)
     if SaveFinalTPIPlot: Model.plot_timepaths(SAVE=True)
-    
-    pass
+    """
 
 #Input parameters for S, I and sigma here then execute this file to
 #run the model.
 
 start = time.time()
-Multi_Country(20,2,2)
+Multi_Country(80,2,4)
 tottime=time.time()-start
 
 if TimeModel==True:
