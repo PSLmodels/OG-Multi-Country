@@ -6,7 +6,6 @@ np.set_printoptions(threshold = 3000, linewidth=2000, suppress=True)
 
 TimeModel=False #Activates timing the model
 
-
 def Multi_Country(S,I,sigma):
 
     #NOTE:To run the model, simply run the Multi_Country function with your chosen levels
@@ -31,7 +30,7 @@ def Multi_Country(S,I,sigma):
 
     #PROGRAM LEVERS:
     #For terminal output
-    PrintAges = False #Prints the different key ages in the demographics
+    PrintAges = True #Prints the different key ages in the demographics
     PrintLoc = False #Displays the current locations of the program inside key TPI functions
     PrintSSEulErrors = False #Prints the euler errors in each attempt of calculating the steady state
     PrintSS = False #Prints the result of the Steady State functions

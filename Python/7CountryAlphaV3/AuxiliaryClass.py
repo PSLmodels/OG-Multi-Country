@@ -10,21 +10,20 @@ import AuxiliaryDemographics as demog
 
 class OLG(object):
     """
-    This object takes all of the parts of calculating the OG multi-country model and stores it into a centralized object. This
-    has a huge advantage over previous versions as we are now able to quickly access stored parts when we are trying
-    to expand the code. Before, we had to carefully pass tuples of parameters everywhere and it was easy to get lost in the details.
-    The variables are listed in alphabetical order of their data type, then alphabetical order of
-    of their name, so Arrays are listed first, Booleans second, etc.
+        This object takes all of the parts of calculating the OG multi-country model and stores it into a centralized object. This
+        has a huge advantage over previous versions as we are now able to quickly access stored parts when we are trying
+        to expand the code. Before, we had to carefully pass tuples of parameters everywhere and it was easy to get lost in the details.
+        The variables are listed in alphabetical order of their data type, then alphabetical order of
+        of their name, so Arrays are listed first, Booleans second, etc.
 
-    For each function there are the following categories:
-        Description:                    Brief description of what the function does
-        Inputs:                         Lists the inputs that the function uses
-        Variables Called From Object:   Lists the variables that the function calls from storage
-        Variables Stored in Object:     Lists the variables that are put into storage
-        Other Functions Called:         Lists the other non-library functions needed to complete the process of the current function
-        Objects in Function:            Lists the variables that are exclusive to that function and are not used again.
-        Outputs:                        Lists the outputs that the function puts out.
-
+        For each function there are the following categories:
+            Description:                    Brief description of what the function does
+            Inputs:                         Lists the inputs that the function uses
+            Variables Called From Object:   Lists the variables that the function calls from storage
+            Variables Stored in Object:     Lists the variables that are put into storage
+            Other Functions Called:         Lists the other non-library functions needed to complete the process of the current function
+            Objects in Function:            Lists the variables that are exclusive to that function and are not used again.
+            Outputs:                        Lists the outputs that the function puts out.
     """
 
     def __init__(self, countries, HH_Params, Firm_Params, Lever_Params):
@@ -232,6 +231,8 @@ class OLG(object):
         #Gets initial population share
         self.Nhat[:,:,0] = self.N[:,:,0]/np.sum(self.N[:,:,0])
 
+        print self.all_FertilityRates.shape, self.S, self.T, f_range
+        print self.agestopull[self.FirstFertilityAge:self.LastFertilityAge+1]-22
         #The last generation dies with probability 1
         self.MortalityRates[:,-1,:] = np.ones((self.I, self.T))
 
@@ -371,6 +372,17 @@ class OLG(object):
         demog.plotDemographics(ages, datasets, self.I, self.S, self.T, self.I_touse, T_touse, compare_across, data_year)
 
     #STEADY STATE
+
+    def get_Gamma(self, w, e):
+        #If getting the SS
+        if e.ndim == 2:
+            we =  np.einsum("i,is->is",w,e)
+
+        #If getting transition path
+        elif e.ndim == 3:
+            we = np.einsum("it, ist -> ist", w, e)
+
+        Gamma = (   (1+(self.chi/we)**(self.rho-1))**((1-self.rho*self.sigma)/(self.rho-1)) * self.rho/(self.rho-1)   )**(-1/self.sigma)
 
     def get_Psi(self, w, e):
         """
@@ -668,6 +680,8 @@ class OLG(object):
 
         #Equation 3.21
         psi_ss = self.get_Psi(w_ss,self.e_ss)
+
+        Gamma_ss = self.get_Gamma(w_ss, self.e_ss)
 
         #Initial guess for the first cohort's consumption
         c1_guess = np.ones(self.I)*.02
@@ -1754,3 +1768,78 @@ class OLG(object):
         else:
             plt.show()
 
+def GETMAGICINDICESTOUSELATER():
+
+    i_indices = []
+    j_indices = []
+
+    I=2
+    S=10
+    T=15
+
+    F = np.zeros((S,T+S))
+    newF = np.zeros((S,T+S))
+    nums = np.arange(0,10000000)
+    beg = 1
+    for s in range(S-1,0,-1):
+        l = S-s
+        np.fill_diagonal(F[s:,:l], nums[beg:beg+l])
+        beg = nums[beg:beg+l][-1]+1
+
+    for t in range(T+1):
+        np.fill_diagonal(F[:,t:], nums[beg:beg+l])
+        beg = nums[beg:beg+l][-1]+1
+
+    print F.T
+    s_indices = np.repeat(range(S), T)
+    t_indices = sum([range(s,T+s) for s in range(S)], [])
+    print F[:,s_indices,t_indices].shape
+    AF = F[:,s_indices,t_indices].reshape(S,T+S)
+
+    print AF.T
+
+    z = np.zeros((I,S,S+T))
+    a = np.array(range(1,S+1)).T*1.
+
+    for r in range(1,T):
+        a = np.vstack( (a, np.linspace(1+r*S,S+S*r,S).T) )
+    a = a.T
+    a = np.tile(a, (I,1,1))
+    #print a[0].T
+
+    s_indices = np.repeat(range(S), T)
+    t_indices = sum([range(s,T+s) for s in range(S)], [])
+
+    z[:,s_indices,t_indices] = a.reshape((I,S*T))
+    b = z[:,s_indices,t_indices].reshape(I,S,T)
+
+    #print z[0].T
+
+def GETMAGIC2():
+    i_indices = []
+    j_indices = []
+
+    I=2
+    S=10
+    T= 10
+
+    F = np.zeros((S,T+S))
+    newF = np.zeros((S,T+S))
+    nums = np.arange(0,10000000)
+    beg = 1
+    for s in range(S-1,0,-1):
+        l = S-s
+        np.fill_diagonal(F[s:,:l], nums[beg:beg+l])
+        beg = nums[beg:beg+l][-1]+1
+
+    for t in range(T+1):
+        np.fill_diagonal(F[:,t:], nums[beg:beg+l])
+        beg = nums[beg:beg+l][-1]+1
+
+    print F.T
+
+    
+
+
+
+GETMAGIC2()
