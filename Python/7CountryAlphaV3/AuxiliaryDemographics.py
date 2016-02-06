@@ -50,6 +50,15 @@ def getkeyages(S, PrintAges):
     if agestopull[LastFertilityAge] > 45:
         agestopull[LastFertilityAge] = 45
 
+    if PrintAges:
+        print "\t\t\t\t\tModel\tData"
+        print "LeaveHouseAge:\t\t", LeaveHouseAge, "\t\t", agestopull[LeaveHouseAge]
+        print "FirstFertilityAge:\t", FirstFertilityAge, "\t\t", agestopull[FirstFertilityAge]
+        print "LastFertilityAge:\t", LastFertilityAge, "\t\t", agestopull[LastFertilityAge]
+        print "MaxImmigrantAge:\t", MaxImmigrantAge, "\t\t", agestopull[MaxImmigrantAge]
+        print "FirstDyingAge:\t\t", FirstDyingAge, "\t\t", agestopull[FirstDyingAge]
+        print "All ages used from data:", agestopull
+
     return LeaveHouseAge, FirstFertilityAge, LastFertilityAge, MaxImmigrantAge, FirstDyingAge, agestopull
 
 def plotDemographics(ages, datasets, I, S, T, I_touse, T_touse = None, compare_across = "T", data_year = 0):
