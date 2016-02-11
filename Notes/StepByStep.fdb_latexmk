@@ -1,5 +1,5 @@
 # Fdb version 3
-["pdflatex"] 1449073276 "StepByStep.tex" "StepByStep.pdf" "StepByStep" 1449073276
+["pdflatex"] 1455207190 "StepByStep.tex" "StepByStep.pdf" "StepByStep" 1455207191
   "/usr/local/texlive/2014/texmf-dist/fonts/map/fontname/texfonts.map" 1272929888 3287 e6b82fe08f5336d4d5ebc73fb1152e87 ""
   "/usr/local/texlive/2014/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmex7.tfm" 1246382020 1004 54797486969f23fa377b128694d548df ""
   "/usr/local/texlive/2014/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmex8.tfm" 1246382020 988 bdf658c3bfc2d96d3c8b02cfc1c94c20 ""
@@ -88,12 +88,12 @@
   "/usr/local/texlive/2014/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1401025944 1445653 26a0aacf3d70032b1ec192e8c7792117 ""
   "/usr/local/texlive/2014/texmf-var/web2c/pdftex/pdflatex.fmt" 1401025990 3832012 904d82bdcc8abf2b1cd296990b82553b ""
   "/usr/local/texlive/2014/texmf.cnf" 1401025936 577 a59edbde8d3a8c549d0eeaab1739e2ff ""
-  "StepByStep.aux" 1449073276 4889 15cec9a5653b49283b037e2030afc276 ""
-  "StepByStep.out" 1449073276 359 af289a0479adf57ccd87c2331b90faf6 ""
-  "StepByStep.tex" 1449073276 38286 7b2eeb81e10f665216e331a7671d4f70 ""
+  "StepByStep.aux" 1455207191 4889 89499cc868a49ad529fb38c92739c6bf ""
+  "StepByStep.out" 1455207191 359 af289a0479adf57ccd87c2331b90faf6 ""
+  "StepByStep.tex" 1455207189 38308 5ce2d2d7982f2698e89c6b93cea46a1d ""
   (generated)
   "StepByStep.pdf"
-  "StepByStep.tex"
-  "StepByStep.out"
-  "StepByStep.log"
   "StepByStep.aux"
+  "StepByStep.log"
+  "StepByStep.out"
+  "StepByStep.tex"
