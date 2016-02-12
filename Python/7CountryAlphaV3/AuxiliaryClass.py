@@ -5,6 +5,7 @@ import numpy as np
 import scipy as sp
 import scipy.optimize as opt
 from matplotlib import pyplot as plt
+from numba import jit
 import AuxiliaryDemographics as demog
 
 class OLG(object):
@@ -414,7 +415,7 @@ class OLG(object):
 
     def get_Gamma(self, w, e):
 
-                #If getting the SS
+        #If getting the SS
         if e.ndim == 2:
             we =  np.einsum("i,is->is",w,e)
 
@@ -643,7 +644,6 @@ class OLG(object):
                                     (1+self.Kids_ss[:,s+1]*Gamma_ss[:,s+1]+w_ss*self.e_ss[:,s+1]*(self.chi/(w_ss*self.e_ss[:,s+1]))\
                                 **((1-self.rho)/self.rho)))*np.exp(-self.g_A)
 
-
             return cvec_ss, cKvec_ss, avec_ss
 
         def householdEuler_SS(cK_1, w_ss, r_ss, Gamma_ss):
@@ -683,7 +683,7 @@ class OLG(object):
             if np.any(cpath<0):
                 print "WARNING! The fsolve for initial optimal consumption guessed a negative number"
                 Euler = np.ones(Euler.shape[0])*9999.
-            print Euler
+
             return Euler
 
         #Equation 3.25

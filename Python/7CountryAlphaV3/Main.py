@@ -107,7 +107,7 @@ def Multi_Country(S,I,sigma):
 #run the model.
 
 start = time.time()
-Multi_Country(80,2,4)
+Multi_Country(80,7,4)
 tottime=time.time()-start
 
 if TimeModel==True:
