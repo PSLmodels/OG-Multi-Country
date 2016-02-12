@@ -117,3 +117,23 @@ if TimeModel==True:
     minutes=minutes-hours*60
     print "The code took:", hours, "hours,", minutes, "minutes and", seconds, "seconds to complete"
 
+
+#testfunc = lambda x,y: x+y
+"""
+mort = np.array([.1,.2,.3])
+def testfunc(c,i):
+    print "Entering"
+    print "iter", i
+    print "c", c
+
+    final = c+mort[i]
+    print "Final", final
+    print "Leaving"
+    return final
+
+cvec = [10,20,30]
+numpytestfunc = np.frompyfunc(testfunc, 2, 1)
+print numpytestfunc.accumulate([cvec,[1,2,3]], axis=0, dtype=np.object)
+#uadd.accumulate([1,2,3], dtype=np.object).astype(np.int)
+"""
+

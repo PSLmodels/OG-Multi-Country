@@ -410,7 +410,11 @@ class OLG(object):
                 - psi        = Array: [I,S,T] or [I,S], Variable made just to simplify calculation of household decision equations
         """
 
-        #If getting the SS
+        return psi
+
+    def get_Gamma(self, w, e):
+
+                #If getting the SS
         if e.ndim == 2:
             we =  np.einsum("i,is->is",w,e)
 
@@ -418,17 +422,11 @@ class OLG(object):
         elif e.ndim == 3:
             we = np.einsum("it, ist -> ist", w, e)
 
-        psi = ( 1 + self.chi*( (self.chi/we)**(self.rho-1) ) )**( (1-self.rho*self.sigma)/(self.rho-1) )
 
-        return psi
-
-    def get_Gamma(self, w, e):
-
-        Psi=self.get_Psi(w,e)
+        Psi = ( 1 + self.chi*( (self.chi/we)**(-((self.rho-1)/self.rho)**2) ) )**( (1-self.rho*self.sigma)/(self.rho-1) )
 
         Gamma=(Psi*(self.rho/(self.rho-1)))**(-1/self.sigma)
 
-        #print Psi, (self.rho/(self.rho-1)), (-1/self.sigma)
 
         return Gamma
 
@@ -460,9 +458,11 @@ class OLG(object):
         """
 
         if e.ndim == 2:
-            lhat=c*(self.chi/np.einsum("i,is->is",w,e))**self.rho
+            we = np.einsum("i,is->is",w,e)
         elif e.ndim == 3:
-            lhat=c*(self.chi/np.einsum("it,ist->ist",w,e))**self.rho
+            np.einsum("it,ist->ist",w,e)
+        
+        lhat=c*(self.chi/we)**((1-self.rho)/self.rho)
 
         return lhat
 
@@ -626,6 +626,7 @@ class OLG(object):
             cKvec_ss[:,0] = cK_1
             cvec_ss[:,0] = cK_1/Gamma_ss[:,0]
 
+
             for s in xrange(self.S-1):
                 #Equation 3.21
                 cKvec_ss[:,s+1] = (self.beta * (1-self.Mortality_ss[:,s]) * (1 + r_ss - self.delta))\
@@ -633,15 +634,15 @@ class OLG(object):
 
                 cvec_ss[:,s+1] = cKvec_ss[:,s+1]/Gamma_ss[:,s+1]
 
-
                 #Equation 3.19
                 avec_ss[:,s+1] = (w_ss*self.e_ss[:,s]*self.lbar_ss + (1 + r_ss - self.delta)*avec_ss[:,s] + bq_ss[:,s] \
-                                    - cvec_ss[:,s]*(1+self.Kids_ss[:,s]*Gamma_ss[:,s]+(self.chi/(w_ss*self.e_ss[:,s]))**self.rho))*np.exp(-self.g_A)
+                                    - cvec_ss[:,s]*(1+self.Kids_ss[:,s]*Gamma_ss[:,s]+w_ss*self.e_ss[:,s]*(self.chi/(w_ss*self.e_ss[:,s]))**((1-self.rho)/self.rho)))*np.exp(-self.g_A)
 
             #Equation 3.19 for final assets
-            avec_ss[:,s+2] = (w_ss*self.e_ss[:,s+1] + (1 + r_ss - self.delta)*avec_ss[:,s+1]\
-                                - cvec_ss[:,s+1]*(1+self.Kids_ss[:,s+1]*Gamma_ss[:,s+1]+(self.chi/(w_ss*self.e_ss[:,s+1]))\
-                                **self.rho))*np.exp(-self.g_A)
+            avec_ss[:,s+2] = (w_ss*self.e_ss[:,s+1] + (1 + r_ss - self.delta)*avec_ss[:,s+1] - cvec_ss[:,s+1]*\
+                                    (1+self.Kids_ss[:,s+1]*Gamma_ss[:,s+1]+w_ss*self.e_ss[:,s+1]*(self.chi/(w_ss*self.e_ss[:,s+1]))\
+                                **((1-self.rho)/self.rho)))*np.exp(-self.g_A)
+
 
             return cvec_ss, cKvec_ss, avec_ss
 
@@ -682,7 +683,7 @@ class OLG(object):
             if np.any(cpath<0):
                 print "WARNING! The fsolve for initial optimal consumption guessed a negative number"
                 Euler = np.ones(Euler.shape[0])*9999.
-            #print Euler
+            print Euler
             return Euler
 
         #Equation 3.25
