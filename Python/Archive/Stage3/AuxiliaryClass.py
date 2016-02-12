@@ -441,9 +441,9 @@ class OLG(object):
         """
 
         if e.ndim == 2:
-            lhat=c*(self.chi/np.einsum("i,is->is",w,e))**self.rho
+            lhat=c*(self.chi/np.einsum("i,is->is",w,e))**(1-self.rho)/self.rho
         elif e.ndim == 3:
-            lhat=c*(self.chi/np.einsum("it,ist->ist",w,e))**self.rho
+            lhat=c*(self.chi/np.einsum("it,ist->ist",w,e))**(1-self.rho)/self.rho
 
         return lhat
 
