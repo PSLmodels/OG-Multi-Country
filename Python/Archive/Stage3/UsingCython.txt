@@ -1,0 +1,5 @@
+A feature of this code is the use of Cython to help speed up the code. In order to do so, you'll need to run the following line in terminal:
+
+python pure_cython_setup_distutils.py build_ext --inplace
+
+Once this is done, the cython function cy_fillca will be callable and you'll be good to go!
