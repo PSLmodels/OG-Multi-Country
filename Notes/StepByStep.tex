@@ -62,7 +62,10 @@
 
 	Households of age $s$ in country $i$ in period $t$ solve the following maximization problem.
 	\begin{equation}
-		\max_{\{c_{i,s+j,t+j}\}_{j=0}^{S-s}} U_{ist} = \sum_{j=0}^{S-s} \beta^j \frac{1}{1-\sigma} c_{i,s+j,t+j}^{1-\sigma} \nonumber
+		\max_{\{c_{i,s+j,t+j}\}_{j=0}^{S-s}} U_{ist} = \sum_{j=0}^{S-s} \beta^j R_{i,s+j,t+j} \frac{1}{1-\sigma} c_{i,s+j,t+j}^{1-\sigma} \nonumber
+	\end{equation}
+	\begin{equation}
+		R_{i,s+j,t+j} \equiv \prod_{x=1}^j (1-\rho_{i,s+x,t+x}) \nonumber
 	\end{equation}
 	subject to the following budget constraint each period.
 	\begin{equation} \label{Eq_HHbc}
@@ -72,7 +75,7 @@
 
 	The solution to this problem yields the following intertemporal Euler equation.
 	\begin{equation} \label{Eq_HHEuler1}
-		c_{ist}^{-\sigma} = \beta c_{i,s+1,t+1}^{-\sigma}(1+r_{i,t+1}-\delta)
+		c_{ist}^{-\sigma} = \beta (1-\rho_{i,s+1,t+1}) c_{i,s+1,t+1}^{-\sigma}(1+r_{i,t+1}-\delta)
 	\end{equation}
 
 	The representative firm in each country maximizes profits subject to a Cobb-Douglas production function.
@@ -116,7 +119,7 @@
 
 	The $IS$ values of $X_t$ in every period must satisfy the following equations $IS$.
 	\begin{align}
-		& c_{ist}^{-\sigma} - \beta c_{i,s+1,t+1}^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,s \label{Eq_Euler2}\\ 
+		& c_{ist}^{-\sigma} - \beta (1-\rho_{i,s+1,t+1}) c_{i,s+1,t+1}^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,s \label{Eq_Euler2}\\ 
 		& r_{it} - r_{1t} = 0; \forall i>1 \\
 		& \sum_{i=1}^I k^f_{it} = 0 \label{Eq_Itnl}
 	\end{align}
@@ -194,7 +197,7 @@
 		w_{it} & = (1-\alpha) \frac{\hat y_{it}}{\hat n_{it}}; \forall i \\
 		\hat bq_{it} & = \frac{\sum_{s=67}^S \hat a_{ist} \rho_{ist} \hat N_{ist}}{\sum_{s=23}^{67} \hat N_{ist}} ; \forall i,s \\
 	    \hat c_{ist} & = w_{it} e_{st} + (1+r_{1t}-\delta)\hat a_{ist} + \hat{bq}_{ist} - \hat a_{i,s+1,t+1}e^{g^A} ; \forall i,s \\
-		& \hat c_{ist}^{-\sigma} - \beta \left(\hat c_{i,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,s \\ 
+		& \hat c_{ist}^{-\sigma} - \beta (1-\rho_{i,s+1,t+1}) \left(\hat c_{i,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,s \\ 
 		& r_{it} - r_{1t} = 0; \forall i>1 \\
 		& \sum_{i=1}^I \hat k^f_{it} = 0
 	\end{align}
@@ -212,7 +215,7 @@
 	\begin{equation}
 		\begin{split}
 		& \max_{\{c_{i,s+j,t+j},\ell_{i,s+j,t+j}\}_{j=0}^{S-s}} U_{ist} = \\
-		& \sum_{j=0}^{S-s} \beta^j \frac{1}{1-\sigma} \left( {c_{i,s+j,t+j}}^{1-1/\rho} + \chi {\ell_{i,s+j,t+j}}^{1-1/\rho}\right)^{\tfrac{{1-\sigma}}{1-1/\rho}}  \nonumber
+		& \sum_{j=0}^{S-s} \beta^j R_{i,s+j,t+j} \frac{1}{1-\sigma} \left( {c_{i,s+j,t+j}}^{1-1/\rho} + \chi {\ell_{i,s+j,t+j}}^{1-1/\rho}\right)^{\tfrac{{1-\sigma}}{1-1/\rho}}  \nonumber
 		\end{split}
 	\end{equation}
 	subject to the following budget constraint each period.
@@ -225,8 +228,8 @@
 
 	The first-order conditions are:
 	\begin{align}
-		& \beta^j \left( {c_{i,s+j,t+j}}^{1-1/\rho} + \chi {\ell_{i,s+j,t+j}}^{1-1/\rho}\right)^{\tfrac{{1-\sigma}}{1-1/\rho}-1} {c_{i,s+j,t+j}}^{-1/\rho}  \nonumber \\ = &  - \lambda_{i,s+j,t+j}  \label{eq_3foc1} \\
-		& \beta^j \left( {c_{i,s+j,t+j}}^{1-1/\rho} + \chi {\ell_{i,s+j,t+j}}^{1-1/\rho}\right)^{\tfrac{{1-\sigma}}{1-1/\rho}-1} \chi {\ell_{i,s+j,t+j}}^{-1/\rho} \nonumber \\ = & - \lambda_{i,s+j,t+j} w_{i,t+j} e_{s+j,t+j} \label{eq_3foc2} \\
+		& \beta^j R_{i,s+j,t+j} \left( {c_{i,s+j,t+j}}^{1-1/\rho} + \chi {\ell_{i,s+j,t+j}}^{1-1/\rho}\right)^{\tfrac{{1-\sigma}}{1-1/\rho}-1} {c_{i,s+j,t+j}}^{-1/\rho}  \nonumber \\ = &  - \lambda_{i,s+j,t+j}  \label{eq_3foc1} \\
+		& \beta^j R_{i,s+j,t+j} \left( {c_{i,s+j,t+j}}^{1-1/\rho} + \chi {\ell_{i,s+j,t+j}}^{1-1/\rho}\right)^{\tfrac{{1-\sigma}}{1-1/\rho}-1} \chi {\ell_{i,s+j,t+j}}^{-1/\rho} \nonumber \\ = & - \lambda_{i,s+j,t+j} w_{i,t+j} e_{s+j,t+j} \label{eq_3foc2} \\
         & (1+r_{i,t+j}-\delta) \lambda_{i,s+j,t+j} = \lambda_{i,s+j-1,t+j-1} \label{eq_3foc3}
 	\end{align}	
 	along with \eqref{eq_3bc}.
@@ -241,9 +244,9 @@
 	Substituting \eqref{eq_3elldef} into \eqref{eq_3foc1} gives:
 	\begin{align}
 	    & \lambda_{i,s+j,t+j} = \nonumber \\
-		& - \beta^j \left( {c_{i,s+j,t+j}}^{\frac{\rho-1}{\rho}} + \chi \left[\left(\frac{\chi} {w_{i,t+j} e_{s+j,t+j}}\right)^{\rho} c_{i,s+j,t+j}\right]^{\frac{\rho-1}{\rho}}\right)^{\frac{1-\rho \sigma}{\rho-1}} {c_{i,s+j,t+j}}^{-1/\rho} \nonumber \\
-		& - \beta^j \left( {c_{i,s+j,t+j}}^{\frac{\rho-1}{\rho}} \left[1 + \chi \left(\frac{\chi} {w_{i,t+j} e_{s+j,t+j}}\right)^{\rho-1} \right]\right)^{\frac{1-\rho \sigma}{\rho-1}} {c_{i,s+j,t+j}}^{-1/\rho} \nonumber \\
-		& - \beta^j \left[1 + \chi \left(\frac{\chi} {w_{i,t+j} e_{s+j,t+j}}\right)^{\rho-1} \right]^{\frac{1-\rho \sigma}{\rho-1}} {c_{i,s+j,t+j}}^{-\sigma} \label{eq_3temp1}
+		& - \beta^j R_{i,s+j,t+j} \left( {c_{i,s+j,t+j}}^{\frac{\rho-1}{\rho}} + \chi \left[\left(\frac{\chi} {w_{i,t+j} e_{s+j,t+j}}\right)^{\rho} c_{i,s+j,t+j}\right]^{\frac{\rho-1}{\rho}}\right)^{\frac{1-\rho \sigma}{\rho-1}} {c_{i,s+j,t+j}}^{-1/\rho} \nonumber \\
+		& - \beta^j R_{i,s+j,t+j} \left( {c_{i,s+j,t+j}}^{\frac{\rho-1}{\rho}} \left[1 + \chi \left(\frac{\chi} {w_{i,t+j} e_{s+j,t+j}}\right)^{\rho-1} \right]\right)^{\frac{1-\rho \sigma}{\rho-1}} {c_{i,s+j,t+j}}^{-1/\rho} \nonumber \\
+		& - \beta^j R_{i,s+j,t+j} \left[1 + \chi \left(\frac{\chi} {w_{i,t+j} e_{s+j,t+j}}\right)^{\rho-1} \right]^{\frac{1-\rho \sigma}{\rho-1}} {c_{i,s+j,t+j}}^{-\sigma} \label{eq_3temp1}
 	\end{align}
 
 	Define $\Psi_{i,s+j,t+j}$.
@@ -253,8 +256,8 @@
 
 	Now substitute \eqref{eq_3temp1} and \eqref{eq_3Psidef} into \eqref{eq_3foc3}.
 	\begin{align}
-        (1+r_{i,t+j}-\delta) \beta^j \Psi_{i,s+j,t+j} {c_{i,s+j,t+j}}^{-\sigma} & = \beta^{j-1} \Psi_{i,s+j-1,t+j-1} {c_{i,s+j-1,t+j-1}}^{-\sigma} \nonumber \\
-        \Psi_{i,s+j-1,t+j-1} {c_{i,s+j-1,t+j-1}}^{-\sigma} & = \beta \Psi_{i,s+j,t+j} {c_{i,s+j,t+j}}^{-\sigma} (1+r_{i,t+j}-\delta) \label{eq_3Euler}
+        & (1+r_{i,t+j}-\delta) \beta^j R_{i,s+j,t+j} \Psi_{i,s+j,t+j} {c_{i,s+j,t+j}}^{-\sigma} = \beta^{j-1} R_{i,s+j-1,t+j-1} \Psi_{i,s+j-1,t+j-1} {c_{i,s+j-1,t+j-1}}^{-\sigma} \nonumber \\
+        & \Psi_{i,s+j-1,t+j-1} {c_{i,s+j-1,t+j-1}}^{-\sigma} = \beta (1-\rho_{i,s+j,t+j}) \Psi_{i,s+j,t+j} {c_{i,s+j,t+j}}^{-\sigma} (1+r_{i,t+j}-\delta) \label{eq_3Euler}
 	\end{align}	
 
 	Substituting \eqref{eq_3elldef} into \eqref{eq_3bc}:
@@ -403,7 +406,7 @@
 	\begin{equation}
 		\begin{split}
 		& \max_{\{c_{i,s+j,t+j},\ell_{i,s+j,t+j},c^K{i,s+j,t+j},a_{i,s+j,t+j}\}_{j=0}^{S-s}} U_{ist} = \\
-		& \sum_{j=0}^{S-s} \beta^j \frac{1}{1-\sigma} \left[ \left( {c_{i,s+j,t+j}}^{1-1/\rho} + \chi {\ell_{i,s+j,t+j}}^{1-1/\rho}\right)^{\tfrac{{1-\sigma}}{1-1/\rho}} + KID_{i,s+j,t+j}{c^K_{i,s+j,t+j}}^{1-\sigma}\right] \nonumber
+		& \sum_{j=0}^{S-s} \beta^j R_{i,s+j,t+j} \frac{1}{1-\sigma} \left[ \left( {c_{i,s+j,t+j}}^{1-1/\rho} + \chi {\ell_{i,s+j,t+j}}^{1-1/\rho}\right)^{\tfrac{{1-\sigma}}{1-1/\rho}} + KID_{i,s+j,t+j}{c^K_{i,s+j,t+j}}^{1-\sigma}\right] \nonumber
 		\end{split}
 	\end{equation}
 	subject to the following budget constraint each period.
@@ -414,21 +417,21 @@
 
 	The first-order conditions are:
 	\begin{align}
-		& \beta^j \left( {c_{i,s+j,t+j}}^{1-1/\rho} + \chi {\ell_{i,s+j,t+j}}^{1-1/\rho}\right)^{\tfrac{{1-\sigma}}{1-1/\rho}-1} {c_{i,s+j,t+j}}^{-1/\rho}  \nonumber \\ = &  - \lambda_{i,s+j,t+j}  \label{eq_4foc1} \\
-		& \beta^j \left( {c_{i,s+j,t+j}}^{1-1/\rho} + \chi {\ell_{i,s+j,t+j}}^{1-1/\rho}\right)^{\tfrac{{1-\sigma}}{1-1/\rho}-1} \chi {\ell_{i,s+j,t+j}}^{-1/\rho} \nonumber \\ = & - \lambda_{i,s+j,t+j} w_{i,t+j} e_{s+j,t+j} \label{eq_4foc2} \\
-		& \beta^j KID_{i,s+j,t+j}{c^K_{i,s+j,t+j}}^{-\sigma} = - \lambda_{i,s+j,t+j} KID_{i,s+j,t+j} \label{eq_4foc3} \\
+		& \beta^j R_{i,s+j,t+j} \left( {c_{i,s+j,t+j}}^{1-1/\rho} + \chi {\ell_{i,s+j,t+j}}^{1-1/\rho}\right)^{\tfrac{{1-\sigma}}{1-1/\rho}-1} {c_{i,s+j,t+j}}^{-1/\rho}  \nonumber \\ = &  - \lambda_{i,s+j,t+j}  \label{eq_4foc1} \\
+		& \beta^j R_{i,s+j,t+j} \left( {c_{i,s+j,t+j}}^{1-1/\rho} + \chi {\ell_{i,s+j,t+j}}^{1-1/\rho}\right)^{\tfrac{{1-\sigma}}{1-1/\rho}-1} \chi {\ell_{i,s+j,t+j}}^{-1/\rho} \nonumber \\ = & - \lambda_{i,s+j,t+j} w_{i,t+j} e_{s+j,t+j} \label{eq_4foc2} \\
+		& \beta^j R_{i,s+j,t+j} KID_{i,s+j,t+j}{c^K_{i,s+j,t+j}}^{-\sigma} = - \lambda_{i,s+j,t+j} KID_{i,s+j,t+j} \label{eq_4foc3} \\
                & (1+r_{i,t+j}-\delta) \lambda_{i,s+j,t+j} = \lambda_{i,s+j-1,t+j-1} \label{eq_4foc4}
 	\end{align}	
 	along with \eqref{eq_4bc}.
 
 	Solve the \eqref{eq_4foc3} for the LaGrange multiplier.
 	\begin{equation}\label{eq_4lamdef}
-	       \lambda_{i,s+j,t+j} = -\beta^j {c^K_{i,s+j,t+j}}^{-\sigma}
+	       \lambda_{i,s+j,t+j} = -\beta^j R_{i,s+j,t+j} {c^K_{i,s+j,t+j}}^{-\sigma}
 	\end{equation}
 
 	Then substitute this into \eqref{eq_4foc4} to get an intertemporal Euler equation.
 	\begin{equation}
-	       {c^K_{i,s+j-1,t+j-1}}^{-\sigma} = \beta (1+r_{i,t+j}-\delta) {c^K_{i,s+j,t+j}}^{-\sigma}
+	       {c^K_{i,s+j-1,t+j-1}}^{-\sigma} = \beta (1-\rho_{i,s+j,t+j}) (1+r_{i,t+j}-\delta) {c^K_{i,s+j,t+j}}^{-\sigma}
 	\end{equation}
 
 	Next, take the ratio of \eqref{eq_4foc1} and \eqref{eq_4foc2} and substitute in \eqref{eq_4lamdef}.
@@ -440,7 +443,7 @@
 
 	Substitute \eqref{eq_4lamdef} and \eqref{eq_4elldef} into \eqref{eq_4foc1}.
 	\begin{align}
-		& \beta^j \left\{ {c_{i,s+j,t+j}}^{1-1/\rho} + \chi \left[c_{i,s+j,t+j} \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^\rho\right]^{1-1/\rho}\right\}^{\tfrac{{1-\sigma}}{1-1/\rho}-1}  {c_{i,s+j,t+j}}^{-1/\rho}  \nonumber \\ = &  \beta^j {c^K_{i,s+j,t+j}}^{-\sigma} \nonumber \\
+		& \beta^j R_{i,s+j,t+j}\left\{ {c_{i,s+j,t+j}}^{1-1/\rho} + \chi \left[c_{i,s+j,t+j} \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^\rho\right]^{1-1/\rho}\right\}^{\tfrac{{1-\sigma}}{1-1/\rho}-1}  {c_{i,s+j,t+j}}^{-1/\rho}  \nonumber \\ = &  \beta^j R_{i,s+j,t+j} {c^K_{i,s+j,t+j}}^{-\sigma} \nonumber \\
 		& \left\{ {c_{i,s+j,t+j}}^{1-1/\rho} \left[1 + \chi \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^{\rho-1}\right]\right\}^{\tfrac{1-\rho \sigma}{\rho-1}}  {c_{i,s+j,t+j}}^{-1/\rho}  \nonumber \\ = &   {c^K_{i,s+j,t+j}}^{-\sigma} \nonumber \\
 		& \left[1 + \chi \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^{\rho-1}\right]^{\tfrac{1-\rho \sigma}{\rho-1}}  {c_{i,s+j,t+j}}^{\left[(1-1/\rho) \tfrac{1-\rho\sigma}{\rho-1}-1/\rho\right]}  \nonumber \\ = & {c^K_{i,s+j,t+j}}^{-\sigma} \nonumber \\
 		& \left[1 + \chi \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^{\rho-1}\right]^{\tfrac{1-\rho \sigma}{\rho-1}}  {c_{i,s+j,t+j}}^{-\sigma} =  {c^K_{i,s+j,t+j}}^{-\sigma} \nonumber \\
@@ -481,7 +484,7 @@
 		\hat c^K_{ist} & = \hat c_{ist} \Gamma_{it}; \forall i,s
 	\end{align}
 	\begin{align}
-		& \left({\hat c^K_{ist}}\right)^{-\sigma} - \beta \left(\hat c^K_{i,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,s \\
+		& \left({\hat c^K_{ist}}\right)^{-\sigma} - \beta (1-\rho_{i,s+1,t+1}) \left(\hat c^K_{i,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,s \\
 		& r_{it} - r_{1t} = 0; \forall i>1 \\
 		& \sum_{i=1}^I \hat k^f_{it} = 0
 	\end{align}
@@ -528,7 +531,7 @@
     	\hat c_{ijst} & = \frac{w_{ijt} e_{jst} + (1+r_{it}-\delta)\hat a_{ijst} + \hat{bq}_{jist} - \hat a_{i,j,s+1,t+1} e^{g^A}} {1 + KID_{ist}\Gamma_{ijt} + \left(\tfrac{\chi}{w_{ijt}e_{jst}}\right)^\rho}; \forall i,j,s \\
 		\hat \ell_{ijst} & = \hat c_{ijst} \left(\frac{\chi}{w_{ijt}e_{jst}}\right)^{\frac{1-\rho}{\rho}} ; \forall i,j,s \\
 		\hat c^K_{ijst} & = \hat c_{ijst} \Gamma_{ijt}; \forall i,j,s \\
-		& \left({\hat c^K_{ijst}}\right)^{-\sigma} - \beta \left(\hat c^K_{i,j,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,j,s \\
+		& \left({\hat c^K_{ijst}}\right)^{-\sigma} - \beta (1-\rho_{i,j,s+1,+1}) \left(\hat c^K_{i,j,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,j,s \\
 		& r_{it} - r_{1t} = 0; \forall i>1 \\
 		& \sum_{i=1}^I \hat k^f_{it} = 0
 	\end{align}
@@ -587,7 +590,7 @@
 		\hat c^K_{ijst} & = \hat c_{ijst} \Gamma_{ijt}; \forall i,j,s
 	\end{align}
 	\begin{align}
-		& \left({\hat c^K_{ijst}}\right)^{-\sigma} - \beta \left(\hat c^K_{i,j,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,j,s \\
+		& \left({\hat c^K_{ijst}}\right)^{-\sigma} - \beta (1-\rho_{i,j,s+1,+1}) \left(\hat c^K_{i,j,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,j,s \\
 		& r_{it} - r_{1t} = 0; \forall i>1 \\
 		& \sum_{i=1}^I \hat k^f_{it} = 0
 	\end{align}
