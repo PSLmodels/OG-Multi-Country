@@ -385,37 +385,6 @@ class OLG(object):
 
     #STEADY STATE
 
-    def get_Psi(self, w, e):
-        """
-            Description:
-                - Calculates the variable Psi using equation 3.21 for the steady state and for transition path functions
-
-            Inputs:
-                - w          = Array: [I,T] or [I], Wage rate for each country and year if called from transition path.
-                                      Otherwise it is the steady state wage rate
-                - e          = Array: [I,S,T] or [I,S], Labor Productivities for each country, cohort and year if called from transition path. 
-                                      Otherwise it is the steady state labor productivities
-
-            Variables Called from Object:
-                - self.chi   = Scalar: Leisure Preference Parameter
-                - self.rho   = Scalar: The intratemporal elasticity of substitution between consumption and leisure
-                - self.sigma = Scalar: Rate of Time Preference
-
-            Variables Stored in Object:
-                - None
-
-            Other Functions Called:
-                - None
-
-            Objects in Function:
-                - we         = Array: [I,S,T] or [I,S], Matrix product of w and e
-
-            Outputs:
-                - psi        = Array: [I,S,T] or [I,S], Variable made just to simplify calculation of household decision equations
-        """
-
-        return psi
-
     def get_Gamma(self, w, e):
 
         #If getting the SS
@@ -427,7 +396,9 @@ class OLG(object):
             we = np.einsum("it, ist -> ist", w, e)
 
 
-        Gamma = (   1+self.chi*(self.chi/we)**( -(self.rho-1)**2/(self.rho**2) )   )**( (self.rho*self.sigma-1)/(self.sigma*(self.rho-1)) )
+        Gamma = ( ( 1+self.chi*(self.chi/we)**(self.rho-1) )**((1-self.rho*self.sigma)/(self.rho-1)) ) ** (1/self.sigma)
+
+        print (1+self.chi*(self.chi/we)**(self.rho-1))[0,2], ((1-self.rho*self.sigma)/(self.rho-1))* (-1/self.sigma)
 
 
         return Gamma
@@ -464,7 +435,7 @@ class OLG(object):
         elif e.ndim == 3:
             we = np.einsum("it,ist->ist",w,e)
         
-        lhat=c*(self.chi/we)**((1-self.rho)/self.rho)
+        lhat=c*(self.chi/we)**self.rho
 
         return lhat
 
@@ -631,19 +602,18 @@ class OLG(object):
 
             for s in xrange(self.S-1):
                 #Equation 3.21
-                cKvec_ss[:,s+1] = (self.beta * (1-self.Mortality_ss[:,s]) * (1 + r_ss - self.delta))\
-                                    **(1/self.sigma) * cKvec_ss[:,s]*np.exp(-self.g_A)
+                cKvec_ss[:,s+1] = ( (self.beta*(1-self.Mortality_ss[:,s])*(1+r_ss-self.delta))**(1/self.sigma)*cKvec_ss[:,s] )*np.exp(-self.g_A)
 
                 cvec_ss[:,s+1] = cKvec_ss[:,s+1]/Gamma_ss[:,s+1]
 
                 #Equation 3.19
                 avec_ss[:,s+1] = (w_ss*self.e_ss[:,s]*self.lbar_ss + (1 + r_ss - self.delta)*avec_ss[:,s] + bq_ss[:,s] \
-                                - cvec_ss[:,s]*(1+self.Kids_ss[:,s]*Gamma_ss[:,s]+w_ss*self.e_ss[:,s]*(self.chi/(w_ss*self.e_ss[:,s]))**((1-self.rho)/self.rho)))*np.exp(-self.g_A)
+                                - cvec_ss[:,s]*(1+self.Kids_ss[:,s]*Gamma_ss[:,s]+w_ss*self.e_ss[:,s]*(self.chi/(w_ss*self.e_ss[:,s]))**self.rho))*np.exp(-self.g_A)
 
             #Equation 3.19 for final assets
             avec_ss[:,s+2] = (w_ss*self.e_ss[:,s+1] + (1 + r_ss - self.delta)*avec_ss[:,s+1] - cvec_ss[:,s+1]*\
                                     (1+self.Kids_ss[:,s+1]*Gamma_ss[:,s+1]+w_ss*self.e_ss[:,s+1]*(self.chi/(w_ss*self.e_ss[:,s+1]))\
-                                **((1-self.rho)/self.rho)))*np.exp(-self.g_A)
+                                **self.rho))*np.exp(-self.g_A)
 
             return cvec_ss, cKvec_ss, avec_ss
 
@@ -686,6 +656,54 @@ class OLG(object):
                 Euler = np.ones(Euler.shape[0])*9999.
 
             return Euler
+        
+        def checkSSEulers(cvec_ss, cKvec_ss, avec_ss, w_ss, r_ss, bq_ss, Gamma_ss):
+            """
+                Description:
+                    -Description of the Function
+
+                Inputs:
+                    - None
+
+                Variables Called from Object:
+
+                    - self.avec_ss           = Array: [I,S], Steady state assets
+                    - self.bqvec_ss          = Array: [I,S], Distribution of bequests in the steady state
+                    - self.cvec_ss           = Array: [I,S], Steady state consumption
+                    - self.e_ss              = Array: [I,S], Labor produtivities for the Steady State
+                    - self.Mortality_ss      = Array: [I,S], Mortality rates of each country for each age cohort in the steady state
+                    - self.psi_ss            = Array: [I,S], Steady state value of shorthand calculation variable
+                    - self.w_ss              = Array: [I], Steady state wage rate
+                    - self.beta              = Scalar: Calculated overall future discount rate
+                    - self.delta             = Scalar: Calulated overall depreciation rate
+                    - self.g_A               = Scalar: Growth rate of technology
+                    - self.r_ss              = Scalar: Steady state intrest rate
+                    - self.sigma             = Scalar: Rate of Time Preference
+
+
+                Variables Stored in Object:
+                    - None
+
+                Other Functions Called:
+                    - None
+
+                Objects in Function:
+                    - we                     = Array: [I,S], Matrix product of w and e
+
+                Outputs:
+                    - None
+            """
+
+            we = np.einsum("i,is->is",w_ss,self.e_ss)
+
+            Household_Euler = avec_ss[:,-1]
+            Chained_C_Condition = cKvec_ss**(-self.sigma) - self.beta*(1-self.Mortality_ss)*(cKvec_ss*np.exp(self.g_A))**-self.sigma * (1+r_ss-self.delta)
+            Modified_Budget_Constraint = cvec_ss -( we*self.lbar_ss + (1+r_ss-self.delta)*avec_ss[:,:-1] + bq_ss - avec_ss[:,1:]*np.exp(self.g_A) )\
+            /(1+self.Kids_ss*Gamma_ss+we*(self.chi/we)**self.rho) 
+            Consumption_Ratio = cKvec_ss - cvec_ss*Gamma_ss
+
+            return Household_Euler, Chained_C_Condition, Modified_Budget_Constraint, Consumption_Ratio
+
 
         #Equation 3.25
         w_ss = (self.alpha*self.A/r_ss)**(self.alpha/(1-self.alpha))*(1-self.alpha)*self.A
@@ -695,13 +713,21 @@ class OLG(object):
         Gamma_ss = self.get_Gamma(w_ss, self.e_ss)
 
         #Initial guess for the first cohort's consumption
-        cK1_guess = np.ones(self.I)*.02
+        cK1_guess = np.ones(self.I)*5
 
         #Finds the optimal consumption for the first cohort
         opt_cK1 = opt.fsolve(householdEuler_SS, cK1_guess, args = (w_ss, r_ss, Gamma_ss))
 
         #Gets the optimal paths for consumption and assets as a function of the first cohort's consumption
         cvec_ss, cKvec_ss, avec_ss = get_lifetime_decisionsSS(opt_cK1, w_ss, r_ss, Gamma_ss)
+
+        Household_Euler, Chained_C_Condition, Modified_Budget_Constraint, Consumption_Ratio = checkSSEulers(cvec_ss, cKvec_ss, avec_ss, w_ss, r_ss, bq_ss, Gamma_ss)
+        print "\nEuler Household satisfied:", np.isclose(np.max(np.absolute(Household_Euler)), 0)
+        print "Equation 4.26 satisfied:", np.isclose(np.max(np.absolute(Chained_C_Condition)), 0)
+        print "Equation 4.23 satisfied:", np.isclose(np.max(np.absolute(Modified_Budget_Constraint)), 0)
+        print "Equation 4.25 satisfied", np.isclose(np.max(np.absolute(Consumption_Ratio)), 0)
+        print Chained_C_Condition[0,:]
+        #print Modified_Budget_Constraint[0,:]
 
         #Snips off the final entry of assets since it is just 0 if the equations solved correctly
         avec_ss = avec_ss[:,:-1]
@@ -893,51 +919,6 @@ class OLG(object):
             print "-Euler for bq satisfied:", np.isclose(np.max(np.absolute(Euler_bq)), 0)
             print "-Euler for r satisfied:", np.isclose(Euler_kf, 0), "\n\n"
 
-    def checkSSEulers(self):
-        """
-            Description:
-                -Description of the Function
-
-            Inputs:
-                - None
-
-            Variables Called from Object:
-
-                - self.avec_ss           = Array: [I,S], Steady state assets
-                - self.bqvec_ss          = Array: [I,S], Distribution of bequests in the steady state
-                - self.cvec_ss           = Array: [I,S], Steady state consumption
-                - self.e_ss              = Array: [I,S], Labor produtivities for the Steady State
-                - self.Mortality_ss      = Array: [I,S], Mortality rates of each country for each age cohort in the steady state
-                - self.psi_ss            = Array: [I,S], Steady state value of shorthand calculation variable
-                - self.w_ss              = Array: [I], Steady state wage rate
-                - self.beta              = Scalar: Calculated overall future discount rate
-                - self.delta             = Scalar: Calulated overall depreciation rate
-                - self.g_A               = Scalar: Growth rate of technology
-                - self.r_ss              = Scalar: Steady state intrest rate
-                - self.sigma             = Scalar: Rate of Time Preference
-
-
-            Variables Stored in Object:
-                - None
-
-            Other Functions Called:
-                - None
-
-            Objects in Function:
-                - we                     = Array: [I,S], Matrix product of w and e
-
-            Outputs:
-                - None
-        """
-
-        we = np.einsum("i,is->is",self.w_ss,self.e_ss[:,:-1])
-
-        print self.psi_ss[:,:-1]*self.cvec_ss[:,:-1]**(-self.sigma) - self.beta*(1-self.Mortality_ss[:,:-1])*self.psi_ss[:,1:]*(self.cvec_ss[:,1:]*np.exp(self.g_A))**(-self.sigma)*(1+self.r_ss-self.delta)
-        
-        print self.cvec_ss[:,:-1] - \
-        (we + (1+self.r_ss-self.delta)*self.avec_ss[:,:-1] + self.bqvec_ss[:,:-1] - self.avec_ss[:,1:]*np.exp(self.g_A)) / \
-        (1 + we*(self.chi/we)**self.rho)
-  
     def PrintSSResults(self):
         """
             Description:

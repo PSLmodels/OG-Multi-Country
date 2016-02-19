@@ -434,23 +434,23 @@
 	Next, take the ratio of \eqref{eq_4foc1} and \eqref{eq_4foc2} and substitute in \eqref{eq_4lamdef}.
 
 	\begin{align}
-		& \frac{{c_{i,s+j,t+j}}^{1-1/\rho}} {\chi {\ell_{i,s+j,t+j}}^{1-1/\rho}} = \frac{1}{w_{i,t+j} e_{s+j,t+j}} \nonumber \\
+		& \frac{{c_{i,s+j,t+j}}^{\rho}} {\chi {\ell_{i,s+j,t+j}}^{\rho}} = \frac{1}{w_{i,t+j} e_{s+j,t+j}} \nonumber \\
 		& \ell_{i,s+j,t+j} = c_{i,s+j,t+j} \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^\rho \label{eq_4elldef}
  	\end{align}
 
 	Substitute \eqref{eq_4lamdef} and \eqref{eq_4elldef} into \eqref{eq_4foc1}.
 	\begin{align}
-		& \beta^j \left\{ {c_{i,s+j,t+j}}^{1-1/\rho} + \chi \left[c_{i,s+j,t+j} \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^\rho\right]^{1-1/\rho}\right\}^{\tfrac{{1-\sigma}}{1-1/\rho}-1} \left(1-\tfrac{1}{\rho}\right)^{-1} {c_{i,s+j,t+j}}^{-1/\rho}  \nonumber \\ = &  \beta^j {c^K_{i,s+j,t+j}}^{-\sigma} \nonumber \\
-		& \left\{ {c_{i,s+j,t+j}}^{1-1/\rho} \left[1 + \chi \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^{\rho-1}\right]\right\}^{\tfrac{1-\rho \sigma}{\rho-1}}  {c_{i,s+j,t+j}}^{-1/\rho}  \nonumber \\ = &  \left(1-\tfrac{1}{\rho}\right) {c^K_{i,s+j,t+j}}^{-\sigma} \nonumber \\
-		& \left[1 + \chi \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^{\rho-1}\right]^{\tfrac{1-\rho \sigma}{\rho-1}}  {c_{i,s+j,t+j}}^{\left[(1-1/\rho) \tfrac{1-\rho\sigma}{\rho-1}-1/\rho\right]}  \nonumber \\ = &  \left(1-\tfrac{1}{\rho}\right) {c^K_{i,s+j,t+j}}^{-\sigma} \nonumber \\
-		& \left[1 + \chi \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^{\rho-1}\right]^{\tfrac{1-\rho \sigma}{\rho-1}}  {c_{i,s+j,t+j}}^{-\sigma} = \left(1-\tfrac{1}{\rho}\right) {c^K_{i,s+j,t+j}}^{-\sigma} \nonumber \\
-		& c^K_{i,s+j,t+j} = c_{i,s+j,t+j} \left\{ \left[1 + \chi \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^{\rho-1}\right]^{\tfrac{1-\rho \sigma}{\rho-1}} \frac{\rho}{\rho-1} \right\}^{-\tfrac{1}{\sigma}} \nonumber
+		& \beta^j \left\{ {c_{i,s+j,t+j}}^{1-1/\rho} + \chi \left[c_{i,s+j,t+j} \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^\rho\right]^{1-1/\rho}\right\}^{\tfrac{{1-\sigma}}{1-1/\rho}-1}  {c_{i,s+j,t+j}}^{-1/\rho}  \nonumber \\ = &  \beta^j {c^K_{i,s+j,t+j}}^{-\sigma} \nonumber \\
+		& \left\{ {c_{i,s+j,t+j}}^{1-1/\rho} \left[1 + \chi \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^{\rho-1}\right]\right\}^{\tfrac{1-\rho \sigma}{\rho-1}}  {c_{i,s+j,t+j}}^{-1/\rho}  \nonumber \\ = &   {c^K_{i,s+j,t+j}}^{-\sigma} \nonumber \\
+		& \left[1 + \chi \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^{\rho-1}\right]^{\tfrac{1-\rho \sigma}{\rho-1}}  {c_{i,s+j,t+j}}^{\left[(1-1/\rho) \tfrac{1-\rho\sigma}{\rho-1}-1/\rho\right]}  \nonumber \\ = & {c^K_{i,s+j,t+j}}^{-\sigma} \nonumber \\
+		& \left[1 + \chi \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^{\rho-1}\right]^{\tfrac{1-\rho \sigma}{\rho-1}}  {c_{i,s+j,t+j}}^{-\sigma} =  {c^K_{i,s+j,t+j}}^{-\sigma} \nonumber \\
+		& c^K_{i,s+j,t+j} = c_{i,s+j,t+j} \left\{ \left[1 + \chi \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^{\rho-1}\right]^{\tfrac{1-\rho \sigma}{\rho-1}} \right\}^{-\tfrac{1}{\sigma}} \nonumber
 	\end{align}
 
 	We rewrite this, more conveniently, as:
 	\begin{align}
        & c^K_{i,s+j,t+j} = c_{i,s+j,t+j} \Gamma_{i,t+j} \label{eq_4cKdef} \\
-       & \Gamma_{i,t+j} \equiv \left\{ \left[1 + \chi \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^{\rho-1}\right]^{\tfrac{1-\rho \sigma}{\rho-1}} \frac{\rho}{\rho-1} \right\}^{-\tfrac{1}{\sigma}} \label{eq_4Gamdef}
+       & \Gamma_{i,t+j} \equiv \left\{ \left[1 + \chi \left(\frac{\chi}{w_{i,t+j} e_{s+j,t+j}}\right)^{\rho-1}\right]^{\tfrac{1-\rho \sigma}{\rho-1}}  \right\}^{-\tfrac{1}{\sigma}} \label{eq_4Gamdef}
 	\end{align}
 
 	Substituting \eqref{eq_4elldef}, \eqref{eq_4cKdef} and \eqref{eq_4Gamdef}, into the budget constraint, \eqref{eq_4bc},  gives:
@@ -475,9 +475,9 @@
 		r_{it} & = \alpha \frac{\hat y_{it}}{\hat k_{it}}; \forall i \\
 		w_{it} & = (1-\alpha) \frac{\hat y_{it}}{\hat n_{it}}; \forall i \\
 		\hat bq_{it} & = \frac{\sum_{s=67}^S \hat a_{ist} \rho_{ist} \hat N_{ist}}{\sum_{s=23}^{67} \hat N_{ist}} ; \forall i,s \\
-		\Gamma_{it} & = \left\{ \left[1 + \chi \left(\frac{\chi}{w_{it} e_{st}}\right)^{\rho-1}\right]^{\tfrac{1-\rho \sigma}{\rho-1}} \frac{\rho}{\rho-1} \right\}^{-\tfrac{1}{\sigma}}; \forall i,s \\
-    	\hat c_{ist} & = \frac{w_{it} e_{st} \bar \ell + (1+r_{it}-\delta)\hat a_{ist} - \hat a_{i,s+1,t+1} e^{g^A}} {1 + KID_{ist}\Gamma_{it} + \left(\tfrac{\chi}{w_{it}e_{st}}\right)^\rho}; \forall i,s \\
-		\hat \ell_{ist} & = \hat c_{ist} \left(\frac{\chi}{w_{it}e_{st}}\right)^{\frac{1-\rho}{\rho}} ; \forall i,s \\
+		\Gamma_{it} & = \left\{ \left[1 + \chi \left(\frac{\chi}{w_{it} e_{st}}\right)^{\rho-1}\right]^{\tfrac{1-\rho \sigma}{\rho-1}}  \right\}^{-\tfrac{1}{\sigma}}; \forall i,s \\
+    	\hat c_{ist} & = \frac{w_{it} e_{st} \bar \ell + (1+r_{it}-\delta)\hat a_{ist} +\hat bq_{ist} - \hat a_{i,s+1,t+1} e^{g^A}} {1 + KID_{ist}\Gamma_{it} +w_{it}e_{st} \left(\tfrac{\chi}{w_{it}e_{st}}\right)^\rho}; \forall i,s \\
+		\hat \ell_{ist} & = \hat c_{ist} \left(\frac{\chi}{w_{it}e_{st}}\right)^\rho ; \forall i,s \\
 		\hat c^K_{ist} & = \hat c_{ist} \Gamma_{it}; \forall i,s
 	\end{align}
 	\begin{align}

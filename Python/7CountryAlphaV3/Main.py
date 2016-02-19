@@ -1,3 +1,4 @@
+from __future__ import division
 import time
 import numpy as np
 import AuxiliaryClass as AUX
@@ -35,7 +36,7 @@ def Multi_Country(S,I,sigma):
     PrintSS = False #Prints the result of the Steady State functions
     Print_caTimepaths = False #Prints the consumption, assets, and bequests timepath as it gets filled in for each iteration of TPI
     Print_HH_Eulers = True #Prints whether the equations for the household decisions are satisfied (Equations 3.22, 3.19, and sum(assets) = 0)
-    Print_Fill_Matricies_Time=False #Activiates Printing the total time it takes to fill the upper and lower diagonal matricies
+    Print_Fill_Matricies_Time=True #Activiates Printing the total time it takes to fill the upper and lower diagonal matricies
     CheckerMode = True #Activates not printing much of anything, used in conjunction with RobustChecker.py
     Iterate = True #Shows the current iteration number and the associated Eulers
 
@@ -43,7 +44,7 @@ def Multi_Country(S,I,sigma):
 
     #For plots to display or save
     DemogGraphs = False #Activates graphing graphs with demographic data and population shares
-    ShowSSGraphs = False #Activates graphs for steady-state solutions for consumption, assets, and bequests
+    ShowSSGraphs = True #Activates graphs for steady-state solutions for consumption, assets, and bequests
     iterations_to_plot = set([1]) #Which iterations of the timepath fsolve you want to plot
     SaveFinalTPIPlot = True #Saves the final (and hopefully converged) time path plot as a .png file
 
@@ -95,19 +96,19 @@ def Multi_Country(S,I,sigma):
     r_init = Model.r_ss*1.05
     bq_init = Model.bqindiv_ss*.95
     a_init = Model.avec_ss*.7
-    #print "Timepath not ready yet! Uncomment it from the main file when the SS code works"
-    #"""
+    print "Timepath not ready yet! Uncomment it from the main file when the SS code works"
+    """
     Model.set_initial_values(r_init, bq_init, a_init)
 
     Model.Timepath_fsolve(Print_HH_Eulers, Print_caTimepaths, iterations_to_plot)
     if SaveFinalTPIPlot: Model.plot_timepaths(SAVE=True)
-    #"""
+    """
 
 #Input parameters for S, I and sigma here then execute this file to
 #run the model.
 
 start = time.time()
-Multi_Country(20,3,4)
+Multi_Country(80,7,4)
 tottime=time.time()-start
 
 if TimeModel==True:
