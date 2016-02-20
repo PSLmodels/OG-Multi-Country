@@ -117,7 +117,7 @@ class OLG(object):
         self.delta=1-(1-delta_annual)**(70/self.S)
 
         #Lever Parameters
-        (PrintAges,self.PrintLoc,self.CheckerMode,self.Iterate,self.UseDiffDemog,self.UseDiffProductivities,self.UseCython) = Lever_Params
+        (PrintAges,self.PrintLoc,self.CheckerMode,self.Iterate,self.UseDiffDemog,self.UseDiffProductivities,self.UseCython,self.TimeLoops) = Lever_Params
 
         #Getting key ages for calculating demographic dynamics
         self.LeaveHouseAge, self.FirstFertilityAge, self.LastFertilityAge,\
@@ -1440,7 +1440,9 @@ class OLG(object):
                 c0future_guess[i,:] = np.linspace(c_matrix[i,1,0], self.cvec_ss[i,-1], self.T)
 
             #Solves for the entire consumption and assets matrices for agents not currently born
+            start=time.time()
             opt.fsolve(HHEulerSystem, c0future_guess, args=(c_matrix, a_matrix, w_path, r_path, psi, bqvec_path, False))
+            if self.TimeLoops: print "Lower Triangle Fill Time", time.time()-start
 
             #Prints consumption and assets matrices for country 0. 
             #NOTE: the output is the transform of the original matrices, so each row is time and each col is cohort

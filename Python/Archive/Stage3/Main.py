@@ -4,7 +4,7 @@ import AuxiliaryClass as AUX
 
 np.set_printoptions(threshold = 3000, linewidth=2000, suppress=True)
 
-TimeModel=False #Activates timing the model
+TimeModel=True #Activates timing the model
 
 
 def Multi_Country(S,I,sigma):
@@ -39,12 +39,13 @@ def Multi_Country(S,I,sigma):
     Print_HH_Eulers = False #Prints whether the equations for the household decisions are satisfied (Equations 3.22, 3.19, and sum(assets) = 0)
     CheckerMode = True #Activates not printing much of anything, used in conjunction with RobustChecker.py
     Iterate = True #Shows the current iteration number and the associated Eulers
+    TimeLoops = False #Times the filling of future consumption and assets
 
     UseCython = True #Activate this to slightly speed up the code, if you don't install the included module, this must be false
 
     #For plots to display or save
     DemogGraphs = False #Activates graphing graphs with demographic data and population shares
-    ShowSSGraphs = True #Activates graphs for steady-state solutions for consumption, assets, and bequests
+    ShowSSGraphs = False #Activates graphs for steady-state solutions for consumption, assets, and bequests
     iterations_to_plot = set([]) #Which iterations of the timepath fsolve you want to plot
     SaveFinalTPIPlot = True #Saves the final (and hopefully converged) time path plot as a .png file
 
@@ -73,7 +74,7 @@ def Multi_Country(S,I,sigma):
 
     Firm_Params = (alpha, delta_ann, chi, rho, g_A)
 
-    Levers = (PrintAges,PrintLoc,CheckerMode,Iterate,UseDiffDemog,UseDiffProductivities,UseCython)
+    Levers = (PrintAges,PrintLoc,CheckerMode,Iterate,UseDiffDemog,UseDiffProductivities,UseCython,TimeLoops)
 
     #Initialize the class instance
     Model = AUX.OLG(Country_Roster,HH_params,Firm_Params,Levers)
