@@ -96,7 +96,7 @@ class OLG(object):
 
         #HH Parameters
         (self.S, self.I, beta_annual, self.sigma) = HH_Params
-        
+    
         self.beta=beta_annual**(70/self.S)
 
         self.T = int(round(8*self.S))
@@ -377,8 +377,8 @@ class OLG(object):
         Description: This calls the plotDemographics function from the AuxiliaryDemographics.py file. See it for details
         """
 
-        ages = self.FirstFertilityAge, self.LastFertilityAge, self.FirstDyingAge, self.MaxImmigrantAge
-        datasets = self.FertilityRates, self.MortalityRates, self.ImmigrationRates, self.Nhat
+        ages = self.LeaveHouseAge, self.FirstFertilityAge, self.LastFertilityAge, self.FirstDyingAge, self.MaxImmigrantAge
+        datasets = self.FertilityRates, self.MortalityRates, self.ImmigrationRates, self.Nhat, self.Kids
 
         #Calls the Auxiliary Demographics file for this function
         demog.plotDemographics(ages, datasets, self.I, self.S, self.T, self.I_touse, T_touse, compare_across, data_year)
@@ -389,16 +389,17 @@ class OLG(object):
 
         #If getting the SS
         if e.ndim == 2:
-            we =  np.einsum("i,is->is",w,e)
+            we =  np.einsum("i,is->is", w, e)
 
         #If getting transition path
         elif e.ndim == 3:
             we = np.einsum("it, ist -> ist", w, e)
 
 
-        Gamma = ( ( 1+self.chi*(self.chi/we)**(self.rho-1) )**((1-self.rho*self.sigma)/(self.rho-1)) ) ** (1/self.sigma)
+        Gamma = ( ( 1+self.chi*(self.chi/we)**(self.rho-1) )**((1-self.rho*self.sigma)/(self.rho-1)) ) ** (-1/self.sigma)
 
-        print (1+self.chi*(self.chi/we)**(self.rho-1))[0,2], ((1-self.rho*self.sigma)/(self.rho-1))* (-1/self.sigma)
+        #print (1+self.chi*(self.chi/we)**(self.rho-1))[0,0], ((1-self.rho*self.sigma)/(self.rho-1))* (-1/self.sigma), \
+        #(self.chi*(self.chi/we)**self.rho)[0,2], Gamma[0,2]
 
 
         return Gamma
@@ -509,7 +510,7 @@ class OLG(object):
 
         return Y
 
-    def GetSSComponents(self, bq_ss, r_ss):
+    def GetSSComponents(self, bq_ss, r_ss, PrintSSEulErrors=False):
         """
             Description:
                 - Solves for all the other variables in the model using bq_ss and r_ss
@@ -602,7 +603,7 @@ class OLG(object):
 
             for s in xrange(self.S-1):
                 #Equation 3.21
-                cKvec_ss[:,s+1] = ( (self.beta*(1-self.Mortality_ss[:,s])*(1+r_ss-self.delta))**(1/self.sigma)*cKvec_ss[:,s] )*np.exp(-self.g_A)
+                cKvec_ss[:,s+1] = ( ((self.beta*(1-self.Mortality_ss[:,s])*(1+r_ss-self.delta))**(1/self.sigma) )*cKvec_ss[:,s] )/np.exp(self.g_A)
 
                 cvec_ss[:,s+1] = cKvec_ss[:,s+1]/Gamma_ss[:,s+1]
 
@@ -697,9 +698,9 @@ class OLG(object):
             we = np.einsum("i,is->is",w_ss,self.e_ss)
 
             Household_Euler = avec_ss[:,-1]
-            Chained_C_Condition = cKvec_ss**(-self.sigma) - self.beta*(1-self.Mortality_ss)*(cKvec_ss*np.exp(self.g_A))**-self.sigma * (1+r_ss-self.delta)
+            Chained_C_Condition = cKvec_ss[:,:-1]**(-self.sigma) - self.beta*(1-self.Mortality_ss[:,:-1])*(cKvec_ss[:,1:]*np.exp(self.g_A))**-self.sigma * (1+r_ss-self.delta)
             Modified_Budget_Constraint = cvec_ss -( we*self.lbar_ss + (1+r_ss-self.delta)*avec_ss[:,:-1] + bq_ss - avec_ss[:,1:]*np.exp(self.g_A) )\
-            /(1+self.Kids_ss*Gamma_ss+we*(self.chi/we)**self.rho) 
+            /(1+self.Kids_ss*Gamma_ss+we*(self.chi/we)**self.rho)
             Consumption_Ratio = cKvec_ss - cvec_ss*Gamma_ss
 
             return Household_Euler, Chained_C_Condition, Modified_Budget_Constraint, Consumption_Ratio
@@ -709,7 +710,6 @@ class OLG(object):
         w_ss = (self.alpha*self.A/r_ss)**(self.alpha/(1-self.alpha))*(1-self.alpha)*self.A
 
         #Equation 3.21
-
         Gamma_ss = self.get_Gamma(w_ss, self.e_ss)
 
         #Initial guess for the first cohort's consumption
@@ -721,13 +721,14 @@ class OLG(object):
         #Gets the optimal paths for consumption and assets as a function of the first cohort's consumption
         cvec_ss, cKvec_ss, avec_ss = get_lifetime_decisionsSS(opt_cK1, w_ss, r_ss, Gamma_ss)
 
-        Household_Euler, Chained_C_Condition, Modified_Budget_Constraint, Consumption_Ratio = checkSSEulers(cvec_ss, cKvec_ss, avec_ss, w_ss, r_ss, bq_ss, Gamma_ss)
-        print "\nEuler Household satisfied:", np.isclose(np.max(np.absolute(Household_Euler)), 0)
-        print "Equation 4.26 satisfied:", np.isclose(np.max(np.absolute(Chained_C_Condition)), 0)
-        print "Equation 4.23 satisfied:", np.isclose(np.max(np.absolute(Modified_Budget_Constraint)), 0)
-        print "Equation 4.25 satisfied", np.isclose(np.max(np.absolute(Consumption_Ratio)), 0)
-        print Chained_C_Condition[0,:]
-        #print Modified_Budget_Constraint[0,:]
+        if PrintSSEulErrors:
+            Household_Euler, Chained_C_Condition, Modified_Budget_Constraint, Consumption_Ratio = checkSSEulers(cvec_ss, cKvec_ss, avec_ss, w_ss, r_ss, bq_ss, Gamma_ss)
+            print "\nZero final period assets satisfied:", np.isclose(np.max(np.absolute(Household_Euler)), 0)
+            print "Equation 4.26 satisfied:", np.isclose(np.max(np.absolute(Chained_C_Condition)), 0)
+            print "Equation 4.23 satisfied:", np.isclose(np.max(np.absolute(Modified_Budget_Constraint)), 0)
+            print "Equation 4.25 satisfied", np.isclose(np.max(np.absolute(Consumption_Ratio)), 0)
+            #print Chained_C_Condition[0,:]
+            #print Modified_Budget_Constraint[0,:]
 
         #Snips off the final entry of assets since it is just 0 if the equations solved correctly
         avec_ss = avec_ss[:,:-1]
@@ -809,7 +810,7 @@ class OLG(object):
                 np.einsum("i,s->is", bqindiv_ss, np.ones(self.FirstDyingAge-self.FirstFertilityAge))
 
         #Calls self.GetSSComponents, which solves for all the other ss variables in terms of bequests and intrest rate
-        w_ss, cvec_ss, cKvec_ss, avec_ss, kd_ss, kf_ss, n_ss, y_ss, lhat_ss = self.GetSSComponents(bq_ss, r_ss)
+        w_ss, cvec_ss, cKvec_ss, avec_ss, kd_ss, kf_ss, n_ss, y_ss, lhat_ss = self.GetSSComponents(bq_ss, r_ss, PrintSSEulErrors)
 
         #Sum of all assets holdings of dead agents to be distributed evenly among all eligible agents
         alldeadagent_assets = np.sum(avec_ss[:,self.FirstDyingAge:]*\
