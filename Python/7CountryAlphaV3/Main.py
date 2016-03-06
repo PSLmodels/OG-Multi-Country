@@ -23,15 +23,14 @@ def Multi_Country(S,I,sigma):
     delta_ann=.08 #Annual depreciation rate
     alpha = .3 #Capital Share of production
     chi = 1.5 #Preference for lesiure
-    rho = 1.4 #Intratemporal elasticity of substitution
+    rho = .4 #Intratemporal elasticity of substitution
 
     #Convergence Tolerances
     demog_ss_tol = 1e-8 #Used in getting ss for population share
 
     #PROGRAM LEVERS:
     #For terminal output
-    PrintAges = False #Prints the different key ages in the demographics
-    PrintLoc = False #Displays the current locations of the program inside key TPI functions
+    PrintAges = False #Displays the current locations of the program inside key TPI functions
     PrintSSEulErrors = True #Prints the euler errors in each attempt of calculating the steady state
     PrintSS = False #Prints the result of the Steady State functions
     Print_caTimepaths = False #Prints the consumption, assets, and bequests timepath as it gets filled in for each iteration of TPI
@@ -39,6 +38,7 @@ def Multi_Country(S,I,sigma):
     Print_Fill_Matricies_Time=True #Activiates Printing the total time it takes to fill the upper and lower diagonal matricies
     CheckerMode = True #Activates not printing much of anything, used in conjunction with RobustChecker.py
     Iterate = True #Shows the current iteration number and the associated Eulers
+    PrintLoc = False
 
     WarpSpeed=True #Activates switching to the Fortran Module for lengthy calculations, currently doesn't do anything
 
@@ -96,19 +96,18 @@ def Multi_Country(S,I,sigma):
     r_init = Model.r_ss*1.05
     bq_init = Model.bqindiv_ss*.95
     a_init = Model.avec_ss*.7
-    print "Timepath not ready yet! Uncomment it from the main file when the SS code works"
-    """
+    
     Model.set_initial_values(r_init, bq_init, a_init)
 
     Model.Timepath_fsolve(Print_HH_Eulers, Print_caTimepaths, iterations_to_plot)
     if SaveFinalTPIPlot: Model.plot_timepaths(SAVE=True)
-    """
+    
 
 #Input parameters for S, I and sigma here then execute this file to
 #run the model.
 
 start = time.time()
-Multi_Country(80,6,4)
+Multi_Country(80,7,4)
 tottime=time.time()-start
 
 if TimeModel==True:
@@ -118,23 +117,4 @@ if TimeModel==True:
     minutes=minutes-hours*60
     print "The code took:", hours, "hours,", minutes, "minutes and", seconds, "seconds to complete"
 
-
-#testfunc = lambda x,y: x+y
-"""
-mort = np.array([.1,.2,.3])
-def testfunc(c,i):
-    print "Entering"
-    print "iter", i
-    print "c", c
-
-    final = c+mort[i]
-    print "Final", final
-    print "Leaving"
-    return final
-
-cvec = [10,20,30]
-numpytestfunc = np.frompyfunc(testfunc, 2, 1)
-print numpytestfunc.accumulate([cvec,[1,2,3]], axis=0, dtype=np.object)
-#uadd.accumulate([1,2,3], dtype=np.object).astype(np.int)
-"""
 
