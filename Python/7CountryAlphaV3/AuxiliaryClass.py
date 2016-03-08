@@ -228,12 +228,14 @@ class OLG(object):
 
             if self.PrintLoc: print "Got Demographics for", I_all[index]
 
+
+        #Scales data sets to account for different number of periods lived
+        self.all_FertilityRates = self.all_FertilityRates*80/self.S
+        self.MortalityRates = self.MortalityRates*80/self.S
+        self.Migrants = self.Migrants*80/self.S
+
         #Gets initial population share
         self.Nhat[:,:,0] = self.N[:,:,0]/np.sum(self.N[:,:,0])
-
-
-        #Increases fertility rates to account for different number of periods lived
-        self.all_FertilityRates = self.all_FertilityRates*80/self.S
 
 
         #The last generation dies with probability 1
@@ -316,12 +318,12 @@ class OLG(object):
             #Get the immigration RATES for the past year
             #If before the transition year T_1, just divide total migrants by population
             if t <= self.T_1:
-                self.ImmigrationRates[:,:,t-1] = self.Migrants[:,:,t-1]/self.N[:,:,t-1]
+                self.ImmigrationRates[:,:,t-1] = self.Migrants[:,:,t-1]/self.N[:,:,t-1]*80/self.S
 
             #If beyond the transition year T_1, average the immigration rates in year T_1 itself
             else:
                 self.ImmigrationRates[:,:,t-1] = np.mean(self.ImmigrationRates[:,:,self.T_1-1],\
-                        axis=0)
+                        axis=0)*80/self.S
 
             #Gets the non-newborn population for the next year (Equation 3.12)
             self.N[:,1:,t] = self.N[:,:-1,t-1]*(1+self.ImmigrationRates[:,:-1,t-1]-self.MortalityRates[:,:-1,t-1])
@@ -334,8 +336,10 @@ class OLG(object):
                 kidsvec = np.diagonal(self.all_FertilityRates[:,s-self.LeaveHouseAge+1:s+1,t:t+self.LeaveHouseAge],axis1=1, axis2=2)
                 self.Kids[:,s,t-1] = np.sum(kidsvec,axis=1)
 
+            print np.sum(self.Nhat[:,:,t])
+
         #Gets Immigration rates for the final year
-        self.ImmigrationRates[:,:,t] = self.Migrants[:,:,t]/self.N[:,:,t]
+        self.ImmigrationRates[:,:,t] = self.Migrants[:,:,t]/self.N[:,:,t]*80/self.S
 
         #Gets Kids for the final year (just the steady state)
         self.Kids[:,:,-1] = self.Kids[:,:,-2]
@@ -376,6 +380,7 @@ class OLG(object):
             self.Nhat = np.einsum("is,t->ist",self.Nhat_ss,np.ones(self.T+self.S))
             self.MortalityRates = np.einsum("is,t->ist",self.Mortality_ss,np.ones(self.T+self.S))
             self.Kids = np.einsum("is,t->ist",self.Kids_ss,np.ones(self.T+self.S))
+
 
     def plotDemographics(self, T_touse="default", compare_across="T", data_year=0):
         """

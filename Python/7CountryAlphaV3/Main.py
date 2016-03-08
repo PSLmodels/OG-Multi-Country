@@ -43,7 +43,7 @@ def Multi_Country(S,I,sigma):
     WarpSpeed=True #Activates switching to the Fortran Module for lengthy calculations, currently doesn't do anything
 
     #For plots to display or save
-    DemogGraphs = False #Activates graphing graphs with demographic data and population shares
+    DemogGraphs = True #Activates graphing graphs with demographic data and population shares
     ShowSSGraphs = True #Activates graphs for steady-state solutions for consumption, assets, and bequests
     iterations_to_plot = set([1]) #Which iterations of the timepath fsolve you want to plot
     SaveFinalTPIPlot = True #Saves the final (and hopefully converged) time path plot as a .png file
@@ -107,7 +107,7 @@ def Multi_Country(S,I,sigma):
 #run the model.
 
 start = time.time()
-Multi_Country(80,7,4)
+Multi_Country(20,6,4)
 tottime=time.time()-start
 
 if TimeModel==True:
