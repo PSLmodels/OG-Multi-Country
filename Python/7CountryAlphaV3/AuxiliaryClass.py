@@ -5,6 +5,7 @@ import numpy as np
 import scipy as sp
 import scipy.optimize as opt
 from matplotlib import pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 from numba import jit
 import AuxiliaryDemographics as demog
 
@@ -96,10 +97,10 @@ class OLG(object):
 
         #HH Parameters
         (self.S, self.I, beta_annual, self.sigma) = HH_Params
-        
+    
         self.beta=beta_annual**(70/self.S)
 
-        self.T = int(round(8*self.S))
+        self.T = int(round(6*self.S))
 
         self.T_1 = self.S
 
@@ -191,7 +192,6 @@ class OLG(object):
 
         self.frange=self.LastFertilityAge+1-self.FirstFertilityAge
 
-
         self.N=np.zeros((self.I,self.S,self.T))
         self.Nhat=np.zeros((self.I,self.S,self.T))
         self.all_FertilityRates = np.zeros((self.I, self.S, self.frange+self.T))
@@ -230,6 +230,10 @@ class OLG(object):
 
         #Gets initial population share
         self.Nhat[:,:,0] = self.N[:,:,0]/np.sum(self.N[:,:,0])
+
+
+        #Increases fertility rates to account for different number of periods lived
+        self.all_FertilityRates = self.all_FertilityRates*80/self.S
 
 
         #The last generation dies with probability 1
@@ -371,14 +375,15 @@ class OLG(object):
         if UseSSDemog == True:
             self.Nhat = np.einsum("is,t->ist",self.Nhat_ss,np.ones(self.T+self.S))
             self.MortalityRates = np.einsum("is,t->ist",self.Mortality_ss,np.ones(self.T+self.S))
+            self.Kids = np.einsum("is,t->ist",self.Kids_ss,np.ones(self.T+self.S))
 
     def plotDemographics(self, T_touse="default", compare_across="T", data_year=0):
         """
         Description: This calls the plotDemographics function from the AuxiliaryDemographics.py file. See it for details
         """
 
-        ages = self.FirstFertilityAge, self.LastFertilityAge, self.FirstDyingAge, self.MaxImmigrantAge
-        datasets = self.FertilityRates, self.MortalityRates, self.ImmigrationRates, self.Nhat
+        ages = self.LeaveHouseAge, self.FirstFertilityAge, self.LastFertilityAge, self.FirstDyingAge, self.MaxImmigrantAge
+        datasets = self.FertilityRates, self.MortalityRates, self.ImmigrationRates, self.Nhat, self.Kids
 
         #Calls the Auxiliary Demographics file for this function
         demog.plotDemographics(ages, datasets, self.I, self.S, self.T, self.I_touse, T_touse, compare_across, data_year)
@@ -389,17 +394,14 @@ class OLG(object):
 
         #If getting the SS
         if e.ndim == 2:
-            we =  np.einsum("i,is->is",w,e)
+            we =  np.einsum("i,is->is", w, e)
 
         #If getting transition path
         elif e.ndim == 3:
             we = np.einsum("it, ist -> ist", w, e)
 
 
-        Gamma = ( ( 1+self.chi*(self.chi/we)**(self.rho-1) )**((1-self.rho*self.sigma)/(self.rho-1)) ) ** (1/self.sigma)
-
-        print (1+self.chi*(self.chi/we)**(self.rho-1))[0,2], ((1-self.rho*self.sigma)/(self.rho-1))* (-1/self.sigma)
-
+        Gamma = ( ( 1+self.chi*(self.chi/we)**(self.rho-1) )**((1-self.rho*self.sigma)/(self.rho-1)) ) ** (-1/self.sigma)
 
         return Gamma
 
@@ -508,52 +510,8 @@ class OLG(object):
             Y = (kd**self.alpha) * (np.einsum("i,is->is",self.A,n)**(1-self.alpha))
 
         return Y
-
-    def GetSSComponents(self, bq_ss, r_ss):
-        """
-            Description:
-                - Solves for all the other variables in the model using bq_ss and r_ss
-
-            Inputs:
-                - bq_ss                     = Array: [I,S], 
-                - r_ss                      = Scalar: Steady-state intrest rate
-
-            Variables Called from Object:
-                - self.A                    = Array: [I], Technology level for each country
-                - self.e_ss                 = Array: [I,S], Labor produtivities for the Steady State
-                - self.Nhat_ss              = Array: [I,S,T+S], World population share of each country for each age cohort and year
-                - self.I                    = Int: Number of Countries
-                - self.alpha                = Scalar: Capital share of production
-
-
-            Variables Stored in Object:
-                - None
-
-            Other Functions Called:
-                - get_lhat = Solves for leisure as in Equation 3.20
-                - get_n = Solves for labor supply as in Equation 3.14
-                - get_Psi = Solves for the Psi variable as in Equation 3.21
-                - get_Y = Solves for output as in Equation 3.15
-                - householdEuler_SS = System of Euler equations to solve the household problem. Used by opt.fsolve
-
-            Objects in Function:
-                - avec_ss                   = Array: [I,S], Steady state assets holdings for each country and cohort
-                - cvec_ss                   = Array: [I,S], Steady state consumption for each country and cohort
-                - c1_guess                  = Array: [I,S], Initial guess for consumption of the youngest cohort
-                - kd_ss                     = Array: [I], Steady state total capital holdings for each country
-                - kf_ss                     = Array: [I], Steady state foreign capital in each country
-                - lhat_ss                   = Array: [I,S], Steady state leisure decision for each country and cohort
-                - n_ss                      = Array: [I], Steady state labor supply
-                - opt_c1                    = Array: [I,S], Optimal consumption of the youngest cohort 
-                - psi_ss                    = Array: [I,S], Steady state Psi variable (see equation 3.21)
-                - w_ss                      = Array: [I], Steady state wage rate
-                - y_ss                      = Array: [I], Steady state output of each country
-
-            Outputs:
-                - w_ss, cvec_ss, avec_ss, kd_ss, kf_ss, n_ss, y_ss, and lhat_ss
-        """
-
-        def get_lifetime_decisionsSS(cK_1, w_ss, r_ss, Gamma_ss):
+    
+    def get_lifetime_decisionsSS(self, cK_1, w_ss, r_ss, Gamma_ss, bq_ss):
             """
                 Description:
                     - 1. Solves for future consumption decisions as a function of initial consumption (Equation 3.22)
@@ -602,8 +560,9 @@ class OLG(object):
 
             for s in xrange(self.S-1):
                 #Equation 3.21
-                cKvec_ss[:,s+1] = ( (self.beta*(1-self.Mortality_ss[:,s])*(1+r_ss-self.delta))**(1/self.sigma)*cKvec_ss[:,s] )*np.exp(-self.g_A)
+                cKvec_ss[:,s+1] = (  ( (self.beta*(1-self.Mortality_ss[:,s])*(1+r_ss-self.delta) )**(1/self.sigma) )*cKvec_ss[:,s]  )/np.exp(self.g_A)
 
+                #Equatoin 4.25
                 cvec_ss[:,s+1] = cKvec_ss[:,s+1]/Gamma_ss[:,s+1]
 
                 #Equation 3.19
@@ -617,7 +576,51 @@ class OLG(object):
 
             return cvec_ss, cKvec_ss, avec_ss
 
-        def householdEuler_SS(cK_1, w_ss, r_ss, Gamma_ss):
+    def GetSSComponents(self, bq_ss, r_ss, PrintSSEulErrors=False):
+        """
+            Description:
+                - Solves for all the other variables in the model using bq_ss and r_ss
+
+            Inputs:
+                - bq_ss                     = Array: [I,S], 
+                - r_ss                      = Scalar: Steady-state intrest rate
+
+            Variables Called from Object:
+                - self.A                    = Array: [I], Technology level for each country
+                - self.e_ss                 = Array: [I,S], Labor produtivities for the Steady State
+                - self.Nhat_ss              = Array: [I,S,T+S], World population share of each country for each age cohort and year
+                - self.I                    = Int: Number of Countries
+                - self.alpha                = Scalar: Capital share of production
+
+
+            Variables Stored in Object:
+                - None
+
+            Other Functions Called:
+                - get_lhat = Solves for leisure as in Equation 3.20
+                - get_n = Solves for labor supply as in Equation 3.14
+                - get_Psi = Solves for the Psi variable as in Equation 3.21
+                - get_Y = Solves for output as in Equation 3.15
+                - householdEuler_SS = System of Euler equations to solve the household problem. Used by opt.fsolve
+
+            Objects in Function:
+                - avec_ss                   = Array: [I,S], Steady state assets holdings for each country and cohort
+                - cvec_ss                   = Array: [I,S], Steady state consumption for each country and cohort
+                - c1_guess                  = Array: [I,S], Initial guess for consumption of the youngest cohort
+                - kd_ss                     = Array: [I], Steady state total capital holdings for each country
+                - kf_ss                     = Array: [I], Steady state foreign capital in each country
+                - lhat_ss                   = Array: [I,S], Steady state leisure decision for each country and cohort
+                - n_ss                      = Array: [I], Steady state labor supply
+                - opt_c1                    = Array: [I,S], Optimal consumption of the youngest cohort 
+                - psi_ss                    = Array: [I,S], Steady state Psi variable (see equation 3.21)
+                - w_ss                      = Array: [I], Steady state wage rate
+                - y_ss                      = Array: [I], Steady state output of each country
+
+            Outputs:
+                - w_ss, cvec_ss, avec_ss, kd_ss, kf_ss, n_ss, y_ss, and lhat_ss
+        """
+
+        def householdEuler_SS(cK_1, w_ss, r_ss, Gamma_ss, bq_ss):
             """
                 Description:
                     - This is the function called by opt.fsolve.
@@ -647,7 +650,7 @@ class OLG(object):
                     - Euler                     = Array: [I], Final assets for each country. Must = 0 for system to solve
             """
 
-            cpath, cK_path, assets_path = get_lifetime_decisionsSS(cK_1, w_ss, r_ss, Gamma_ss)
+            cpath, cK_path, assets_path = self.get_lifetime_decisionsSS(cK_1, w_ss, r_ss, Gamma_ss, bq_ss)
 
             Euler = assets_path[:,-1]
 
@@ -697,37 +700,37 @@ class OLG(object):
             we = np.einsum("i,is->is",w_ss,self.e_ss)
 
             Household_Euler = avec_ss[:,-1]
-            Chained_C_Condition = cKvec_ss**(-self.sigma) - self.beta*(1-self.Mortality_ss)*(cKvec_ss*np.exp(self.g_A))**-self.sigma * (1+r_ss-self.delta)
+            Chained_C_Condition = cKvec_ss[:,:-1]**(-self.sigma) - \
+                                 self.beta*(1-self.Mortality_ss[:,:-1])*(cKvec_ss[:,1:]*np.exp(self.g_A))**-self.sigma * (1+r_ss-self.delta)
             Modified_Budget_Constraint = cvec_ss -( we*self.lbar_ss + (1+r_ss-self.delta)*avec_ss[:,:-1] + bq_ss - avec_ss[:,1:]*np.exp(self.g_A) )\
-            /(1+self.Kids_ss*Gamma_ss+we*(self.chi/we)**self.rho) 
+            /(1+self.Kids_ss*Gamma_ss+we*(self.chi/we)**self.rho)
             Consumption_Ratio = cKvec_ss - cvec_ss*Gamma_ss
 
             return Household_Euler, Chained_C_Condition, Modified_Budget_Constraint, Consumption_Ratio
-
 
         #Equation 3.25
         w_ss = (self.alpha*self.A/r_ss)**(self.alpha/(1-self.alpha))*(1-self.alpha)*self.A
 
         #Equation 3.21
-
         Gamma_ss = self.get_Gamma(w_ss, self.e_ss)
 
         #Initial guess for the first cohort's consumption
         cK1_guess = np.ones(self.I)*5
 
         #Finds the optimal consumption for the first cohort
-        opt_cK1 = opt.fsolve(householdEuler_SS, cK1_guess, args = (w_ss, r_ss, Gamma_ss))
+        opt_cK1 = opt.fsolve(householdEuler_SS, cK1_guess, args = (w_ss, r_ss, Gamma_ss, bq_ss))
 
         #Gets the optimal paths for consumption and assets as a function of the first cohort's consumption
-        cvec_ss, cKvec_ss, avec_ss = get_lifetime_decisionsSS(opt_cK1, w_ss, r_ss, Gamma_ss)
+        cvec_ss, cKvec_ss, avec_ss = self.get_lifetime_decisionsSS(opt_cK1, w_ss, r_ss, Gamma_ss, bq_ss)
 
-        Household_Euler, Chained_C_Condition, Modified_Budget_Constraint, Consumption_Ratio = checkSSEulers(cvec_ss, cKvec_ss, avec_ss, w_ss, r_ss, bq_ss, Gamma_ss)
-        print "\nEuler Household satisfied:", np.isclose(np.max(np.absolute(Household_Euler)), 0)
-        print "Equation 4.26 satisfied:", np.isclose(np.max(np.absolute(Chained_C_Condition)), 0)
-        print "Equation 4.23 satisfied:", np.isclose(np.max(np.absolute(Modified_Budget_Constraint)), 0)
-        print "Equation 4.25 satisfied", np.isclose(np.max(np.absolute(Consumption_Ratio)), 0)
-        print Chained_C_Condition[0,:]
-        #print Modified_Budget_Constraint[0,:]
+        if PrintSSEulErrors:
+            Household_Euler, Chained_C_Condition, Modified_Budget_Constraint, Consumption_Ratio = checkSSEulers(cvec_ss, cKvec_ss, avec_ss, w_ss, r_ss, bq_ss, Gamma_ss)
+            print "\nZero final period assets satisfied:", np.isclose(np.max(np.absolute(Household_Euler)), 0)
+            print "Equation 4.26 satisfied:", np.isclose(np.max(np.absolute(Chained_C_Condition)), 0)
+            print "Equation 4.23 satisfied:", np.isclose(np.max(np.absolute(Modified_Budget_Constraint)), 0)
+            print "Equation 4.25 satisfied", np.isclose(np.max(np.absolute(Consumption_Ratio)), 0)
+            #print Chained_C_Condition[0,:]
+            #print Modified_Budget_Constraint[0,:]
 
         #Snips off the final entry of assets since it is just 0 if the equations solved correctly
         avec_ss = avec_ss[:,:-1]
@@ -809,7 +812,7 @@ class OLG(object):
                 np.einsum("i,s->is", bqindiv_ss, np.ones(self.FirstDyingAge-self.FirstFertilityAge))
 
         #Calls self.GetSSComponents, which solves for all the other ss variables in terms of bequests and intrest rate
-        w_ss, cvec_ss, cKvec_ss, avec_ss, kd_ss, kf_ss, n_ss, y_ss, lhat_ss = self.GetSSComponents(bq_ss, r_ss)
+        w_ss, cvec_ss, cKvec_ss, avec_ss, kd_ss, kf_ss, n_ss, y_ss, lhat_ss = self.GetSSComponents(bq_ss, r_ss, PrintSSEulErrors)
 
         #Sum of all assets holdings of dead agents to be distributed evenly among all eligible agents
         alldeadagent_assets = np.sum(avec_ss[:,self.FirstDyingAge:]*\
@@ -824,7 +827,28 @@ class OLG(object):
 
         Euler_all = np.append(Euler_bq, Euler_kf)
 
+
+
         if PrintSSEulErrors: print "Euler Errors:", Euler_all
+        
+        betaj = self.beta**np.arange(self.S)
+        U = betaj*(1-self.sigma)**-1*(1-self.Mortality_ss)*\
+                          (  (cvec_ss**(1-1/self.rho) + self.chi*lhat_ss**(1-1/self.rho))**((1/self.sigma)/(1-1/self.rho))\
+                                 + self.Kids_ss*cKvec_ss**(1-self.sigma)  )
+
+        V = betaj*(1-self.sigma)**-1*(1-self.Mortality_ss)*\
+                          (cvec_ss**(1-1/self.rho) + self.chi*lhat_ss**(1-1/self.rho))**((1/self.sigma)/(1-1/self.rho))
+        H = betaj*(1-self.sigma)**-1*self.Kids_ss*cKvec_ss**(1-self.sigma)
+        U2 = V+H
+
+        print "Lifetime Utility for country 1:", np.sum(U2, axis=1)[0]
+        print "V", np.sum(V, axis=1)[0]
+        print "H", np.sum(H, axis=1)[0]
+        #print "betaj*(1-self.sigma)**-1*(1-self.Mortality_ss)", betaj*(1-self.sigma)**-1*(1-self.Mortality_ss)
+        #print "betaj", betaj
+        #print "(1-self.Mortality_ss)", (1-self.Mortality_ss)[0,:]
+        #print "(1-self.sigma)**-1", (1-self.sigma)**-1, self.sigma
+
         
         return Euler_all
 
@@ -919,6 +943,20 @@ class OLG(object):
             print "-Euler for bq satisfied:", np.isclose(np.max(np.absolute(Euler_bq)), 0)
             print "-Euler for r satisfied:", np.isclose(Euler_kf, 0), "\n\n"
 
+        """
+        num = 1000
+        feas_cK = np.tile( np.linspace(0,3,num), ((self.I,1)) )
+        feas_finalassets = np.zeros(num)
+
+        for n in xrange(num):
+            print n
+            c, ck, a = self.get_lifetime_decisionsSS(feas_cK[:,n], self.w_ss, self.r_ss, self.Gamma_ss, self.bqvec_ss)
+            feas_finalassets[n] = a[0,-1]
+
+        plt.plot(feas_cK[0,:], feas_finalassets)
+        plt.show()
+        """
+
     def PrintSSResults(self):
         """
             Description:
@@ -986,27 +1024,94 @@ class OLG(object):
             Outputs:
                 - None
         """
-
+        plt.title("Steady state")
+        plt.subplot(231)
         for i in range(self.I):
             plt.plot(range(self.S),self.cvec_ss[i,:])
         plt.title("Consumption")
-        plt.legend(self.I_touse[:self.I])
-        plt.show()
+        #plt.legend(self.I_touse[:self.I])
+
+        plt.subplot(232)
         for i in range(self.I):
             plt.plot(range(self.S),self.cKvec_ss[i,:])
         plt.title("Kids' Consumption")
-        plt.legend(self.I_touse[:self.I])
-        plt.show()
+        #plt.legend(self.I_touse[:self.I])
+        #plt.show()
+
+        plt.subplot(233)
         for i in range(self.I):
             plt.plot(range(self.S),self.avec_ss[i,:])
         plt.title("Assets")
-        plt.legend(self.I_touse[:self.I])
-        plt.show()
+        #plt.legend(self.I_touse[:self.I])
+        #plt.show()
+
+        plt.subplot(234)
+        for i in range(self.I):
+            plt.plot(range(self.S),self.lhat_ss[i,:])
+        plt.title("Leisure")
+        #plt.legend(self.I_touse[:self.I])
+        #plt.show()
+
+        plt.subplot(235)
         for i in range(self.I):
             plt.plot(range(self.S),self.bqvec_ss[i,:])
         plt.title("Bequests")
-        plt.legend(self.I_touse[:self.I])
+        #plt.legend(self.I_touse[:self.I])
+
         plt.show()
+
+    def plotSSUtility(self, cK_1):
+
+        cKvec_ss = np.zeros((len(cK_1),self.S))
+        cvec_ss = np.zeros((len(cK_1),self.S))
+        avec_ss = np.zeros((len(cK_1),self.S+1))
+
+        cKvec_ss[:,0] = cK_1
+        cvec_ss[:,0] = cK_1/self.Gamma_ss[0,0]
+
+
+        for s in xrange(self.S-1):
+            #Equation 3.21
+            cKvec_ss[:,s+1] = ( ((self.beta**-1*(1-self.Mortality_ss[0,s])*(1+self.r_ss-self.delta))**(1/self.sigma) )*cKvec_ss[:,s] )/np.exp(self.g_A)
+
+            cvec_ss[:,s+1] = cKvec_ss[:,s+1]/self.Gamma_ss[0,s+1]
+
+            #Equation 3.19
+            avec_ss[:,s+1] = (self.w_ss[0]*self.e_ss[0,s]*self.lbar_ss + (1 + self.r_ss - self.delta)*avec_ss[:,s] + self.bqvec_ss[0,s] \
+                            - cvec_ss[:,s]*(1+self.Kids_ss[0,s]*self.Gamma_ss[0,s]+self.w_ss[0]*self.e_ss[0,s]*(self.chi/(self.w_ss[0]*self.e_ss[0,s]))**self.rho))*np.exp(-self.g_A)
+
+        #Equation 3.19 for final assets
+        avec_ss[:,s+2] = (self.w_ss[0]*self.e_ss[0,s+1] + (1 + self.r_ss - self.delta)*avec_ss[:,s+1] - cvec_ss[:,s+1]*\
+                                (1+self.Kids_ss[0,s+1]*self.Gamma_ss[0,s+1]+self.w_ss[0]*self.e_ss[0,s+1]*(self.chi/(self.w_ss[0]*self.e_ss[0,s+1]))\
+                            **self.rho))*np.exp(-self.g_A)
+
+
+        lhat_ss = cvec_ss*(self.chi/self.w_ss[0]*self.e_ss[0,:])**self.rho
+
+        betaj = self.beta**np.arange(self.S)
+        U = betaj*(1-self.sigma)**-1*(1-self.Mortality_ss[0])*\
+                          (  (cvec_ss**(1-1/self.rho) + self.chi*lhat_ss**(1-1/self.rho))**((1/self.sigma)/(1-1/self.rho))\
+                                 + self.Kids_ss[0]*cKvec_ss**(1-self.sigma)  )
+
+        V = betaj*(1-self.sigma)**-1*(1-self.Mortality_ss[0])*\
+                          (cvec_ss**(1-1/self.rho) + self.chi*lhat_ss**(1-1/self.rho))**((1/self.sigma)/(1-1/self.rho))
+        H = betaj**-1*(1-self.sigma)**-1*self.Kids_ss[0]*cKvec_ss**(1-self.sigma)
+        U2 = np.sum(V+H, axis=1)
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+
+        c1 = cK_1/self.Gamma_ss[0,0]
+        X, Y = np.meshgrid(c1, cK_1)
+        Z = U2
+
+        ax.plot_surface(X, Y, Z)
+
+        ax.set_xlabel('Consumption')
+        ax.set_ylabel('Kids Consumption')
+        ax.set_zlabel('Utility')
+
+        #plt.show()
 
     #TIMEPATH-ITERATION
 
@@ -1086,11 +1191,7 @@ class OLG(object):
         popt, pcov = opt.curve_fit(func,x,y)
         rtest = np.hstack(( self.r_init, func(t,popt[0],popt[1]) ))
 
-        print popt
-        print t
-        print x, y
-        print rtest
-        print np.array(range(self.T)).shape, rtest.shape, rpath_guess.shape
+
         plt.plot(range(self.T), rtest)
         #plt.show()
 
@@ -1098,7 +1199,7 @@ class OLG(object):
         bb = -2 * (self.r_init-self.r_ss)/(self.T-1)
         aa = -bb / (2*(self.T-1))
         rpath_guess[:self.T] = aa * np.arange(0,self.T)**2 + bb*np.arange(0,self.T) + cc
-        rpath_guess = rtest
+        #rpath_guess = rtest
 
         for i in range(self.I):
             bqpath_guess[i,:self.T] = np.linspace(self.bq_init[i], self.bqindiv_ss[i], self.T)
@@ -1211,11 +1312,11 @@ class OLG(object):
 
                 #Gets assets for every agents' next year using Equation 3.19
                 a_matrix[:,s+1,s+1:self.T+s+1] = (  (we[:,s,s:self.T+s]*self.lbar[s:self.T+s] + (1 + r_path[s:self.T+s] - self.delta)*a_matrix[:,s,s:self.T+s] + bqvec_path[:,s,s:self.T+s])\
-                                                -c_matrix[:,s,s:self.T+s]*(1+self.Kids[:,s,s:self.T+s]*Gamma[:,s,s:self.T+s]+we[:,s,s:self.T+s]*(self.chi/we[:,s,s:self.T+s])**((1-self.rho)/self.rho) )  )*np.exp(-self.g_A)
+                                                -c_matrix[:,s,s:self.T+s]*(1+self.Kids[:,s,s:self.T+s]*Gamma[:,s,s:self.T+s]+we[:,s,s:self.T+s]*(self.chi/we[:,s,s:self.T+s])**(self.rho) )  )*np.exp(-self.g_A)
 
             #Gets assets in the final period of every agents' lifetime
             a_matrix[:,-1,s+2:self.T+s+2] = (  (we[:,-1,s+1:self.T+s+1]*self.lbar[s+1:self.T+s+1] + (1 + r_path[s+1:self.T+s+1] - self.delta)*a_matrix[:,-2,s+1:self.T+s+1])\
-                                            -c_matrix[:,-1,s+1:self.T+s+1]*(1+self.Kids[:,-1,s+1:self.T+s+1]*Gamma[:,-1,s+1:self.T+s+1]+we[:,-1,s+1:self.T+s+1]*(self.chi/we[:,-1,s+1:self.T+s+1])**((1-self.rho)/self.rho) )  )*np.exp(-self.g_A)
+                                            -c_matrix[:,-1,s+1:self.T+s+1]*(1+self.Kids[:,-1,s+1:self.T+s+1]*Gamma[:,-1,s+1:self.T+s+1]+we[:,-1,s+1:self.T+s+1]*(self.chi/we[:,-1,s+1:self.T+s+1])**(self.rho) )  )*np.exp(-self.g_A)
 
 
             return c_matrix, cK_matrix, a_matrix
@@ -1272,11 +1373,11 @@ class OLG(object):
                 c_matrix[:,s+1:,t+1] = cK_matrix[:,s+1:,t+1]/Gamma[:,s+1:,t+1]
                 
                 a_matrix[:,s+1:,t+1] = (  (we[:,s:,t]*self.lbar[t] + (1 + r_path[t] - self.delta)*a_matrix[:,s:-1,t] + bqvec_path[:,s:,t])\
-                                                 -c_matrix[:,s:,t]*(1+self.Kids[:,s:,t]*Gamma[:,s:,t]+we[:,s:,t]*(self.chi/we[:,s:,t])**((1-self.rho)/self.rho) ) )*np.exp(-self.g_A)
+                                                 -c_matrix[:,s:,t]*(1+self.Kids[:,s:,t]*Gamma[:,s:,t]+we[:,s:,t]*(self.chi/we[:,s:,t])**(self.rho) ) )*np.exp(-self.g_A)
 
             #Gets assets in the final period of every agents' lifetime
             a_matrix[:,-1,t+2] = (  (we[:,-1,t+1] + (1 + r_path[t+1] - self.delta)*a_matrix[:,-2,t+1])\
-                                            -c_matrix[:,-1,t+1]*(1+self.Kids[:,-1,t+1]*Gamma[:,-1,t+1]+we[:,-1,t+1]*(self.chi/we[:,-1,t+1])**((1-self.rho)/self.rho) )  )*np.exp(-self.g_A)
+                                            -c_matrix[:,-1,t+1]*(1+self.Kids[:,-1,t+1]*Gamma[:,-1,t+1]+we[:,-1,t+1]*(self.chi/we[:,-1,t+1])**(self.rho) )  )*np.exp(-self.g_A)
 
             return c_matrix, cK_matrix, a_matrix
 
@@ -1334,6 +1435,8 @@ class OLG(object):
                 #Household Eulers are solved when the agents have no assets at the end of their life
                 Euler = np.ravel(a_matrix[:,-1,self.S:])
 
+            #print "Max Euler", max(Euler)
+
             return Euler
 
         #Checks various household condidions
@@ -1388,7 +1491,7 @@ class OLG(object):
             Modified_Budget_Constraint = c_matrix[:,:-1,:self.T-1]\
                                          -  (we*self.lbar[:self.T-1] + (1+r_path[:self.T-1]-self.delta)*a_matrix[:,:-2,:self.T-1] + bqvec_path[:,:-1,:self.T-1]\
                                          - a_matrix[:,1:-1,1:self.T]*np.exp(self.g_A))\
-                                         /(1 + self.Kids[:,:-1,:self.T-1]*Gamma[:,:-1,:self.T-1] + we*(self.chi/we)**((1-self.rho)/self.rho)  )
+                                         /(1 + self.Kids[:,:-1,:self.T-1]*Gamma[:,:-1,:self.T-1] + we*(self.chi/we)**(self.rho)  )
 
             #Disparity between left and right sides of Equation 4.25
             Consumption_Ratio = cK_matrix - c_matrix*Gamma
@@ -1455,7 +1558,7 @@ class OLG(object):
 
             #Equation 3.19 for the oldest agent in time t=0. Note that this agent chooses to consume everything so that it has no assets in the following period
             c_matrix[:,self.S-1,0] = (w_path[:,0]*self.e[:,self.S-1,0]*self.lbar[self.S-1] + (1 + r_path[0] - self.delta)*self.a_init[:,self.S-1] + bqvec_path[:,self.S-1,0])\
-            /(1+self.Kids[:,-1,0]*Gamma[:,-1,0]+w_path[:,0]*self.e[:,self.S-1,0]*(self.chi/(w_path[:,0]*self.e[:,self.S-1,0]))**( (1-self.rho)/self.rho ))
+            /(1+self.Kids[:,-1,0]*Gamma[:,-1,0]+w_path[:,0]*self.e[:,self.S-1,0]*(self.chi/(w_path[:,0]*self.e[:,self.S-1,0]))**(self.rho))
 
             cK_matrix[:,self.S-1,0] = c_matrix[:,self.S-1,0]*Gamma[:,-1,0]
 
@@ -1498,6 +1601,7 @@ class OLG(object):
                 #print np.round(np.transpose(Consumption_Ratio[0,:,:]), decimals=4)
 
             #Returns only up until time T and not the vector
+            #print c_matrix[0,:,:self.T]
             return c_matrix[:,:,:self.T], cK_matrix[:,:,:self.T], a_matrix[:,:-1,:self.T]
 
         #Equation 3.25
@@ -1748,7 +1852,7 @@ class OLG(object):
         for i in range(self.I):
             plt.plot(range(self.S+self.T), r_path)
         plt.title("r_path")
-        plt.legend(self.I_touse)
+        #plt.legend(self.I_touse)
         ax.set_xticklabels([])
 
 
