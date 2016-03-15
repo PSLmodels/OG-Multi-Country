@@ -35,17 +35,14 @@ def Multi_Country(S,I,sigma):
     PrintSS = False #Prints the result of the Steady State functions
     Print_caTimepaths = False #Prints the consumption, assets, and bequests timepath as it gets filled in for each iteration of TPI
     Print_HH_Eulers = True #Prints whether the equations for the household decisions are satisfied (Equations 3.22, 3.19, and sum(assets) = 0)
-    Print_Fill_Matricies_Time=True #Activiates Printing the total time it takes to fill the upper and lower diagonal matricies
-    CheckerMode = True #Activates not printing much of anything, used in conjunction with RobustChecker.py
+    Print_Fill_Matricies_Time = False #Activiates Printing the total time it takes to fill the upper and lower diagonal matricies
+    CheckerMode = False #Activates not printing much of anything, used in conjunction with RobustChecker.py
     Iterate = True #Shows the current iteration number and the associated Eulers
-    PrintLoc = False
-
-    WarpSpeed=True #Activates switching to the Fortran Module for lengthy calculations, currently doesn't do anything
 
     #For plots to display or save
-    DemogGraphs = True #Activates graphing graphs with demographic data and population shares
-    ShowSSGraphs = True #Activates graphs for steady-state solutions for consumption, assets, and bequests
-    iterations_to_plot = set([1]) #Which iterations of the timepath fsolve you want to plot
+    DemogGraphs = False #Activates graphing graphs with demographic data and population shares
+    ShowSSGraphs = False #Activates graphs for steady-state solutions for consumption, assets, and bequests
+    iterations_to_plot = set([]) #Which iterations of the timepath fsolve you want to plot
     SaveFinalTPIPlot = True #Saves the final (and hopefully converged) time path plot as a .png file
 
     #For using differing ways to solve the model
@@ -72,7 +69,7 @@ def Multi_Country(S,I,sigma):
 
     Firm_Params = (alpha, delta_ann, chi, rho, g_A)
 
-    Levers = (PrintAges,PrintLoc,CheckerMode,Iterate,UseDiffDemog,UseDiffProductivities,WarpSpeed,Print_Fill_Matricies_Time)
+    Levers = (PrintAges,CheckerMode,Iterate,UseDiffDemog,UseDiffProductivities,Print_Fill_Matricies_Time)
 
     #Initialize the class instance
     Model = AUX.OLG(Country_Roster,HH_params,Firm_Params,Levers)
@@ -101,13 +98,13 @@ def Multi_Country(S,I,sigma):
 
     Model.Timepath_fsolve(Print_HH_Eulers, Print_caTimepaths, iterations_to_plot)
     if SaveFinalTPIPlot: Model.plot_timepaths(SAVE=True)
-    
+
 
 #Input parameters for S, I and sigma here then execute this file to
 #run the model.
 
 start = time.time()
-Multi_Country(20,6,4)
+Multi_Country(20,3,4)
 tottime=time.time()-start
 
 if TimeModel==True:
