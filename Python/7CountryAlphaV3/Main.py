@@ -4,7 +4,7 @@ import numpy as np
 import AuxiliaryClass as AUX
 np.set_printoptions(threshold = 3000, linewidth=2000, suppress=True)
 
-TimeModel=False #Activates timing the model
+TimeModel=True #Activates timing the model
 
 def Multi_Country(S,I,sigma):
 
@@ -31,10 +31,10 @@ def Multi_Country(S,I,sigma):
     #PROGRAM LEVERS:
     #For terminal output
     PrintAges = False #Displays the current locations of the program inside key TPI functions
-    PrintSSEulErrors = True #Prints the euler errors in each attempt of calculating the steady state
+    PrintSSEulErrors = False #Prints the euler errors in each attempt of calculating the steady state
     PrintSS = False #Prints the result of the Steady State functions
     Print_caTimepaths = False #Prints the consumption, assets, and bequests timepath as it gets filled in for each iteration of TPI
-    Print_HH_Eulers = True #Prints whether the equations for the household decisions are satisfied (Equations 3.22, 3.19, and sum(assets) = 0)
+    Print_HH_Eulers = False #Prints whether the equations for the household decisions are satisfied (Equations 3.22, 3.19, and sum(assets) = 0)
     Print_Fill_Matricies_Time = False #Activiates Printing the total time it takes to fill the upper and lower diagonal matricies
     CheckerMode = False #Activates not printing much of anything, used in conjunction with RobustChecker.py
     Iterate = True #Shows the current iteration number and the associated Eulers
@@ -104,7 +104,7 @@ def Multi_Country(S,I,sigma):
 #run the model.
 
 start = time.time()
-Multi_Country(20,3,4)
+Multi_Country(80,7,4)
 tottime=time.time()-start
 
 if TimeModel==True:
