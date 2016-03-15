@@ -217,7 +217,7 @@ class OLG(object):
 
         #Increases fertility rates to account for different number of periods lived
         self.all_FertilityRates = self.all_FertilityRates*80/self.S
-        #self.MortalityRates = self.MortalityRates*80/self.S
+        self.MortalityRates = self.MortalityRates*80/self.S
 
         #The last generation dies with probability 1
         self.MortalityRates[:,-1,:] = np.ones((self.I, self.T))
