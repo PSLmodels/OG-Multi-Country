@@ -7,6 +7,7 @@ import scipy.optimize as opt
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import AuxiliaryDemographics as demog
+from pure_cython import cy_fillca
 
 class OLG(object):
     """
@@ -108,7 +109,7 @@ class OLG(object):
         self.delta=1-(1-delta_annual)**(70/self.S)
 
         #Lever Parameters
-        (PrintAges,self.CheckerMode,self.Iterate,self.UseDiffDemog,self.UseDiffProductivities,self.Matrix_Time) = Lever_Params
+        (PrintAges,self.CheckerMode,self.Iterate,self.UseDiffDemog,self.UseDiffProductivities,self.Matrix_Time,self.ShaveTime) = Lever_Params
 
         #Getting key ages for calculating demographic dynamics
         self.LeaveHouseAge, self.FirstFertilityAge, self.LastFertilityAge,\
@@ -1177,20 +1178,26 @@ class OLG(object):
             #Gets we ahead of time for easier calculation
             we = np.einsum("it,ist->ist",w_path,self.e)
 
+
+            if self.ShaveTime:
+                cy_fillca(c_matrix,cK_matrix,a_matrix,r_path,self.MortalityRates,bqvec_path,we,Gamma,self.lbar,self.Kids,self.beta,self.chi,self.delta,self.g_A,self.rho,self.sigma)
+
             #Loops through each year (across S) and gets decisions for every agent in the next year
-            for s in xrange(self.S-1):
+            else:
+                for s in xrange(self.S-1):
 
-                #Gets consumption for every agents' next year using Equation 3.22
-                cK_matrix[:,s+1,s+1:self.T+s+1] = ((self.beta * (1-self.MortalityRates[:,s,s:self.T+s]) * (1 + r_path[s+1:self.T+s+1] - self.delta))**(1/self.sigma)\
-                                                 * cK_matrix[:,s,s:self.T+s])*np.exp(-self.g_A)
+                    #Gets consumption for every agents' next year using Equation 3.22
+                    cK_matrix[:,s+1,s+1:self.T+s+1] = ((self.beta * (1-self.MortalityRates[:,s,s:self.T+s]) * (1 + r_path[s+1:self.T+s+1] - self.delta))**(1/self.sigma)\
+                                                    * cK_matrix[:,s,s:self.T+s])*np.exp(-self.g_A)
 
-                c_matrix[:,s+1,s+1:self.T+s+1] = cK_matrix[:,s+1,s+1:self.T+s+1]/Gamma[:,s+1,s+1:self.T+s+1]
+                    c_matrix[:,s+1,s+1:self.T+s+1] = cK_matrix[:,s+1,s+1:self.T+s+1]/Gamma[:,s+1,s+1:self.T+s+1]
 
-                #Gets assets for every agents' next year using Equation 3.19
-                a_matrix[:,s+1,s+1:self.T+s+1] = (  (we[:,s,s:self.T+s]*self.lbar[s:self.T+s] + (1 + r_path[s:self.T+s] - self.delta)*a_matrix[:,s,s:self.T+s] + bqvec_path[:,s,s:self.T+s])\
-                                                -c_matrix[:,s,s:self.T+s]*(1+self.Kids[:,s,s:self.T+s]*Gamma[:,s,s:self.T+s]+we[:,s,s:self.T+s]*(self.chi/we[:,s,s:self.T+s])**(self.rho) )  )*np.exp(-self.g_A)
+                    #Gets assets for every agents' next year using Equation 3.19
+                    a_matrix[:,s+1,s+1:self.T+s+1] = (  (we[:,s,s:self.T+s]*self.lbar[s:self.T+s] + (1 + r_path[s:self.T+s] - self.delta)*a_matrix[:,s,s:self.T+s] + bqvec_path[:,s,s:self.T+s])\
+                                                    -c_matrix[:,s,s:self.T+s]*(1+self.Kids[:,s,s:self.T+s]*Gamma[:,s,s:self.T+s]+we[:,s,s:self.T+s]*(self.chi/we[:,s,s:self.T+s])**(self.rho) )  )*np.exp(-self.g_A)
 
             #Gets assets in the final period of every agents' lifetime
+            s=self.S-2
             a_matrix[:,-1,s+2:self.T+s+2] = (  (we[:,-1,s+1:self.T+s+1]*self.lbar[s+1:self.T+s+1] + (1 + r_path[s+1:self.T+s+1] - self.delta)*a_matrix[:,-2,s+1:self.T+s+1])\
                                             -c_matrix[:,-1,s+1:self.T+s+1]*(1+self.Kids[:,-1,s+1:self.T+s+1]*Gamma[:,-1,s+1:self.T+s+1]+we[:,-1,s+1:self.T+s+1]*(self.chi/we[:,-1,s+1:self.T+s+1])**(self.rho) )  )*np.exp(-self.g_A)
 
