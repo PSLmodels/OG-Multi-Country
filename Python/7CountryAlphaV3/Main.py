@@ -6,7 +6,7 @@ np.set_printoptions(threshold = 3000, linewidth=2000, suppress=True)
 
 TimeModel=True #Activates timing the model
 
-def Multi_Country(S,I,sigma):
+def Multi_Country(S,I,J,sigma):
 
     #NOTE:To run the model, simply run the Multi_Country function with your chosen levels
     #of the number of cohorts (S), the number of countries (I) and slope parameter (sigma)
@@ -38,7 +38,7 @@ def Multi_Country(S,I,sigma):
     Print_Fill_Matricies_Time = True #Activiates Printing the total time it takes to fill the upper and lower diagonal matricies
     CheckerMode = False #Activates not printing much of anything, used in conjunction with RobustChecker.py
     Iterate = True #Shows the current iteration number and the associated Eulers
-    ShaveTime = False #Shaves off a little more time for TPI.
+    ShaveTime = True #Shaves off a little more time for TPI.
 
     #For plots to display or save
     DemogGraphs = False #Activates graphing graphs with demographic data and population shares
@@ -97,7 +97,7 @@ def Multi_Country(S,I,sigma):
     
     Model.set_initial_values(r_init, bq_init, a_init)
 
-    Model.Timepath_fsolve(Print_HH_Eulers, Print_caTimepaths, iterations_to_plot)
+    Model.Timepath_optimize(Print_HH_Eulers, Print_caTimepaths, iterations_to_plot)
     if SaveFinalTPIPlot: Model.plot_timepaths(SAVE=True)
 
 
@@ -105,7 +105,8 @@ def Multi_Country(S,I,sigma):
 #run the model.
 
 start = time.time()
-Multi_Country(80,7,4)
+# S, I, J, sigma
+Multi_Country(80,7,2,4)
 tottime=time.time()-start
 
 if TimeModel==True:
