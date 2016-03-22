@@ -47,7 +47,7 @@ def Multi_Country(S,I,sigma):
 
     #For using differing ways to solve the model
     UseDiffDemog = True #Turns on different demographics for each country
-    UseSSDemog = False #Activates using only steady state demographics for TPI calculation
+    UseSSDemog = True #Activates using only steady state demographics for TPI calculation
     UseDiffProductivities = False #Activates having e vary across cohorts
 
     #Adjusts the country list if we are using less than 7 Countries
@@ -77,7 +77,7 @@ def Multi_Country(S,I,sigma):
     #Demographics
     Model.Demographics(demog_ss_tol, UseSSDemog)
     if DemogGraphs: Model.plotDemographics(T_touse="default", compare_across="T", data_year=0)
-
+    Model.immigrationplot()
 
     #STEADY STATE INITIAL GUESSES
     r_ss_guess = .2
@@ -97,7 +97,7 @@ def Multi_Country(S,I,sigma):
     Model.set_initial_values(r_init, bq_init, a_init)
 
     Model.Timepath_fsolve(Print_HH_Eulers, Print_caTimepaths, iterations_to_plot)
-    if SaveFinalTPIPlot: Model.plot_timepaths(SAVE=True)
+    if SaveFinalTPIPlot: Model.plot_timepaths(SAVE=False)
 
 
 #Input parameters for S, I and sigma here then execute this file to
