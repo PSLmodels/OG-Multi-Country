@@ -35,7 +35,7 @@ def Multi_Country(S,I,J,sigma):
     PrintSS = False #Prints the result of the Steady State functions
     Print_caTimepaths = False #Prints the consumption, assets, and bequests timepath as it gets filled in for each iteration of TPI
     Print_HH_Eulers = False #Prints whether the equations for the household decisions are satisfied (Equations 3.22, 3.19, and sum(assets) = 0)
-    Print_Fill_Matricies_Time = True #Activiates Printing the total time it takes to fill the upper and lower diagonal matricies
+    Print_Fill_Matricies_Time = False #Activiates Printing the total time it takes to fill the upper and lower diagonal matricies
     CheckerMode = False #Activates not printing much of anything, used in conjunction with RobustChecker.py
     Iterate = True #Shows the current iteration number and the associated Eulers
     ShaveTime = True #Shaves off a little more time for TPI.
@@ -50,6 +50,7 @@ def Multi_Country(S,I,J,sigma):
     UseDiffDemog = True #Turns on different demographics for each country
     UseSSDemog = False #Activates using only steady state demographics for TPI calculation
     UseDiffProductivities = False #Activates having e vary across cohorts
+    UseSamePopRates = True #Activates using the same Demographics across labor classes. Leave as true.
 
     #Adjusts the country list if we are using less than 7 Countries
     if CheckerMode==False:
@@ -66,11 +67,11 @@ def Multi_Country(S,I,J,sigma):
     ##INPUTS INTO THE CLASS###
     Country_Roster = (I_dict, I_touse)
 
-    HH_params = (S,I,beta_ann,sigma)
+    HH_params = (S,I,J,beta_ann,sigma)
 
     Firm_Params = (alpha, delta_ann, chi, rho, g_A)
 
-    Levers = (PrintAges,CheckerMode,Iterate,UseDiffDemog,UseDiffProductivities,Print_Fill_Matricies_Time,ShaveTime)
+    Levers = (PrintAges,CheckerMode,Iterate,UseDiffDemog,UseDiffProductivities,Print_Fill_Matricies_Time,ShaveTime,UseSamePopRates)
 
     #Initialize the class instance
     Model = AUX.OLG(Country_Roster,HH_params,Firm_Params,Levers)
@@ -105,8 +106,9 @@ def Multi_Country(S,I,J,sigma):
 #run the model.
 
 start = time.time()
-# S, I, J, sigma
-Multi_Country(80,7,2,4)
+# S-Number of Cohorts, I-Number of Countries, J-Number of Skill classes
+# S, I, J and sigma. S and I are integers. Sigma may not be.
+Multi_Country(40,4,2,4)
 tottime=time.time()-start
 
 if TimeModel==True:
