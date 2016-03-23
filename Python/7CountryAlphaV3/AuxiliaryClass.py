@@ -104,7 +104,27 @@ class OLG(object):
             self.T_1 = 50
 
         #Demographics Parameters
-        self.I_dict, self.I_touse = countries
+        self.I_dict, self.I_touse , self.I_High= countries
+        self.classportion = np.zeros((self.I,self.J))
+
+
+        #The User inputs the portion of the population they deem "high skill"
+        #Then the remaining portion is split evenly between the remaining classes
+        if self.J>1:
+            for j in xrange(self.J):
+                remainder=(1.0-self.I_High)/(self.J-1)
+                if j==0:
+                    self.classportion[:,0]=self.I_High
+                else:
+                    self.classportion[:,j]=remainder
+        else:
+            print "Error! Need a minimum of two skill classes!"
+            print "Changing the number of classes to two"
+            self.J=2
+            self.classportion = np.zeros((self.I,self.J))
+            self.classportion[:,0]=self.I_High
+            self.classportion[:,1]=(1.0-self.classportion[:,0])
+
 
         #Firm Parameters
         (self.alpha,delta_annual,self.chi,self.rho, self.g_A)= Firm_Params
@@ -211,6 +231,9 @@ class OLG(object):
                 self.N[i,:,:,0] = np.loadtxt(("Data_Files/population.csv"),delimiter=',',\
                         skiprows=1, usecols=[index+1])[self.agestopull]*1000
 
+                for j in xrange(self.J):
+                    self.N[i,j,:,0]=self.N[i,j,:,0]*self.classportion[i,j]
+
                 self.all_FertilityRates[i,:,self.FirstFertilityAge:self.LastFertilityAge+1,\
                         :self.frange+self.T_1] =  np.transpose(np.loadtxt(str("Data_Files/" + I_all[index] + "_fertility.csv"),delimiter=',',skiprows=1\
                         ,usecols=(self.agestopull[self.FirstFertilityAge:self.LastFertilityAge+1]-22))[48-self.frange:48+self.T_1,:])
@@ -239,9 +262,9 @@ class OLG(object):
             self.all_FertilityRates[:,:,:,self.frange+self.T_1:] = np.tile(np.expand_dims(f_bar, axis=2), (self.I,1,1,self.T-self.T_1))
             self.MortalityRates[:,:,:,self.T_1:] = np.tile(np.expand_dims(rho_bar, axis=2), (self.I,1,1,self.T-self.T_1))
 
-            print self.MortalityRates[:,0,:,:]==self.MortalityRates[:,1,:,:]
-            print self.FertilityRates[:,0,:,:]==self.FertilityRates[:,1,:,:]
-            print self.Migrants[:,0,:,:]==self.Migrants[:,1,:,:]
+            #print self.MortalityRates[:,0,:,:]==self.MortalityRates[:,1,:,:]
+            #print self.FertilityRates[:,0,:,:]==self.FertilityRates[:,1,:,:]
+            #print self.Migrants[:,0,:,:]==self.Migrants[:,1,:,:]
 
 
             #FertilityRates is exactly like all_FertilityRates except it begins at time t=0 rather than time t=-self.frange
@@ -351,7 +374,7 @@ class OLG(object):
         while np.max(np.abs(self.Nhat[:,:,:,-1] - self.Nhat[:,:,:,-2])) > demog_ss_tol:
             pop_new[:,:,0] = np.sum((pop_old[:,:,:]*self.FertilityRates[:,:,:,-1]),axis=2)
             pop_new[:,:,1:] = pop_old[:,:,:-1]*(1+self.ImmigrationRates[:,:,:-1,-1]-self.MortalityRates[:,:,:-1,-1])
-            self.Nhat = np.dstack((self.Nhat,pop_new/np.sum(pop_new))) #Problem Spot Here!
+            self.Nhat = np.concatenate((self.Nhat,pop_new/np.sum(pop_new)),axis=4) #Problem Spot Here!
             future_year_iter += 1
 
 
