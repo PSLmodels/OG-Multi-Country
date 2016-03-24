@@ -232,7 +232,7 @@ class OLG(object):
                         skiprows=1, usecols=[index+1])[self.agestopull]*1000
 
                 for j in xrange(self.J):
-                    self.N[i,j,:,0]=self.N[i,j,:,0]*self.classportion[i,j]
+                    self.N[i,j,:,0]*=self.classportion[i,j]
 
                 self.all_FertilityRates[i,:,self.FirstFertilityAge:self.LastFertilityAge+1,\
                         :self.frange+self.T_1] =  np.transpose(np.loadtxt(str("Data_Files/" + I_all[index] + "_fertility.csv"),delimiter=',',skiprows=1\
@@ -446,12 +446,12 @@ class OLG(object):
         """
 
         #If getting the SS
-        if e.ndim == 2:
-            we =  np.einsum("i,is->is", w, e)
+        if e.ndim == 3:
+            we =  np.einsum("ij,ijs->ijs", w, e)
 
         #If getting transition path
-        elif e.ndim == 3:
-            we = np.einsum("it, ist -> ist", w, e)
+        elif e.ndim == 4:
+            we = np.einsum("ijt, ijst -> ijst", w, e)
 
 
         Gamma = ( ( 1+self.chi*(self.chi/we)**(self.rho-1) )**((1-self.rho*self.sigma)/(self.rho-1)) ) ** (-1/self.sigma)
@@ -479,10 +479,10 @@ class OLG(object):
                 - lhat          = Array: [I,S,T+S] or [I,S], Leisure for either the transition path or the steady steady-state
         """
 
-        if e.ndim == 2:
-            we = np.einsum("i,is->is",w,e)
-        elif e.ndim == 3:
-            we = np.einsum("it,ist->ist",w,e)
+        if e.ndim == 3:
+            we = np.einsum("ij,ijs->ijs",w,e)
+        elif e.ndim == 4:
+            we = np.einsum("ijt,ijst->ijst",w,e)
         
         lhat=c*(self.chi/we)**self.rho
 
@@ -512,9 +512,9 @@ class OLG(object):
                 - n          = Array: [I,S,T] or [I,S], Aggregate labor productivity for either the transition path or the steady steady-state
         """
 
-        if lhat.ndim == 2:
+        if lhat.ndim == 3:
             n = np.sum(self.e_ss*(self.lbar_ss-lhat)*self.Nhat_ss,axis=1)
-        elif lhat.ndim == 3:
+        elif lhat.ndim == 4:
             n = np.sum(self.e[:,:,:self.T]*(self.lbar[:self.T]-lhat)*self.Nhat[:,:,:self.T],axis=1)
 
         return n
@@ -584,28 +584,32 @@ class OLG(object):
                     - cvec_ss                    = Array: [I,S], Vector of steady state consumption
                 """
 
-            cKvec_ss = np.zeros((self.I,self.S))
-            cvec_ss = np.zeros((self.I,self.S))
-            avec_ss = np.zeros((self.I,self.S+1))
+            cKvec_ss = np.zeros((self.I,self.J,self.S))
+            cvec_ss = np.zeros((self.I,self.J,self.S))
+            avec_ss = np.zeros((self.I,self.J,self.S+1))
 
-            cKvec_ss[:,0] = cK_1
-            cvec_ss[:,0] = cK_1/Gamma_ss[:,0]
+            cK_1=np.reshape(cK_1,(self.I,self.J))
+
+            cKvec_ss[:,:,0] = cK_1
+            cvec_ss[:,:,0] = cK_1/Gamma_ss[:,:,0]
 
 
             for s in xrange(self.S-1):
                 #Equation 4.26
-                cKvec_ss[:,s+1] = (  ( (self.beta*(1-self.Mortality_ss[:,s])*(1+r_ss-self.delta) )**(1/self.sigma) )*cKvec_ss[:,s]  )/np.exp(self.g_A)
+                cKvec_ss[:,:,s+1] = (  ( (self.beta*(1-self.Mortality_ss[:,:,s])*(1+r_ss-self.delta) )**(1/self.sigma) )*cKvec_ss[:,:,s]  )/np.exp(self.g_A)
 
                 #Equation 4.25
-                cvec_ss[:,s+1] = cKvec_ss[:,s+1]/Gamma_ss[:,s+1]
+                cvec_ss[:,:,s+1] = cKvec_ss[:,:,s+1]/Gamma_ss[:,:,s+1]
+
+                print w_ss.shape
 
                 #Equation 4.23
-                avec_ss[:,s+1] = (w_ss*self.e_ss[:,s]*self.lbar_ss + (1 + r_ss - self.delta)*avec_ss[:,s] + bq_ss[:,s] \
-                                - cvec_ss[:,s]*(1+self.Kids_ss[:,s]*Gamma_ss[:,s]+w_ss*self.e_ss[:,s]*(self.chi/(w_ss*self.e_ss[:,s]))**self.rho))*np.exp(-self.g_A)
+                avec_ss[:,:,s+1] = (w_ss*self.e_ss[:,:,s]*self.lbar_ss + (1 + r_ss - self.delta)*avec_ss[:,:,s] + bq_ss[:,:,s] \
+                        - cvec_ss[:,:,s]*(1+self.Kids_ss[:,:,s]*Gamma_ss[:,:,s]+w_ss*self.e_ss[:,:,s]*(self.chi/(w_ss[:]*self.e_ss[:,s]))**self.rho))*np.exp(-self.g_A)
 
             #Equation 4.23 for final assets
-            avec_ss[:,s+2] = (w_ss*self.e_ss[:,s+1] + (1 + r_ss - self.delta)*avec_ss[:,s+1] - cvec_ss[:,s+1]*\
-                                    (1+self.Kids_ss[:,s+1]*Gamma_ss[:,s+1]+w_ss*self.e_ss[:,s+1]*(self.chi/(w_ss*self.e_ss[:,s+1]))\
+            avec_ss[:,:,s+2] = (w_ss*self.e_ss[:,:,s+1] + (1 + r_ss - self.delta)*avec_ss[:,:,s+1] - cvec_ss[:,:,s+1]*\
+                    (1+self.Kids_ss[:,:,s+1]*Gamma_ss[:,:,s+1]+w_ss*self.e_ss[:,:,s+1]*(self.chi/(w_ss*self.e_ss[:,:,s+1]))\
                                 **self.rho))*np.exp(-self.g_A)
 
             return cvec_ss, cKvec_ss, avec_ss
@@ -747,13 +751,13 @@ class OLG(object):
             return Household_Euler, Chained_C_Condition, Modified_Budget_Constraint, Consumption_Ratio
 
         #Equation 4.19
-        w_ss = (self.alpha*self.A/r_ss)**(self.alpha/(1-self.alpha))*(1-self.alpha)*self.A
+        w_ss = (self.alpha*self.A/r_ss)**(self.alpha/(1-self.alpha))*(1-self.alpha)*self.A  #FIX STARTS HERE
 
         #Equation 4.22
         Gamma_ss = self.get_Gamma(w_ss, self.e_ss)
 
         #Initial guess for the first cohort's kids consumption
-        cK1_guess = np.ones(self.I)*5
+        cK1_guess = np.ones((self.I,self.J))*5
 
         #Finds the optimal kids consumption for the first cohort
         opt_cK1 = opt.fsolve(householdEuler_SS, cK1_guess, args = (w_ss, r_ss, Gamma_ss, bq_ss))
@@ -841,13 +845,13 @@ class OLG(object):
                 
         """
         #Breaking up the input into its 2 components
-        bqindiv_ss = guess[:-1]
+        bqindiv_ss = np.reshape(guess[:-1],(self.I,self.J))
         r_ss = guess[-1]
 
         #Initializes a vector of bequests received for each individial. Will be = 0 for a block of young and a block of old cohorts
-        bq_ss = np.zeros((self.I,self.S))
-        bq_ss[:,self.FirstFertilityAge:self.FirstDyingAge] = \
-                np.einsum("i,s->is", bqindiv_ss, np.ones(self.FirstDyingAge-self.FirstFertilityAge))
+        bq_ss = np.zeros((self.I,self.J,self.S))
+        bq_ss[:,:,self.FirstFertilityAge:self.FirstDyingAge] = \
+                np.einsum("ij,s->ijs", bqindiv_ss, np.ones(self.FirstDyingAge-self.FirstFertilityAge))
 
         #Calls self.GetSSComponents, which solves for all the other ss variables in terms of bequests and intrest rate
         w_ss, cvec_ss, cKvec_ss, avec_ss, kd_ss, kf_ss, n_ss, y_ss, lhat_ss = self.GetSSComponents(bq_ss, r_ss, PrintSSEulErrors)
@@ -925,6 +929,8 @@ class OLG(object):
 
         #Prepares the initial guess for the fsolve
         guess = np.append(bqss_guess, rss_guess)
+
+        print guess
 
         #Searches over bq and r to find values that satisfy the Euler Equations (3.19 and 3.24)
         ss = opt.fsolve(self.EulerSystemSS, guess, args=PrintSSEulErrors)
