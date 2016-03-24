@@ -374,7 +374,10 @@ class OLG(object):
         while np.max(np.abs(self.Nhat[:,:,:,-1] - self.Nhat[:,:,:,-2])) > demog_ss_tol:
             pop_new[:,:,0] = np.sum((pop_old[:,:,:]*self.FertilityRates[:,:,:,-1]),axis=2)
             pop_new[:,:,1:] = pop_old[:,:,:-1]*(1+self.ImmigrationRates[:,:,:-1,-1]-self.MortalityRates[:,:,:-1,-1])
-            self.Nhat = np.concatenate((self.Nhat,pop_new/np.sum(pop_new)),axis=4) #Problem Spot Here!
+            temp = pop_new/np.sum(pop_new)
+            temp2 = np.zeros((self.I,self.J,self.S,1))
+            temp2[:,:,:,0] = temp
+            self.Nhat = np.concatenate((self.Nhat,temp2),axis=3)
             future_year_iter += 1
 
 
@@ -387,13 +390,16 @@ class OLG(object):
         self.Nhat = self.Nhat[:,:,:,:self.T]
 
         #Imposing the ss for years after self.T
-        self.Nhat = np.dstack((  self.Nhat[:,:,:,:self.T], np.einsum("ijs,t->ijst",self.Nhat_ss,np.ones(self.S))  ))
+        temp = np.einsum("ijs,t->ijst",self.Nhat_ss,np.ones(self.S))
+        self.Nhat = np.concatenate((  self.Nhat[:,:,:,:self.T], temp  ),axis=3)
 
         #Imposing the ss for years after self.T
-        self.MortalityRates = np.dstack((  self.MortalityRates[:,:,:,:self.T], np.einsum("ijs,t->ijst",self.Mortality_ss, np.ones(self.S))  ))        
+        temp = np.einsum("ijs,t->ijst",self.Mortality_ss,np.ones(self.S))
+        self.MortalityRates = np.concatenate((  self.MortalityRates[:,:,:,:self.T], temp ),axis=3)        
 
         #Imposing the ss for years after self.T
-        self.Kids = np.dstack((  self.Kids[:,:,:,:self.T], np.einsum("ijs,t->ijst",self.Kids_ss, np.ones(self.S))  )) 
+        temp = np.einsum("ijs,t->ijst",self.Kids_ss, np.ones(self.S)) 
+        self.Kids = np.concatenate((  self.Kids[:,:,:,:self.T], temp ), axis=3) 
 
         #Overwrites all the years in the transition path with the steady state if UseSSDemog == True
         if UseSSDemog == True:

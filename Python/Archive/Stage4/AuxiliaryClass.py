@@ -92,7 +92,7 @@ class OLG(object):
         #PARAMETER SET UP
 
         #HH Parameters
-        (self.S, self.I, self.J, beta_annual, self.sigma) = HH_Params
+        (self.S, self.I, beta_annual, self.sigma) = HH_Params
     
         self.beta=beta_annual**(70/self.S)
 
@@ -339,6 +339,8 @@ class OLG(object):
         while np.max(np.abs(self.Nhat[:,:,-1] - self.Nhat[:,:,-2])) > demog_ss_tol:
             pop_new[:,0] = np.sum((pop_old[:,:]*self.FertilityRates[:,:,-1]),axis=1)
             pop_new[:,1:] = pop_old[:,:-1]*(1+self.ImmigrationRates[:,:-1,-1]-self.MortalityRates[:,:-1,-1])
+            print "Nhat Shape", self.Nhat.shape
+            print "newpop_shape", pop_new.shape
             self.Nhat = np.dstack((self.Nhat,pop_new/np.sum(pop_new)))
             future_year_iter += 1
 

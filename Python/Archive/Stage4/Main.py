@@ -66,7 +66,7 @@ def Multi_Country(S,I,sigma):
     ##INPUTS INTO THE CLASS###
     Country_Roster = (I_dict, I_touse)
 
-    HH_params = (S,I,J,beta_ann,sigma)
+    HH_params = (S,I,beta_ann,sigma)
 
     Firm_Params = (alpha, delta_ann, chi, rho, g_A)
 
