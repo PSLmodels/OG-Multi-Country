@@ -15,7 +15,11 @@ def Multi_Country(S,I,J,sigma):
 
     #Country Rosters
     I_dict = {"usa":0,"eu":1,"japan":2,"china":3,"india":4,"russia":5,"korea":6} #DONT CHANGE
+    I_HighSkill = np.array([.7,.7,.7,.75,.75,.7,.7]) #CAN CHANGE
     I_touse = ["eu","russia","usa","japan","korea","china","india"] #CAN CHANGE
+
+    #NOTE: I_HighSkill sets the portion of each country's population that's deemed 
+    #      "high skill". The remaining portion will be divided equally among the remaining classes.
 
     #Parameters Zone
     g_A = 0.015 #Technical growth rate
@@ -24,6 +28,7 @@ def Multi_Country(S,I,J,sigma):
     alpha = .3 #Capital Share of production
     chi = 1.5 #Preference for lesiure
     rho = .4 #Intratemporal elasticity of substitution
+
 
     #Convergence Tolerances
     demog_ss_tol = 1e-8 #Used in getting ss for population share
@@ -57,15 +62,17 @@ def Multi_Country(S,I,J,sigma):
         if len(I_touse) < I:
             print "WARNING: We are changing I from", I, "to", len(I_touse), "to fit the length of I_touse. So the countries we are using now are", I_touse
             I = len(I_touse)
+            I_HighSkill_touse = I_HighSkill[:I]
             time.sleep(2)
 
         elif len(I_touse) > I:
             print "WARNING: We are changing I_touse from", I_touse, "to", I_touse[:I], "so there are", I, "regions"
             I_touse = I_touse[:I]
+            I_HighSkill_touse = I_HighSkill[:I]
             time.sleep(2)
 
     ##INPUTS INTO THE CLASS###
-    Country_Roster = (I_dict, I_touse)
+    Country_Roster = (I_dict, I_touse,I_HighSkill_touse)
 
     HH_params = (S,I,J,beta_ann,sigma)
 
