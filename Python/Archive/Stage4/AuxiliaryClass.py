@@ -7,7 +7,7 @@ import scipy.optimize as opt
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import AuxiliaryDemographics as demog
-from pure_cython import cy_fillca
+#from pure_cython import cy_fillca
 
 
 class OLG(object):
@@ -341,7 +341,6 @@ class OLG(object):
             pop_new[:,1:] = pop_old[:,:-1]*(1+self.ImmigrationRates[:,:-1,-1]-self.MortalityRates[:,:-1,-1])
             self.Nhat = np.dstack((self.Nhat,pop_new/np.sum(pop_new)))
             future_year_iter += 1
-
 
         #Stores the steady state year in a seperate matrix
         self.Nhat_ss = self.Nhat[:,:,-1]

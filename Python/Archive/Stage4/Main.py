@@ -107,7 +107,7 @@ def Multi_Country(S,I,sigma):
 start = time.time()
 # S-Number of Cohorts, I-Number of Countries
 # S, I, and sigma. S and I are integers. Sigma may not be.
-Multi_Country(80,7,4)
+Multi_Country(20,3,4)
 tottime=time.time()-start
 
 if TimeModel==True:

@@ -7,7 +7,8 @@ import scipy.optimize as opt
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import AuxiliaryDemographics as demog
-from pure_cython import cy_fillca
+#from pure_cython import cy_fillca
+
 
 class OLG(object):
     """
@@ -91,7 +92,7 @@ class OLG(object):
         #PARAMETER SET UP
 
         #HH Parameters
-        (self.S, self.I, beta_annual, self.sigma) = HH_Params
+        (self.S, self.I, self.J, beta_annual, self.sigma) = HH_Params
     
         self.beta=beta_annual**(70/self.S)
 
@@ -103,14 +104,37 @@ class OLG(object):
             self.T_1 = 50
 
         #Demographics Parameters
-        self.I_dict, self.I_touse = countries
+        self.I_dict, self.I_touse , self.I_High= countries
+        self.classportion = np.zeros((self.I,self.J))
+
+
+        #The User inputs the portion of the population they deem "high skill"
+        #Then the remaining portion is split evenly between the remaining classes
+        #TO JEFF: I think we can assume that the data for percentage of population in each J will be from some outside
+        #         data file, so I'm not sure we need this
+
+        if self.J>1:
+            for j in xrange(self.J):
+                remainder=(1.0-self.I_High)/(self.J-1)
+                if j==0:
+                    self.classportion[:,0]=self.I_High
+                else:
+                    self.classportion[:,j]=remainder
+        else:
+            print "Error! Need a minimum of two skill classes!"
+            print "Changing the number of classes to two"
+            self.J=2
+            self.classportion = np.zeros((self.I,self.J))
+            self.classportion[:,0]=self.I_High
+            self.classportion[:,1]=(1.0-self.classportion[:,0])
+
 
         #Firm Parameters
         (self.alpha,delta_annual,self.chi,self.rho, self.g_A)= Firm_Params
         self.delta=1-(1-delta_annual)**(70/self.S)
 
         #Lever Parameters
-        (PrintAges,self.CheckerMode,self.Iterate,self.UseDiffDemog,self.UseDiffProductivities,self.Matrix_Time,self.ShaveTime) = Lever_Params
+        (PrintAges,self.CheckerMode,self.Iterate,self.UseDiffDemog,self.UseDiffProductivities,self.Matrix_Time,self.ShaveTime,self.SameRates) = Lever_Params
 
         #Getting key ages for calculating demographic dynamics
         self.LeaveHouseAge, self.FirstFertilityAge, self.LastFertilityAge,\
@@ -124,13 +148,13 @@ class OLG(object):
 
         #Initialize Labor Productivities
         if self.UseDiffProductivities:
-            self.e = np.ones((self.I, self.S, self.T+self.S))
-            self.e[:,self.FirstDyingAge:,:] = 0.3
-            self.e[:,:self.LeaveHouseAge,:] = 0.3
+            self.e = np.ones((self.I, self.J, self.S, self.T+self.S))
+            self.e[:,:,self.FirstDyingAge:,:] = 0.3
+            self.e[:,:,:self.LeaveHouseAge,:] = 0.3
         else:
-            self.e = np.ones((self.I, self.S, self.T+self.S)) #Labor productivities
+            self.e = np.ones((self.I, self.J, self.S, self.T+self.S)) #Labor productivities
 
-        self.e_ss=self.e[:,:,-1]
+        self.e_ss=self.e[:,:,:,-1]
 
         #Initilize Time Endowment
         self.lbar = np.cumsum(np.ones(self.T+self.S)*self.g_A)
@@ -185,60 +209,76 @@ class OLG(object):
 
         self.frange=self.LastFertilityAge+1-self.FirstFertilityAge
 
-        self.N=np.zeros((self.I,self.S,self.T))
-        self.Nhat=np.zeros((self.I,self.S,self.T))
-        self.all_FertilityRates = np.zeros((self.I, self.S, self.frange+self.T))
-        self.FertilityRates = np.zeros((self.I, self.S, self.T))
-        self.MortalityRates = np.zeros((self.I, self.S, self.T))
-        self.Migrants = np.zeros((self.I, self.S, self.T))
+        self.N=np.zeros((self.I,self.J,self.S,self.T))
+        self.Nhat=np.zeros((self.I,self.J,self.S,self.T))
+        self.all_FertilityRates = np.zeros((self.I,self.J, self.S, self.frange+self.T))
+        self.FertilityRates = np.zeros((self.I, self.J ,self.S, self.T))
+        self.MortalityRates = np.zeros((self.I, self.J ,self.S, self.T))
+        self.Migrants = np.zeros((self.I, self.J ,self.S, self.T))
 
         I_all = list(sorted(self.I_dict, key=self.I_dict.get))
 
-        #We loop over each country to import its demographic data
-        for i in xrange(self.I):
+        if self.SameRates:
+            #We loop over each country to import its demographic data
+            for i in xrange(self.I):
 
-            #If the bool UseDiffDemog == True, we get the unique country index number for importing from the .CSVs
-            if self.UseDiffDemog:
-                index = self.I_dict[self.I_touse[i]]
+                #If the bool UseDiffDemog == True, we get the unique country index number for importing from the .CSVs
+                if self.UseDiffDemog:
+                    index = self.I_dict[self.I_touse[i]]
 
-            #Otherwise we just only use the data for one specific country
-            else:
-                index = 0
+                #Otherwise we just only use the data for one specific country
+                else:
+                    index = 0
 
-            #Importing the data and correctly storing it in our demographics matrices
-            self.N[i,:,0] = np.loadtxt(("Data_Files/population.csv"),delimiter=',',\
-                    skiprows=1, usecols=[index+1])[self.agestopull]*1000
+                #Importing the data and correctly storing it in our demographics matrices
+                self.N[i,:,:,0] = np.loadtxt(("Data_Files/population.csv"),delimiter=',',\
+                        skiprows=1, usecols=[index+1])[self.agestopull]*1000
 
-            self.all_FertilityRates[i,self.FirstFertilityAge:self.LastFertilityAge+1,\
-                    :self.frange+self.T_1] =  np.transpose(np.loadtxt(str("Data_Files/" + I_all[index] + "_fertility.csv"),delimiter=',',skiprows=1\
-                    ,usecols=(self.agestopull[self.FirstFertilityAge:self.LastFertilityAge+1]-22))[48-self.frange:48+self.T_1,:])
+                for j in xrange(self.J):
+                    self.N[i,j,:,0]*=self.classportion[i,j]
 
-            self.MortalityRates[i,self.FirstDyingAge:,:self.T_1] = np.transpose(np.loadtxt(str("Data_Files/" + I_all[index] + "_mortality.csv")\
-                    ,delimiter=',',skiprows=1, usecols=(self.agestopull[self.FirstDyingAge:]-67))[:self.T_1,:])
+                self.all_FertilityRates[i,:,self.FirstFertilityAge:self.LastFertilityAge+1,\
+                        :self.frange+self.T_1] =  np.transpose(np.loadtxt(str("Data_Files/" + I_all[index] + "_fertility.csv"),delimiter=',',skiprows=1\
+                        ,usecols=(self.agestopull[self.FirstFertilityAge:self.LastFertilityAge+1]-22))[48-self.frange:48+self.T_1,:])
 
-            self.Migrants[i,:self.MaxImmigrantAge,:self.T_1] = np.einsum("s,t->st",np.loadtxt(("Data_Files/net_migration.csv"),delimiter=','\
-                    ,skiprows=1, usecols=[index+1])[self.agestopull[:self.MaxImmigrantAge]]*100, np.ones(self.T_1))
+                self.MortalityRates[i,:,self.FirstDyingAge:,:self.T_1] = np.transpose(np.loadtxt(str("Data_Files/" + I_all[index] + "_mortality.csv")\
+                        ,delimiter=',',skiprows=1, usecols=(self.agestopull[self.FirstDyingAge:]-67))[:self.T_1,:])
 
-        #Gets initial population share
-        self.Nhat[:,:,0] = self.N[:,:,0]/np.sum(self.N[:,:,0])
+                self.Migrants[i,:,:self.MaxImmigrantAge,:self.T_1] = np.einsum("s,t->st",np.loadtxt(("Data_Files/net_migration.csv"),delimiter=','\
+                        ,skiprows=1, usecols=[index+1])[self.agestopull[:self.MaxImmigrantAge]]*100, np.ones(self.T_1))
 
-        #Increases fertility rates to account for different number of periods lived
-        self.all_FertilityRates = self.all_FertilityRates*80/self.S
-        self.MortalityRates = self.MortalityRates*80/self.S
+            #Gets initial population share
+            self.Nhat[:,:,:,0] = self.N[:,:,:,0]/np.sum(self.N[:,:,:,0])
 
-        #The last generation dies with probability 1
-        self.MortalityRates[:,-1,:] = np.ones((self.I, self.T))
 
-        #Gets steady-state values for all countries by taking the mean at year T_1-1 across countries
-        f_bar = np.mean(self.all_FertilityRates[:,:,self.frange+self.T_1-1], axis=0)
-        rho_bar = np.mean(self.MortalityRates[:,:,self.T_1-1], axis=0)
+            #Increases fertility rates to account for different number of periods lived
+            self.all_FertilityRates = self.all_FertilityRates*80/self.S
+            self.MortalityRates = self.MortalityRates*80/self.S
 
-        #Set to the steady state for every year beyond year T_1
-        self.all_FertilityRates[:,:,self.frange+self.T_1:] = np.tile(np.expand_dims(f_bar, axis=2), (self.I,1,self.T-self.T_1))
-        self.MortalityRates[:,:,self.T_1:] = np.tile(np.expand_dims(rho_bar, axis=2), (self.I,1,self.T-self.T_1))
 
-        #FertilityRates is exactly like all_FertilityRates except it begins at time t=0 rather than time t=-self.frange
-        self.FertilityRates[:,self.FirstFertilityAge:self.LastFertilityAge+1,:] = self.all_FertilityRates[:,self.FirstFertilityAge:self.LastFertilityAge+1,self.frange:]
+            #The last generation dies with probability 1
+            self.MortalityRates[:,:,-1,:] = np.ones((self.I, self.J,self.T))
+
+            #Gets steady-state values for all countries by taking the mean at year T_1-1 across countries
+            f_bar = np.mean(self.all_FertilityRates[:,:,:,self.frange+self.T_1-1], axis=0)
+            rho_bar = np.mean(self.MortalityRates[:,:,:,self.T_1-1], axis=0)
+
+            #Set to the steady state for every year beyond year T_1
+            self.all_FertilityRates[:,:,:,self.frange+self.T_1:] = np.tile(np.expand_dims(f_bar, axis=2), (self.I,1,1,self.T-self.T_1))
+            self.MortalityRates[:,:,:,self.T_1:] = np.tile(np.expand_dims(rho_bar, axis=2), (self.I,1,1,self.T-self.T_1))
+
+            #print self.MortalityRates[:,0,:,:]==self.MortalityRates[:,1,:,:]
+            #print self.FertilityRates[:,0,:,:]==self.FertilityRates[:,1,:,:]
+            #print self.Migrants[:,0,:,:]==self.Migrants[:,1,:,:]
+
+
+            #FertilityRates is exactly like all_FertilityRates except it begins at time t=0 rather than time t=-self.frange
+            self.FertilityRates[:,:,self.FirstFertilityAge:self.LastFertilityAge+1,:] = self.all_FertilityRates[:,:,self.FirstFertilityAge:self.LastFertilityAge+1,self.frange:]
+        else:
+            #TO JEFF: What is this?
+            print "Currently not configured for different rates among labor classes"
+            print "Please change UseSamePopRates back to true"
+            raise NotImplementedError("NOT DONE YET")
 
     def Demographics(self, demog_ss_tol, UseSSDemog=False):
         """
@@ -293,77 +333,83 @@ class OLG(object):
         """
 
         #Initializes immigration rates
-        self.ImmigrationRates = np.zeros((self.I,self.S,self.T))
-        self.Kids=np.zeros((self.I,self.S,self.T))
+        self.ImmigrationRates = np.zeros((self.I,self.J,self.S,self.T))
+        self.Kids=np.zeros((self.I,self.J,self.S,self.T))
 
         #Getting the population and population shares from the present to year T
         for t in xrange(1,self.T):
 
             #Gets new babies born this year (Equation 3.11)
-            self.N[:,0,t] = np.sum((self.N[:,:,t-1]*self.FertilityRates[:,:,t-1]), axis=1)
+            self.N[:,:,0,t] = np.sum((self.N[:,:,:,t-1]*self.FertilityRates[:,:,:,t-1]), axis=2)
 
             #Get the immigration RATES for the past year
             #If before the transition year T_1, just divide total migrants by population
             if t <= self.T_1:
-                self.ImmigrationRates[:,:,t-1] = self.Migrants[:,:,t-1]/self.N[:,:,t-1]*80/self.S
+                self.ImmigrationRates[:,:,:,t-1] = self.Migrants[:,:,:,t-1]/self.N[:,:,:,t-1]*80/self.S
 
             #If beyond the transition year T_1, average the immigration rates in year T_1 itself
             else:
-                self.ImmigrationRates[:,:,t-1] = np.mean(self.ImmigrationRates[:,:,self.T_1-1],\
-                        axis=0)*80/self.S
+                self.ImmigrationRates[:,:,:,t-1] = np.mean(self.ImmigrationRates[:,:,:,self.T_1-1],axis=0)*80/self.S
 
             #Gets the non-newborn population for the next year (Equation 3.12)
-            self.N[:,1:,t] = self.N[:,:-1,t-1]*(1+self.ImmigrationRates[:,:-1,t-1]-self.MortalityRates[:,:-1,t-1])
+            self.N[:,:,1:,t] = self.N[:,:,:-1,t-1]*(1+self.ImmigrationRates[:,:,:-1,t-1]-self.MortalityRates[:,:,:-1,t-1])
             
             #Gets the population share by taking a fraction of the total world population this year
-            self.Nhat[:,:,t] = self.N[:,:,t]/np.sum(self.N[:,:,t])
+            self.Nhat[:,:,:,t] = self.N[:,:,:,t]/np.sum(self.N[:,:,:,t])
             
             #Gets the number of kids each agent has in this period
             for s in xrange(self.FirstFertilityAge,self.LastFertilityAge+self.LeaveHouseAge):
-                kidsvec = np.diagonal(self.all_FertilityRates[:,s-self.LeaveHouseAge+1:s+1,t:t+self.LeaveHouseAge],axis1=1, axis2=2)
-                self.Kids[:,s,t-1] = np.sum(kidsvec,axis=1)
+                kidsvec = np.diagonal(self.all_FertilityRates[:,:,s-self.LeaveHouseAge+1:s+1,t:t+self.LeaveHouseAge],axis1=2, axis2=3)
+                self.Kids[:,:,s,t-1] = np.sum(kidsvec,axis=2)
 
         #Gets Immigration rates for the final year
-        self.ImmigrationRates[:,:,t] = self.Migrants[:,:,t]/self.N[:,:,t]*80/self.S
+
+        self.ImmigrationRates[:,:,:,-1] = np.mean(self.ImmigrationRates[:,:,:,self.T_1-1],axis=0)*80/self.S
 
         #Gets Kids for the final year (just the steady state)
-        self.Kids[:,:,-1] = self.Kids[:,:,-2]
+        self.Kids[:,:,:,-1] = self.Kids[:,:,:,-2]
 
         #Initialize iterating variables to find the steady state population shares
-        pop_old = self.N[:,:,-1]
-        pop_new = self.N[:,:,-1]
+        pop_old = self.N[:,:,:,-1]
+        pop_new = self.N[:,:,:,-1]
         future_year_iter = 0
 
         #Calculates new years of population shares until the greatest absolute difference between 2 consecutive years is less than demog_ss_tol
-        while np.max(np.abs(self.Nhat[:,:,-1] - self.Nhat[:,:,-2])) > demog_ss_tol:
-            pop_new[:,0] = np.sum((pop_old[:,:]*self.FertilityRates[:,:,-1]),axis=1)
-            pop_new[:,1:] = pop_old[:,:-1]*(1+self.ImmigrationRates[:,:-1,-1]-self.MortalityRates[:,:-1,-1])
-            self.Nhat = np.dstack((self.Nhat,pop_new/np.sum(pop_new)))
+        while np.max(np.abs(self.Nhat[:,:,:,-1] - self.Nhat[:,:,:,-2])) > demog_ss_tol:
+            pop_new[:,:,0] = np.sum((pop_old[:,:,:]*self.FertilityRates[:,:,:,-1]),axis=2)
+            pop_new[:,:,1:] = pop_old[:,:,:-1]*(1+self.ImmigrationRates[:,:,:-1,-1]-self.MortalityRates[:,:,:-1,-1])
+            temp = pop_new/np.sum(pop_new)
+            temp2 = np.zeros((self.I,self.J,self.S,1))
+            temp2[:,:,:,0] = temp
+            self.Nhat = np.concatenate((self.Nhat,temp2),axis=3)
             future_year_iter += 1
 
 
         #Stores the steady state year in a seperate matrix
-        self.Nhat_ss = self.Nhat[:,:,-1]
-        self.Mortality_ss=self.MortalityRates[:,:,-1]
-        self.Kids_ss = self.Kids[:,:,-1]
+        self.Nhat_ss = self.Nhat[:,:,:,-1]
+        self.Mortality_ss=self.MortalityRates[:,:,:,-1]
+        self.Kids_ss = self.Kids[:,:,:,-1]
         
         #Deletes all the years between t=T and the steady state calculated in the while loop
-        self.Nhat = self.Nhat[:,:,:self.T]
+        self.Nhat = self.Nhat[:,:,:,:self.T]
 
         #Imposing the ss for years after self.T
-        self.Nhat = np.dstack((  self.Nhat[:,:,:self.T], np.einsum("is,t->ist",self.Nhat_ss,np.ones(self.S))  ))
+        temp = np.einsum("ijs,t->ijst",self.Nhat_ss,np.ones(self.S))
+        self.Nhat = np.concatenate((  self.Nhat[:,:,:,:self.T], temp  ),axis=3)
 
         #Imposing the ss for years after self.T
-        self.MortalityRates = np.dstack((  self.MortalityRates[:,:,:self.T], np.einsum("is,t->ist",self.Mortality_ss, np.ones(self.S))  ))        
+        temp = np.einsum("ijs,t->ijst",self.Mortality_ss,np.ones(self.S))
+        self.MortalityRates = np.concatenate((  self.MortalityRates[:,:,:,:self.T], temp ),axis=3)              
 
         #Imposing the ss for years after self.T
-        self.Kids = np.dstack((  self.Kids[:,:,:self.T], np.einsum("is,t->ist",self.Kids_ss, np.ones(self.S))  )) 
+        temp = np.einsum("ijs,t->ijst",self.Kids_ss, np.ones(self.S)) 
+        self.Kids = np.concatenate((  self.Kids[:,:,:,:self.T], temp ), axis=3) 
 
         #Overwrites all the years in the transition path with the steady state if UseSSDemog == True
         if UseSSDemog == True:
-            self.Nhat = np.einsum("is,t->ist",self.Nhat_ss,np.ones(self.T+self.S))
-            self.MortalityRates = np.einsum("is,t->ist",self.Mortality_ss,np.ones(self.T+self.S))
-            self.Kids = np.einsum("is,t->ist",self.Kids_ss,np.ones(self.T+self.S))
+            self.Nhat = np.einsum("ijs,t->ijst",self.Nhat_ss,np.ones(self.T+self.S))
+            self.MortalityRates = np.einsum("ijs,t->ijst",self.Mortality_ss,np.ones(self.T+self.S))
+            self.Kids = np.einsum("ijs,t->ijst",self.Kids_ss,np.ones(self.T+self.S))
 
     def plotDemographics(self, T_touse="default", compare_across="T", data_year=0):
         """
@@ -424,12 +470,12 @@ class OLG(object):
         """
 
         #If getting the SS
-        if e.ndim == 2:
-            we =  np.einsum("i,is->is", w, e)
+        if e.ndim == 3:
+            we =  np.einsum("ij,ijs->ijs", w, e)
 
         #If getting transition path
-        elif e.ndim == 3:
-            we = np.einsum("it, ist -> ist", w, e)
+        elif e.ndim == 4:
+            we = np.einsum("ijt, ijst -> ijst", w, e)
 
 
         Gamma = ( ( 1+self.chi*(self.chi/we)**(self.rho-1) )**((1-self.rho*self.sigma)/(self.rho-1)) ) ** (-1/self.sigma)
@@ -457,10 +503,10 @@ class OLG(object):
                 - lhat          = Array: [I,S,T+S] or [I,S], Leisure for either the transition path or the steady steady-state
         """
 
-        if e.ndim == 2:
-            we = np.einsum("i,is->is",w,e)
-        elif e.ndim == 3:
-            we = np.einsum("it,ist->ist",w,e)
+        if e.ndim == 3:
+            we = np.einsum("ij,ijs->ijs",w,e)
+        elif e.ndim == 4:
+            we = np.einsum("ijt,ijst->ijst",w,e)
         
         lhat=c*(self.chi/we)**self.rho
 
@@ -490,9 +536,9 @@ class OLG(object):
                 - n          = Array: [I,S,T] or [I,S], Aggregate labor productivity for either the transition path or the steady steady-state
         """
 
-        if lhat.ndim == 2:
+        if lhat.ndim == 3:
             n = np.sum(self.e_ss*(self.lbar_ss-lhat)*self.Nhat_ss,axis=1)
-        elif lhat.ndim == 3:
+        elif lhat.ndim == 4:
             n = np.sum(self.e[:,:,:self.T]*(self.lbar[:self.T]-lhat)*self.Nhat[:,:,:self.T],axis=1)
 
         return n
@@ -562,28 +608,32 @@ class OLG(object):
                     - cvec_ss                    = Array: [I,S], Vector of steady state consumption
                 """
 
-            cKvec_ss = np.zeros((self.I,self.S))
-            cvec_ss = np.zeros((self.I,self.S))
-            avec_ss = np.zeros((self.I,self.S+1))
+            cKvec_ss = np.zeros((self.I,self.J,self.S))
+            cvec_ss = np.zeros((self.I,self.J,self.S))
+            avec_ss = np.zeros((self.I,self.J,self.S+1))
 
-            cKvec_ss[:,0] = cK_1
-            cvec_ss[:,0] = cK_1/Gamma_ss[:,0]
+            cK_1=np.reshape(cK_1,(self.I,self.J))
+
+            cKvec_ss[:,:,0] = cK_1
+            cvec_ss[:,:,0] = cK_1/Gamma_ss[:,:,0]
 
 
             for s in xrange(self.S-1):
                 #Equation 4.26
-                cKvec_ss[:,s+1] = (  ( (self.beta*(1-self.Mortality_ss[:,s])*(1+r_ss-self.delta) )**(1/self.sigma) )*cKvec_ss[:,s]  )/np.exp(self.g_A)
+                cKvec_ss[:,:,s+1] = (  ( (self.beta*(1-self.Mortality_ss[:,:,s])*(1+r_ss-self.delta) )**(1/self.sigma) )*cKvec_ss[:,:,s]  )/np.exp(self.g_A)
 
                 #Equation 4.25
-                cvec_ss[:,s+1] = cKvec_ss[:,s+1]/Gamma_ss[:,s+1]
+                cvec_ss[:,:,s+1] = cKvec_ss[:,:,s+1]/Gamma_ss[:,:,s+1]
+
+                print w_ss.shape
 
                 #Equation 4.23
-                avec_ss[:,s+1] = (w_ss*self.e_ss[:,s]*self.lbar_ss + (1 + r_ss - self.delta)*avec_ss[:,s] + bq_ss[:,s] \
-                                - cvec_ss[:,s]*(1+self.Kids_ss[:,s]*Gamma_ss[:,s]+w_ss*self.e_ss[:,s]*(self.chi/(w_ss*self.e_ss[:,s]))**self.rho))*np.exp(-self.g_A)
+                avec_ss[:,:,s+1] = (w_ss*self.e_ss[:,:,s]*self.lbar_ss + (1 + r_ss - self.delta)*avec_ss[:,:,s] + bq_ss[:,:,s] \
+                        - cvec_ss[:,:,s]*(1+self.Kids_ss[:,:,s]*Gamma_ss[:,:,s]+w_ss*self.e_ss[:,:,s]*(self.chi/(w_ss[:]*self.e_ss[:,s]))**self.rho))*np.exp(-self.g_A)
 
             #Equation 4.23 for final assets
-            avec_ss[:,s+2] = (w_ss*self.e_ss[:,s+1] + (1 + r_ss - self.delta)*avec_ss[:,s+1] - cvec_ss[:,s+1]*\
-                                    (1+self.Kids_ss[:,s+1]*Gamma_ss[:,s+1]+w_ss*self.e_ss[:,s+1]*(self.chi/(w_ss*self.e_ss[:,s+1]))\
+            avec_ss[:,:,s+2] = (w_ss*self.e_ss[:,:,s+1] + (1 + r_ss - self.delta)*avec_ss[:,:,s+1] - cvec_ss[:,:,s+1]*\
+                    (1+self.Kids_ss[:,:,s+1]*Gamma_ss[:,:,s+1]+w_ss*self.e_ss[:,:,s+1]*(self.chi/(w_ss*self.e_ss[:,:,s+1]))\
                                 **self.rho))*np.exp(-self.g_A)
 
             return cvec_ss, cKvec_ss, avec_ss
@@ -725,13 +775,13 @@ class OLG(object):
             return Household_Euler, Chained_C_Condition, Modified_Budget_Constraint, Consumption_Ratio
 
         #Equation 4.19
-        w_ss = (self.alpha*self.A/r_ss)**(self.alpha/(1-self.alpha))*(1-self.alpha)*self.A
+        w_ss = (self.alpha*self.A/r_ss)**(self.alpha/(1-self.alpha))*(1-self.alpha)*self.A  #FIX STARTS HERE
 
         #Equation 4.22
         Gamma_ss = self.get_Gamma(w_ss, self.e_ss)
 
         #Initial guess for the first cohort's kids consumption
-        cK1_guess = np.ones(self.I)*5
+        cK1_guess = np.ones((self.I,self.J))*5
 
         #Finds the optimal kids consumption for the first cohort
         opt_cK1 = opt.fsolve(householdEuler_SS, cK1_guess, args = (w_ss, r_ss, Gamma_ss, bq_ss))
@@ -819,13 +869,13 @@ class OLG(object):
                 
         """
         #Breaking up the input into its 2 components
-        bqindiv_ss = guess[:-1]
+        bqindiv_ss = np.reshape(guess[:-1],(self.I,self.J))
         r_ss = guess[-1]
 
         #Initializes a vector of bequests received for each individial. Will be = 0 for a block of young and a block of old cohorts
-        bq_ss = np.zeros((self.I,self.S))
-        bq_ss[:,self.FirstFertilityAge:self.FirstDyingAge] = \
-                np.einsum("i,s->is", bqindiv_ss, np.ones(self.FirstDyingAge-self.FirstFertilityAge))
+        bq_ss = np.zeros((self.I,self.J,self.S))
+        bq_ss[:,:,self.FirstFertilityAge:self.FirstDyingAge] = \
+                np.einsum("ij,s->ijs", bqindiv_ss, np.ones(self.FirstDyingAge-self.FirstFertilityAge))
 
         #Calls self.GetSSComponents, which solves for all the other ss variables in terms of bequests and intrest rate
         w_ss, cvec_ss, cKvec_ss, avec_ss, kd_ss, kf_ss, n_ss, y_ss, lhat_ss = self.GetSSComponents(bq_ss, r_ss, PrintSSEulErrors)
@@ -903,6 +953,8 @@ class OLG(object):
 
         #Prepares the initial guess for the fsolve
         guess = np.append(bqss_guess, rss_guess)
+
+        print guess
 
         #Searches over bq and r to find values that satisfy the Euler Equations (3.19 and 3.24)
         ss = opt.fsolve(self.EulerSystemSS, guess, args=PrintSSEulErrors)
@@ -1332,7 +1384,8 @@ class OLG(object):
 
                     #Gets assets for every agents' next year using Equation 3.19
                     a_matrix[:,s+1,s+1:self.T+s+1] = (  (we[:,s,s:self.T+s]*self.lbar[s:self.T+s] + (1 + r_path[s:self.T+s] - self.delta)*a_matrix[:,s,s:self.T+s] + bqvec_path[:,s,s:self.T+s])\
-                                                    -c_matrix[:,s,s:self.T+s]*(1+self.Kids[:,s,s:self.T+s]*Gamma[:,s,s:self.T+s]+we[:,s,s:self.T+s]*(self.chi/we[:,s,s:self.T+s])**(self.rho) )  )*np.exp(-self.g_A)
+                                                    -c_matrix[:,s,s:self.T+s]*(1+self.Kids[:,s,s:self.T+s]*Gamma[:,s,s:self.T+s]+we[:,s,s:self.T+s]*(self.chi/we[:,s,s:self.T+s])**(self.rho)\
+                                                    )  )*np.exp(-self.g_A)
 
             #Gets assets in the final period of every agents' lifetime
             s=self.S-2
