@@ -89,8 +89,8 @@ def Multi_Country(S,I,J,sigma):
 
 
     #STEADY STATE INITIAL GUESSES
-    r_ss_guess = .2
-    bq_ss_guess = np.ones(I)*.2
+    r_ss_guess = .25
+    bq_ss_guess = np.ones((I,J))*.2
 
     #Steady State
     Model.SteadyState(r_ss_guess, bq_ss_guess, PrintSSEulErrors)
