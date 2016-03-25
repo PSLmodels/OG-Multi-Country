@@ -9,6 +9,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import AuxiliaryDemographics as demog
 from pure_cython import cy_fillca
 
+
 class OLG(object):
     """
         This object takes all of the parts of calculating the OG multi-country model and stores it into a centralized object. This
@@ -324,7 +325,7 @@ class OLG(object):
                 self.Kids[:,s,t-1] = np.sum(kidsvec,axis=1)
 
         #Gets Immigration rates for the final year
-        self.ImmigrationRates[:,:,t] = self.Migrants[:,:,t]/self.N[:,:,t]*80/self.S
+        self.ImmigrationRates[:,:,-1] = np.mean(self.ImmigrationRates[:,:,self.T_1-1],axis=0)*80/self.S
 
         #Gets Kids for the final year (just the steady state)
         self.Kids[:,:,-1] = self.Kids[:,:,-2]
@@ -1332,7 +1333,8 @@ class OLG(object):
 
                     #Gets assets for every agents' next year using Equation 3.19
                     a_matrix[:,s+1,s+1:self.T+s+1] = (  (we[:,s,s:self.T+s]*self.lbar[s:self.T+s] + (1 + r_path[s:self.T+s] - self.delta)*a_matrix[:,s,s:self.T+s] + bqvec_path[:,s,s:self.T+s])\
-                                                    -c_matrix[:,s,s:self.T+s]*(1+self.Kids[:,s,s:self.T+s]*Gamma[:,s,s:self.T+s]+we[:,s,s:self.T+s]*(self.chi/we[:,s,s:self.T+s])**(self.rho) )  )*np.exp(-self.g_A)
+                                                    -c_matrix[:,s,s:self.T+s]*(1+self.Kids[:,s,s:self.T+s]*Gamma[:,s,s:self.T+s]+we[:,s,s:self.T+s]*(self.chi/we[:,s,s:self.T+s])**(self.rho)\
+                                                    )  )*np.exp(-self.g_A)
 
             #Gets assets in the final period of every agents' lifetime
             s=self.S-2
@@ -1849,8 +1851,7 @@ class OLG(object):
         guess = np.append(rpath_guess, bqindiv_path_guess)
 
         #Solves for the correct transition paths
-        paths = opt.root(self.EulerSystemTPI, guess, args=(Print_HH_Eulers, Print_caTimepaths), method="krylov", tol=1e-8 )
-
+        paths = opt.fsolve(self.EulerSystemTPI, guess, args=(Print_HH_Eulers, Print_caTimepaths))#, method="krylov", tol=1e-8)["x"]
 
         #Reshapes the output of the opt.fsolve so that the first row is the transition path for r and
         #the second through I rows are the transition paths of bq for each country

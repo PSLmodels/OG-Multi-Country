@@ -327,7 +327,7 @@ class OLG(object):
             self.Nhat[:,:,t] = self.N[:,:,t]/np.sum(self.N[:,:,t])
 
         #Gets Immigration rates for the final year
-        self.ImmigrationRates[:,:,t] = self.Migrants[:,:,t]/self.N[:,:,t]
+        self.ImmigrationRates[:,:,-1] = np.mean(self.ImmigrationRates[:,:,self.T_1-1],axis=0)
 
         #Initialize iterating variables to find the steady state population shares
         pop_old = self.N[:,:,-1]
