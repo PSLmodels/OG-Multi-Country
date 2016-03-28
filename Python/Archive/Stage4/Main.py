@@ -34,11 +34,11 @@ def Multi_Country(S,I,sigma):
     PrintSSEulErrors = False #Prints the euler errors in each attempt of calculating the steady state
     PrintSS = False #Prints the result of the Steady State functions
     Print_caTimepaths = False #Prints the consumption, assets, and bequests timepath as it gets filled in for each iteration of TPI
-    Print_HH_Eulers = False #Prints whether the equations for the household decisions are satisfied (Equations 3.22, 3.19, and sum(assets) = 0)
+    Print_HH_Eulers = True #Prints whether the equations for the household decisions are satisfied (Equations 3.22, 3.19, and sum(assets) = 0)
     Print_Fill_Matricies_Time = False #Activiates Printing the total time it takes to fill the upper and lower diagonal matricies
     CheckerMode = False #Activates not printing much of anything, used in conjunction with RobustChecker.py
     Iterate = True #Shows the current iteration number and the associated Eulers
-    ShaveTime = True #Shaves off a little more time for TPI.
+    ShaveTime = False #Shaves off a little more time for TPI.
 
     #For plots to display or save
     DemogGraphs = False #Activates graphing graphs with demographic data and population shares
@@ -78,7 +78,7 @@ def Multi_Country(S,I,sigma):
     #Demographics
     Model.Demographics(demog_ss_tol, UseSSDemog)
     if DemogGraphs: Model.plotDemographics(T_touse="default", compare_across="T", data_year=0)
-
+    #Model.immigrationplot()
 
     #STEADY STATE INITIAL GUESSES
     r_ss_guess = .2
@@ -98,7 +98,7 @@ def Multi_Country(S,I,sigma):
     Model.set_initial_values(r_init, bq_init, a_init)
 
     Model.Timepath_optimize(Print_HH_Eulers, Print_caTimepaths, iterations_to_plot)
-    if SaveFinalTPIPlot: Model.plot_timepaths(SAVE=True)
+    if SaveFinalTPIPlot: Model.plot_timepaths(SAVE=False)
 
 
 #Input parameters for S, I and sigma here then execute this file to
@@ -107,7 +107,7 @@ def Multi_Country(S,I,sigma):
 start = time.time()
 # S-Number of Cohorts, I-Number of Countries
 # S, I, and sigma. S and I are integers. Sigma may not be.
-Multi_Country(40,4,4)
+Multi_Country(20,3,4)
 tottime=time.time()-start
 
 if TimeModel==True:

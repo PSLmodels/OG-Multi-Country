@@ -15,6 +15,8 @@ def Multi_Country(S,I,J,sigma):
 
     #Country Rosters
     I_dict = {"usa":0,"eu":1,"japan":2,"china":3,"india":4,"russia":5,"korea":6} #DONT CHANGE
+    #TO JEFF: I this the percentages below are for the lower skill class just FYI. 
+    #         So all we'll need to do is change the variable name to I_LowSkill or something
     I_HighSkill = np.array([.7,.7,.7,.75,.75,.7,.7]) #CAN CHANGE
     I_touse = ["eu","russia","usa","japan","korea","china","india"] #CAN CHANGE
 
@@ -43,10 +45,10 @@ def Multi_Country(S,I,J,sigma):
     Print_Fill_Matricies_Time = False #Activiates Printing the total time it takes to fill the upper and lower diagonal matricies
     CheckerMode = False #Activates not printing much of anything, used in conjunction with RobustChecker.py
     Iterate = True #Shows the current iteration number and the associated Eulers
-    ShaveTime = True #Shaves off a little more time for TPI.
+    ShaveTime = False #Shaves off a little more time for TPI.
 
     #For plots to display or save
-    DemogGraphs = False #Activates graphing graphs with demographic data and population shares
+    DemogGraphs = True #Activates graphing graphs with demographic data and population shares
     ShowSSGraphs = False #Activates graphs for steady-state solutions for consumption, assets, and bequests
     iterations_to_plot = set([]) #Which iterations of the timepath fsolve you want to plot
     SaveFinalTPIPlot = True #Saves the final (and hopefully converged) time path plot as a .png file
@@ -62,17 +64,18 @@ def Multi_Country(S,I,J,sigma):
         if len(I_touse) < I:
             print "WARNING: We are changing I from", I, "to", len(I_touse), "to fit the length of I_touse. So the countries we are using now are", I_touse
             I = len(I_touse)
-            I_HighSkill_touse = I_HighSkill[:I]
+            I_HighSkill = I_HighSkill[:I]
             time.sleep(2)
 
         elif len(I_touse) > I:
             print "WARNING: We are changing I_touse from", I_touse, "to", I_touse[:I], "so there are", I, "regions"
             I_touse = I_touse[:I]
-            I_HighSkill_touse = I_HighSkill[:I]
+            I_HighSkill = I_HighSkill[:I]
             time.sleep(2)
 
+
     ##INPUTS INTO THE CLASS###
-    Country_Roster = (I_dict, I_touse,I_HighSkill_touse)
+    Country_Roster = (I_dict, I_touse,I_HighSkill)
 
     HH_params = (S,I,J,beta_ann,sigma)
 
@@ -86,7 +89,7 @@ def Multi_Country(S,I,J,sigma):
     #Demographics
     Model.Demographics(demog_ss_tol, UseSSDemog)
     if DemogGraphs: Model.plotDemographics(T_touse="default", compare_across="T", data_year=0)
-
+    #Model.immigrationplot()
 
     #STEADY STATE INITIAL GUESSES
     r_ss_guess = .25
@@ -105,8 +108,10 @@ def Multi_Country(S,I,J,sigma):
     
     Model.set_initial_values(r_init, bq_init, a_init)
 
+
     Model.Timepath_optimize(Print_HH_Eulers, Print_caTimepaths, iterations_to_plot)
     if SaveFinalTPIPlot: Model.plot_timepaths(SAVE=True)
+
 
 
 #Input parameters for S, I and sigma here then execute this file to
@@ -115,7 +120,7 @@ def Multi_Country(S,I,J,sigma):
 start = time.time()
 # S-Number of Cohorts, I-Number of Countries, J-Number of Skill classes
 # S, I, J and sigma. S and I are integers. Sigma may not be.
-Multi_Country(40,4,2,4)
+Multi_Country(40,7,2,4)
 tottime=time.time()-start
 
 if TimeModel==True:

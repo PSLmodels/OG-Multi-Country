@@ -115,7 +115,7 @@ def plotDemographics(ages, datasets, I, S, T, I_touse, T_touse = None, compare_a
     def firstPlot():
         plt.subplot(231)
         for i in range(I):
-            plt.plot(range(FirstDyingAge, S-1), MortalityRates[i,FirstDyingAge:-1,data_year])
+            plt.plot(range(FirstDyingAge, S-1), MortalityRates[i,0,FirstDyingAge:-1,data_year])
         plt.title("Mortality Rates", fontsize=14)
         plt.xlabel('Age')
         plt.ylabel('Mortality Rate')
@@ -123,7 +123,7 @@ def plotDemographics(ages, datasets, I, S, T, I_touse, T_touse = None, compare_a
 
         plt.subplot(232)
         for i in range(I):
-            plt.plot(range(FirstFertilityAge,LastFertilityAge+1), FertilityRates[i,FirstFertilityAge:LastFertilityAge+1,data_year])
+            plt.plot(range(FirstFertilityAge,LastFertilityAge+1), FertilityRates[i,0,FirstFertilityAge:LastFertilityAge+1,data_year])
         plt.legend(I_touse, prop={'size':11}, loc="upper right")
         plt.title("Fertility Rates", fontsize=14)
         plt.xlabel('Age')
@@ -132,7 +132,7 @@ def plotDemographics(ages, datasets, I, S, T, I_touse, T_touse = None, compare_a
 
         plt.subplot(233)
         for i in range(I):
-            plt.plot(range(MaxImmigrantAge), ImmigrationRates[i,:MaxImmigrantAge,data_year])
+            plt.plot(range(MaxImmigrantAge), ImmigrationRates[i,0,:MaxImmigrantAge,data_year])
         plt.title("Immigration Rates", fontsize=14)
         plt.xlabel('Age')
         plt.ylabel('Immigration Rate')
@@ -140,14 +140,14 @@ def plotDemographics(ages, datasets, I, S, T, I_touse, T_touse = None, compare_a
         #Kids
         plt.subplot(234)
         for i in range(I):
-            plt.plot(range(FirstFertilityAge,LastFertilityAge+LeaveHouseAge), Kids[i,FirstFertilityAge:LastFertilityAge+LeaveHouseAge,data_year])
+            plt.plot(range(FirstFertilityAge,LastFertilityAge+LeaveHouseAge), Kids[i,0,FirstFertilityAge:LastFertilityAge+LeaveHouseAge,data_year])
         plt.xlabel('Age')
         plt.ylabel('Kids')
         plt.title("Kids", fontsize=14)
 
         plt.subplot(235)
         for i in range(I):
-            plt.plot(range(S), Nhat[i,:,data_year])
+            plt.plot(range(S), Nhat[i,:,:,data_year].sum(axis=0))
         plt.xlabel('Age')
         plt.ylabel('Population Share')
         plt.title("Initial Population Shares", fontsize=14)
@@ -155,7 +155,7 @@ def plotDemographics(ages, datasets, I, S, T, I_touse, T_touse = None, compare_a
         #Transition path for total population of each country from the initial shares to the steady-state
         plt.subplot(236)           
         for i in range(I):
-            plt.plot(range(T), np.sum(Nhat[i,:,:T], axis=0))
+            plt.plot(range(T), np.sum(Nhat[i,:,:,:T], axis=(0,1)))
         plt.title("Total Pop Shares Transition Path", fontsize=14)
         plt.xlabel('Year')
         plt.ylabel('Total Population Share')
@@ -173,7 +173,7 @@ def plotDemographics(ages, datasets, I, S, T, I_touse, T_touse = None, compare_a
 
             if len(T_touse) == 1:
                 for i in range(I):
-                    plt.plot(range(S), Nhat[i,:,T_touse[0]])
+                    plt.plot(range(S), Nhat[i,:,T_touse[0]].sum(axis=0))
                 if T_touse[0] < 0:
                     T_touse[0] += T+1
                 plt.title("Time t =" + str(T_touse[0]), fontsize=14)
@@ -196,7 +196,7 @@ def plotDemographics(ages, datasets, I, S, T, I_touse, T_touse = None, compare_a
 
                     plt.subplot(magic_int+count)
                     for i in range(I):
-                        plt.plot(range(S), Nhat[i,:,t])
+                        plt.plot(range(S), Nhat[i,:,:,t].sum(axis=0))
                         if t < 0:
                             t += T+1
                         plt.title("Time t =" + str(t), fontsize=14)
@@ -218,7 +218,7 @@ def plotDemographics(ages, datasets, I, S, T, I_touse, T_touse = None, compare_a
                 plt.subplot(magic_int+i)
 
                 for t in T_touse:
-                    plt.plot(range(S), Nhat[i,:,t])
+                    plt.plot(range(S), Nhat[i,:,:,t].sum(0))
                     plt.title(I_touse[i], fontsize=14)
                     plt.xlabel('Age')
                     plt.ylabel('Population Share')

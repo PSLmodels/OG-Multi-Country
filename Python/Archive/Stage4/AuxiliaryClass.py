@@ -7,7 +7,7 @@ import scipy.optimize as opt
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import AuxiliaryDemographics as demog
-from pure_cython import cy_fillca
+#from pure_cython import cy_fillca
 
 
 class OLG(object):
@@ -306,12 +306,12 @@ class OLG(object):
             #Get the immigration RATES for the past year
             #If before the transition year T_1, just divide total migrants by population
             if t <= self.T_1:
-                self.ImmigrationRates[:,:,t-1] = self.Migrants[:,:,t-1]/self.N[:,:,t-1]#*80/self.S
+                self.ImmigrationRates[:,:,t-1] = self.Migrants[:,:,t-1]/self.N[:,:,t-1]*80/self.S
 
             #If beyond the transition year T_1, average the immigration rates in year T_1 itself
             else:
                 self.ImmigrationRates[:,:,t-1] = np.mean(self.ImmigrationRates[:,:,self.T_1-1],\
-                        axis=0)#*80/self.S
+                        axis=0)*80/self.S
 
             #Gets the non-newborn population for the next year (Equation 3.12)
             self.N[:,1:,t] = self.N[:,:-1,t-1]*(1+self.ImmigrationRates[:,:-1,t-1]-self.MortalityRates[:,:-1,t-1])
@@ -325,7 +325,7 @@ class OLG(object):
                 self.Kids[:,s,t-1] = np.sum(kidsvec,axis=1)
 
         #Gets Immigration rates for the final year
-        self.ImmigrationRates[:,:,t] = self.Migrants[:,:,t]/self.N[:,:,t]#*80/self.S
+        self.ImmigrationRates[:,:,-1] = np.mean(self.ImmigrationRates[:,:,self.T_1-1],axis=0)*80/self.S
 
         #Gets Kids for the final year (just the steady state)
         self.Kids[:,:,-1] = self.Kids[:,:,-2]
@@ -339,11 +339,8 @@ class OLG(object):
         while np.max(np.abs(self.Nhat[:,:,-1] - self.Nhat[:,:,-2])) > demog_ss_tol:
             pop_new[:,0] = np.sum((pop_old[:,:]*self.FertilityRates[:,:,-1]),axis=1)
             pop_new[:,1:] = pop_old[:,:-1]*(1+self.ImmigrationRates[:,:-1,-1]-self.MortalityRates[:,:-1,-1])
-            print "Nhat Shape", self.Nhat.shape
-            print "newpop_shape", pop_new.shape
             self.Nhat = np.dstack((self.Nhat,pop_new/np.sum(pop_new)))
             future_year_iter += 1
-
 
         #Stores the steady state year in a seperate matrix
         self.Nhat_ss = self.Nhat[:,:,-1]
@@ -378,6 +375,26 @@ class OLG(object):
 
         #Calls the Auxiliary Demographics file for this function
         demog.plotDemographics(ages, datasets, self.I, self.S, self.T, self.I_touse, T_touse, compare_across, data_year)
+
+    def immigrationplot(self):
+        subplotdim_dict = {2:221, 3:221, 4:221, 5:231, 6:231, 7:241}
+        colors = ["blue","green","red","cyan","purple","yellow","brown"]
+        fig = plt.figure()
+        fig.suptitle("Immigration Rates")
+        for i in range(self.I):
+            
+            ax = fig.add_subplot(subplotdim_dict[self.I]+i, projection='3d')
+            S, T = np.meshgrid(range(self.S), range(self.T))
+
+            ax.plot_surface(S, T, np.transpose(self.ImmigrationRates[i,:,:self.T]), color=colors[i])
+
+            ax.set_zlim3d(np.min(self.ImmigrationRates[i,:,:self.T]), np.max(self.ImmigrationRates[:,:,:self.T])*1.05)
+
+            ax.set_title(self.I_touse[i])
+            ax.set_xlabel('S')
+            ax.set_ylabel('T')
+
+        plt.show()
 
     #STEADY STATE
 
@@ -1833,8 +1850,7 @@ class OLG(object):
         guess = np.append(rpath_guess, bqindiv_path_guess)
 
         #Solves for the correct transition paths
-        paths = opt.root(self.EulerSystemTPI, guess, args=(Print_HH_Eulers, Print_caTimepaths), method="krylov", tol=1e-8 )
-
+        paths = opt.fsolve(self.EulerSystemTPI, guess, args=(Print_HH_Eulers, Print_caTimepaths))#, method="krylov", tol=1e-8)["x"]
 
         #Reshapes the output of the opt.fsolve so that the first row is the transition path for r and
         #the second through I rows are the transition paths of bq for each country
