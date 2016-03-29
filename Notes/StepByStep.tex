@@ -306,12 +306,12 @@
 	Solving for $k_{it}$ gives:
 	\begin{align}
 		k_{it} & = \left(\frac{w_{it}}{(1-\alpha)A_i} \right)^{\frac{1}{\alpha}} n_{it} \nonumber \\
-		k_{it} & = \left(\frac{\alpha A_i}{r{t}} \right)^{\frac{1}{1-\alpha}} n_{it} \nonumber
+		k_{it} & = \left(\frac{\alpha A_i}{r_t} \right)^{\frac{1}{1-\alpha}} n_{it} \nonumber
 	\end{align}
 
 	This can be solved for $w_{it}$.
 	\begin{equation}
-		w_{it} = \left(\frac{\alpha A_i}{r{t}} \right)^{\frac{\alpha}{1-\alpha}} (1-\alpha) A_i \label{eq_3wfunc}
+		w_{it} = \left(\frac{\alpha A_i}{r_t} \right)^{\frac{\alpha}{1-\alpha}} (1-\alpha) A_i \label{eq_3wfunc}
 	\end{equation}
 
 	With this information search over the value of $c_{is1}$ for each household to find the value that sets $a_{iS,S-s}$ (their final savings) to zero when we chain equations \eqref{eq_3Psidef2}, \eqref{eq_3Euler2} and \eqref{eq_3cdef2}.  That is, we solve for each households optimal time path of consumption and savings given the assumed history of factor prices.  This step requires the use of \texttt{fsolve}.  Note that it may be more convenient to write \eqref{eq_3cdef} as follows.
@@ -522,8 +522,8 @@
 		\hat k_{it} & = \sum_{j=1}^J \sum_{s=1}^S \hat a_{ijst} \hat N_{ijst} - \hat k_{it}^f; \forall i \\
 		\hat n_{ijt} & = \sum_{s=1}^S e_{ijs} (\bar \ell - \hat \ell_{ijst} ) \hat N_{ijst}; \forall i,j \\
 		\hat y_{it} & = \hat k_{it}^\alpha \prod_{j=1}^J \left( A_{i} \hat n_{ijt} \right)^{\alpha_j}; \alpha + \sum_{j=1}^J \alpha_j = 1 ; \forall i \\
-		r_{it} & = \alpha \frac{\hat y_{it}}{\hat k_{it}}; \forall i \\
-		w_{ijt} & = (1-\alpha_j) \frac{\hat y_{it}}{\hat n_{ijt}}; \forall i.j
+		r_{it} & = \alpha \frac{\hat y_{it}}{\hat k_{it}}; \forall i \label{eq_5rfunc}\\
+		w_{ijt} & = (1-\alpha_j) \frac{\hat y_{it}}{\hat n_{ijt}}; \forall i.j \label{eq_5wfunc}
 	\end{align}
 	\begin{align}
 		\hat bq_{it} & = \frac{\sum_{s=67}^S \sum_j \hat a_{ijst} \rho_{ijst} \hat N_{ijst}}{\sum_{s=23}^{67} \hat N_{ijst}} ; \forall i,s \\
@@ -534,6 +534,26 @@
 		& \left({\hat c^K_{ijst}}\right)^{-\sigma} - \beta (1-\rho_{i,j,s+1,+1}) \left(\hat c^K_{i,j,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,j,s \\
 		& r_{it} - r_{1t} = 0; \forall i>1 \\
 		& \sum_{i=1}^I \hat k^f_{it} = 0
+	\end{align}
+
+	The analogue \eqref{eq_3wfunc} is found by solving equations \eqref{eq_5rfunc} and \eqref{eq_5wfunc} for $k_{it}$.
+
+	\begin{align}
+		k_{it} & = \left( \frac{\alpha A_i^{\sum_j \alpha_j} \prod_j n_{ijt}^{\alpha_j}} {r_t} \right)^{\frac{1}{1-\alpha}} \nonumber \\
+		& = \left(\frac{w_{ijt}} {\alpha_j A_i^{\sum_j \alpha_j} \prod_{x \ne j} n_{ixt}^{\alpha_x}} \right)^{\frac{1}{\alpha}}; \quad \forall j \nonumber
+	\end{align}
+	
+	These can be rewritten as:
+	\begin{align}
+		1 & = \frac{ \alpha^\alpha A_i^{\sum_j \alpha_j} n_{ijt}^{2\alpha_j \alpha - \alpha_j - \alpha + 1}} {\alpha_j^{1-\alpha}r_t^\alpha w_{ijt}^{1-\alpha} \prod_{x \ne j} n_{ixt}^{\alpha_x}} \nonumber \\
+		n_{ixt} & = \frac{\alpha_j w_{ixt}} {\alpha_x w_{ijt}} n_{ijt} ; \quad \forall j,k \nonumber
+	\end{align}	
+
+	Substituting the second into the first gives:
+	\begin{align}
+		1 & = \frac{ \alpha^\alpha A_i^{\sum_j \alpha_j} n_{ijt}^{2\alpha_j \alpha - \alpha_j - \alpha + 1}} {\alpha_j^{1-\alpha}r_t^\alpha w_{ijt}^{1-\alpha} \prod_{x \ne j} \left( \frac{\alpha_j w_{ixt}} {\alpha_x w_{ijt}} n_{ijt} \right)^{\alpha_x}} \nonumber \\
+		1 & = \frac{ \alpha^\alpha A_i^{\sum_j \alpha_j} n_{ijt}^{2\alpha_j \alpha - \alpha_j - \alpha + 1}} {\alpha_j^{1-\alpha}r_t^\alpha w_{ijt}^{1-\alpha} \prod_{x \ne j} \left( \frac{\alpha_j w_{ixt}} {\alpha_x w_{ijt}} \right)^{\alpha_x} n_{ijt}^{\sum_{x\ne j} \alpha_x}} \nonumber \\
+		1 & = \frac{ \alpha^\alpha A_i^{\sum_j \alpha_j} n_{ijt}^{2\alpha_j \alpha - \sum_j\alpha_j - \alpha + 1}} {\alpha_j^{1-\alpha}r_t^\alpha w_{ijt}^{1-\alpha} \prod_{x \ne j} \left( \frac{\alpha_j w_{ixt}} {\alpha_x w_{ijt}} \right)^{\alpha_x} } \nonumber
 	\end{align}
 
 
