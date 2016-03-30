@@ -9,7 +9,7 @@ TimeModel=True #Activates timing the model
 def Multi_Country(S,I,J,sigma):
 
     #NOTE:To run the model, simply run the Multi_Country function with your chosen levels
-    #of the number of cohorts (S), the number of countries (I) and slope parameter (sigma)
+    #of the number of cohorts (S), the number of countries (I), the number of skill classes (J) and slope parameter (sigma)
 
     #THIS SETS ALL OF THE USER PARAMETERS
 
@@ -28,6 +28,7 @@ def Multi_Country(S,I,J,sigma):
     beta_ann=.95 #Annual discount rate
     delta_ann=.08 #Annual depreciation rate
     alpha = .3 #Capital Share of production
+    alphaj = np.array([.4,.3]) #Share of production for each labor class
     chi = 1.5 #Preference for lesiure
     rho = .4 #Intratemporal elasticity of substitution
 
@@ -48,7 +49,7 @@ def Multi_Country(S,I,J,sigma):
     ShaveTime = False #Shaves off a little more time for TPI.
 
     #For plots to display or save
-    DemogGraphs = True #Activates graphing graphs with demographic data and population shares
+    DemogGraphs = False #Activates graphing graphs with demographic data and population shares
     ShowSSGraphs = False #Activates graphs for steady-state solutions for consumption, assets, and bequests
     iterations_to_plot = set([]) #Which iterations of the timepath fsolve you want to plot
     SaveFinalTPIPlot = True #Saves the final (and hopefully converged) time path plot as a .png file
@@ -73,13 +74,22 @@ def Multi_Country(S,I,J,sigma):
             I_HighSkill = I_HighSkill[:I]
             time.sleep(2)
 
+    #Does a quick check on labor classes and their share of production, to make sure the conditions are met
+    if len(alphaj)==J:
+        if np.sum(alphaj)+alpha==1:
+            print "Shares confirmed!"
+        else:
+            raise ValueError("Production shares MUST sum to 1!")
+    else:
+        raise ValueError("The number of production shares (alphaj's length) MUST equal the number of classes (J)")
+
 
     ##INPUTS INTO THE CLASS###
     Country_Roster = (I_dict, I_touse,I_HighSkill)
 
     HH_params = (S,I,J,beta_ann,sigma)
 
-    Firm_Params = (alpha, delta_ann, chi, rho, g_A)
+    Firm_Params = (alpha, delta_ann, chi, rho, g_A,alphaj)
 
     Levers = (PrintAges,CheckerMode,Iterate,UseDiffDemog,UseDiffProductivities,Print_Fill_Matricies_Time,ShaveTime,UseSamePopRates)
 

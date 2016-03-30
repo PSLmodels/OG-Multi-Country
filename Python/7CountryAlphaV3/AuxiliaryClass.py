@@ -130,7 +130,7 @@ class OLG(object):
 
 
         #Firm Parameters
-        (self.alpha,delta_annual,self.chi,self.rho, self.g_A)= Firm_Params
+        (self.alpha,delta_annual,self.chi,self.rho, self.g_A,self.alphaj)= Firm_Params
         self.delta=1-(1-delta_annual)**(70/self.S)
 
         #Lever Parameters
@@ -471,6 +471,8 @@ class OLG(object):
 
         #If getting the SS
         if e.ndim == 3:
+            print w.shape
+            print e.shape
             we =  np.einsum("ij,ijs->ijs", w, e)
 
         #If getting transition path
@@ -775,8 +777,12 @@ class OLG(object):
             return Household_Euler, Chained_C_Condition, Modified_Budget_Constraint, Consumption_Ratio
 
         #Equation 4.19
-        w_ss = (self.alpha*self.A/r_ss)**(self.alpha/(1-self.alpha))*(1-self.alpha)*self.A  #FIX STARTS HERE
-
+        #w_ss = (self.alpha*self.A/r_ss)**(self.alpha/(1-self.alpha))*(1-self.alpha)*self.A  #FIX STARTS HERE
+        for j in xrange(self.J):
+            part1=(self.A)**self.alphaj[j]*n_ss[:,j,:]**(1-alphaj[j])
+            part2=(r_ss/(self.alpha*np.product((self.A*n_ss)**self.alphaj,axis=1)))**(self.alpha/(self.alpha-1))
+        
+        w_ss=(1-alphaj)*part1*part2
         #Equation 4.22
         Gamma_ss = self.get_Gamma(w_ss, self.e_ss)
 
