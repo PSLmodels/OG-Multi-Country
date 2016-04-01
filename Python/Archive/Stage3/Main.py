@@ -41,8 +41,6 @@ def Multi_Country(S,I,sigma):
     Iterate = True #Shows the current iteration number and the associated Eulers
     TimeLoops = False #Times the filling of future consumption and assets
 
-    UseCython = True #Activate this to slightly speed up the code, if you don't install the included module, this must be false
-
     #For plots to display or save
     DemogGraphs = False #Activates graphing graphs with demographic data and population shares
     ShowSSGraphs = False #Activates graphs for steady-state solutions for consumption, assets, and bequests
@@ -74,7 +72,7 @@ def Multi_Country(S,I,sigma):
 
     Firm_Params = (alpha, delta_ann, chi, rho, g_A)
 
-    Levers = (PrintAges,PrintLoc,CheckerMode,Iterate,UseDiffDemog,UseDiffProductivities,UseCython,TimeLoops)
+    Levers = (PrintAges,PrintLoc,CheckerMode,Iterate,UseDiffDemog,UseDiffProductivities,TimeLoops)
 
     #Initialize the class instance
     Model = AUX.OLG(Country_Roster,HH_params,Firm_Params,Levers)
@@ -109,7 +107,7 @@ def Multi_Country(S,I,sigma):
 #run the model.
 
 start = time.time()
-Multi_Country(20,2,2)
+Multi_Country(30,3,2)
 tottime=time.time()-start
 
 if TimeModel==True:

@@ -4,7 +4,6 @@ import time
 import numpy as np
 import scipy as sp
 import scipy.optimize as opt
-from pure_cython import cy_fillca
 from matplotlib import pyplot as plt
 
 import AuxiliaryDemographics as demog
@@ -117,7 +116,7 @@ class OLG(object):
         self.delta=1-(1-delta_annual)**(70/self.S)
 
         #Lever Parameters
-        (PrintAges,self.PrintLoc,self.CheckerMode,self.Iterate,self.UseDiffDemog,self.UseDiffProductivities,self.UseCython,self.TimeLoops) = Lever_Params
+        (PrintAges,self.PrintLoc,self.CheckerMode,self.Iterate,self.UseDiffDemog,self.UseDiffProductivities,self.TimeLoops) = Lever_Params
 
         #Getting key ages for calculating demographic dynamics
         self.LeaveHouseAge, self.FirstFertilityAge, self.LastFertilityAge,\
@@ -666,7 +665,7 @@ class OLG(object):
             return Euler
 
         #Equation 3.25
-        w_ss = (self.alpha*self.A/r_ss)**(self.alpha/(1-self.alpha))*(1-self.alpha)*self.A
+        w_ss = (self.alpha/r_ss)**(self.alpha/(1-self.alpha))*(1-self.alpha)*self.A
 
         #Equation 3.21
         psi_ss = self.get_Psi(w_ss,self.e_ss)
@@ -1171,20 +1170,15 @@ class OLG(object):
             #Gets we ahead of time for easier calculation
             we = np.einsum("it,ist->ist",w_path,self.e)
 
-            if self.UseCython:
-                cy_fillca(c_matrix,a_matrix,r_path,self.MortalityRates,bqvec_path,we,psi,self.beta,self.chi,self.delta,self.g_A,self.rho,self.sigma)
-                s=self.S-2
-
             #Loops through each year (across S) and gets decisions for every agent in the next year
-            else:
-                for s in range(self.S-1):
+            for s in range(self.S-1):
 
-                    #Gets consumption for every agents' next year using Equation 3.22
-                    c_matrix[:,s+1,s+1:self.T+s+1] = ((self.beta * (1-self.MortalityRates[:,s,s:self.T+s]) * (1 + r_path[s+1:self.T+s+1] - self.delta)\
-                                                    * psi[:,s+1,s+1:self.T+s+1])/psi[:,s,s:self.T+s])**(1/self.sigma) * c_matrix[:,s,s:self.T+s]*np.exp(-self.g_A)
-                    #Gets assets for every agents' next year using Equation 3.19
-                    a_matrix[:,s+1,s+1:self.T+s+1] = (  (we[:,s,s:self.T+s] + (1 + r_path[s:self.T+s] - self.delta)*a_matrix[:,s,s:self.T+s] + bqvec_path[:,s,s:self.T+s])\
-                                                    -c_matrix[:,s,s:self.T+s]*(1+we[:,s,s:self.T+s]*(self.chi/we[:,s,s:self.T+s])**self.rho)  )*np.exp(-self.g_A)
+                #Gets consumption for every agents' next year using Equation 3.22
+                c_matrix[:,s+1,s+1:self.T+s+1] = ((self.beta * (1-self.MortalityRates[:,s,s:self.T+s]) * (1 + r_path[s+1:self.T+s+1] - self.delta)\
+                                                * psi[:,s+1,s+1:self.T+s+1])/psi[:,s,s:self.T+s])**(1/self.sigma) * c_matrix[:,s,s:self.T+s]*np.exp(-self.g_A)
+                #Gets assets for every agents' next year using Equation 3.19
+                a_matrix[:,s+1,s+1:self.T+s+1] = (  (we[:,s,s:self.T+s] + (1 + r_path[s:self.T+s] - self.delta)*a_matrix[:,s,s:self.T+s] + bqvec_path[:,s,s:self.T+s])\
+                                                -c_matrix[:,s,s:self.T+s]*(1+we[:,s,s:self.T+s]*(self.chi/we[:,s,s:self.T+s])**self.rho)  )*np.exp(-self.g_A)
 
             #Gets assets in the final period of every agents' lifetime
             a_matrix[:,-1,s+2:self.T+s+2] = (  (we[:,-1,s+1:self.T+s+1] + (1 + r_path[s+1:self.T+s+1] - self.delta)*a_matrix[:,-2,s+1:self.T+s+1])\
@@ -1466,7 +1460,8 @@ class OLG(object):
             return c_matrix[:,:,:self.T], a_matrix[:,:-1,:self.T]
 
         #Equation 3.25
-        w_path = np.einsum("it,i->it",np.einsum("i,t->it",self.alpha*self.A,1/r_path)**(self.alpha/(1-self.alpha)),(1-self.alpha)*self.A)
+        alphvec=np.ones(self.I)*self.alpha
+        w_path = np.einsum("it,i->it",np.einsum("i,t->it",alphvec,1/r_path)**(self.alpha/(1-self.alpha)),(1-self.alpha)*self.A)
 
         #Equation 3.21
         psi = self.get_Psi(w_path,self.e)
