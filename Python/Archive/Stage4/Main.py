@@ -26,7 +26,7 @@ def Multi_Country(S,I,sigma):
     rho = .4 #Intratemporal elasticity of substitution
 
     #Convergence Tolerances
-    demog_ss_tol = 1e-8 #Used in getting ss for population share
+    demog_ss_tol = 1e-14 #Used in getting ss for population share
 
     #PROGRAM LEVERS:
     #For terminal output
@@ -35,7 +35,7 @@ def Multi_Country(S,I,sigma):
     PrintSS = False #Prints the result of the Steady State functions
     Print_caTimepaths = False #Prints the consumption, assets, and bequests timepath as it gets filled in for each iteration of TPI
     Print_HH_Eulers = True #Prints whether the equations for the household decisions are satisfied (Equations 3.22, 3.19, and sum(assets) = 0)
-    Print_Fill_Matricies_Time = False #Activiates Printing the total time it takes to fill the upper and lower diagonal matricies
+    Print_Fill_Matricies_Time = True #Activiates Printing the total time it takes to fill the upper and lower diagonal matricies
     CheckerMode = False #Activates not printing much of anything, used in conjunction with RobustChecker.py
     Iterate = True #Shows the current iteration number and the associated Eulers
     ShaveTime = False #Shaves off a little more time for TPI.

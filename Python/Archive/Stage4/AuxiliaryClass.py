@@ -1634,7 +1634,7 @@ class OLG(object):
             #Fills in c_matrix and a_matrix with the correct decisions for agents currently alive
 
             start=time.time()
-            opt.root(Alive_EulerSystem, cK0alive_guess, args=(c_matrix, cK_matrix, a_matrix, w_path, r_path, Gamma, bqvec_path), method="krylov", tol=1e-8)
+            opt.root(Alive_EulerSystem, cK0alive_guess, args=(c_matrix, cK_matrix, a_matrix, w_path, r_path, Gamma, bqvec_path), method="krylov", tol=1e-12)
             if self.Matrix_Time: print "\nFill time: NEW UPPER USING KRYLOV", time.time()-start
 
             #Initializes a guess for the first vector for the fsolve to use
@@ -1644,7 +1644,7 @@ class OLG(object):
 
             #Solves for the entire consumption and assets matrices for agents not currently born
             start=time.time()
-            opt.root(Future_EulerSystem, cK0future_guess, args=(c_matrix, cK_matrix, a_matrix, w_path, r_path, Gamma, bqvec_path), method="krylov", tol=1e-8)
+            opt.root(Future_EulerSystem, cK0future_guess, args=(c_matrix, cK_matrix, a_matrix, w_path, r_path, Gamma, bqvec_path), method="krylov", tol=1e-12)
             if self.Matrix_Time: print "lower triangle fill time NOW USING KRYLOV", time.time()-start
 
             #Prints consumption and assets matrices for country 0. 

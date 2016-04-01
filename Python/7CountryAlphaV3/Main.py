@@ -57,7 +57,7 @@ def Multi_Country(S,I,J,sigma):
     #For using differing ways to solve the model
     UseDiffDemog = True #Turns on different demographics for each country
     UseSSDemog = False #Activates using only steady state demographics for TPI calculation
-    UseDiffProductivities = False #Activates having e vary across cohorts
+    UseDiffProductivities = True #Activates having e vary across cohorts
     UseSamePopRates = True #Activates using the same Demographics across labor classes. Leave as true.
 
     #Adjusts the country list if we are using less than 7 Countries
@@ -130,7 +130,7 @@ def Multi_Country(S,I,J,sigma):
 start = time.time()
 # S-Number of Cohorts, I-Number of Countries, J-Number of Skill classes
 # S, I, J and sigma. S and I are integers. Sigma may not be.
-Multi_Country(40,7,2,4)
+Multi_Country(80,7,2,4)
 tottime=time.time()-start
 
 if TimeModel==True:
