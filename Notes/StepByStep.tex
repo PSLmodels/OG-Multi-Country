@@ -510,7 +510,7 @@
 	\begin{align}
 		y_{it} & = k_{it}^\alpha \prod_{j=1}^J \left( A_{i} n_{ijt} \right)^{\alpha_j}; \alpha + \sum_{j=1}^J \alpha_j = 1 \\
 		r_{it} & = \alpha \frac{y_{it}}{k_{it}} \\
-		w_{ijt} & = (1-\alpha_j) \frac{y_{it}}{n_{ijt}}
+		w_{ijt} & = \alpha_j \frac{y_{it}}{n_{ijt}}
 	\end{align}
 
 	Our behavioral equations become:
@@ -523,7 +523,7 @@
 		\hat n_{ijt} & = \sum_{s=1}^S e_{ijs} (\bar \ell - \hat \ell_{ijst} ) \hat N_{ijst}; \forall i,j \label{eq_5nsum}\\
 		\hat y_{it} & = \hat k_{it}^\alpha \prod_{j=1}^J \left( A_{i} \hat n_{ijt} \right)^{\alpha_j}; \alpha + \sum_{j=1}^J \alpha_j = 1 ; \forall i \label{eq_5yfunc} \\
 		r_{it} & = \alpha \frac{\hat y_{it}}{\hat k_{it}}; \forall i \label{eq_5rfunc}\\
-		w_{ijt} & = (1-\alpha_j) \frac{\hat y_{it}}{\hat n_{ijt}}; \forall i.j \label{eq_5wfunc}
+		w_{ijt} & = \alpha_j \frac{\hat y_{it}}{\hat n_{ijt}}; \forall i,j \label{eq_5wfunc}
 	\end{align}
 	\begin{align}
 		\hat {bq}_{it} & = \frac{\sum_{s=67}^S \sum_j \hat a_{ijst} \rho_{ijst} \hat N_{ijst}}{\sum_{s=23}^{67} \hat N_{ijst}} ; \forall i,s \label{eq_5bqfunc}\\
@@ -540,15 +540,13 @@
 
 	First note that given an initial state described by $\left\{ \hat N_{ijs0}, a_{ijs0} \right\}\; \forall i,j,s$, equations \eqref{eq_5demo1} - \eqref{eq_5demo4} give the entire history of the deomgraphics, $\left\{ g^N_t, \hat N_{ijst}, \hat{KID}_{ijst} \right\}\; \forall i,j,s,t$, separately from the rest of the economy.
 
-	Next, make a guess for the history of capital stocks and labor inputs, $\left\{ \hat k_{it}, \hat k^f_{it}, \hat n_{ijt} \right\}\; \forall i,j,t$.
+	Next, make a guess for the history of capital stocks and labor inputs, $\left\{ \hat k_{it}, \hat k^f_{it}, \hat n_{ijt}, \hat{bq}_{it} \right\}\; \forall i,j,t$.
 
 	Equations \eqref{eq_5yfunc} - \eqref{eq_5wfunc}, then give us $\left\{ \hat y_{it}, r_{it}, \hat n_{ijt} \right\}\; \forall i,j,t$
 
-	Equation \eqref{eq_5bqfunc} gives $\left\{ \hat{bq}_{it} \right\}\; \forall i,t$.
+	Next, given the initial asset holdings (the $a$'s), we can use an ``inner'' fsolve along with equations \eqref{eq_5HH1func} - \eqref{eq_5HH5func} to find $\left\{ \hat c_{ijst}, \hat c^K_{ijst}, \hat \ell_{ijst}, \hat a_{ijst} \right\}\; \forall i,j,s,t$.  We do this by choosing the inititial consumption value that sets final assets to zero for each household.
 
-	Next, given the initial asset holdings (the $a$'s), we can use an fsolve along with equations \eqref{eq_5HH1func} - \eqref{eq_5HH5func} to find $\left\{ \hat c_{ijst}, \hat c^K_{ijst}, \hat \ell_{ijst}, \hat a_{ijst} \right\}\; \forall i,j,s,t$.  We do this by choosing the inititial consumption value that sets final assets to zero for each household.
-
-	Then we use a second fsolve to find the values of $\left\{ \hat k_{it}, \hat k^f_{it}, \hat n_{ijt} \right\}\; \forall i,j,t$, that make equations \eqref{eq_5ksum}, \eqref{eq_5nsum} and \eqref{eq_5requal} true, subject to the constraint from \eqref{eq_5kfsum}.
+	Then we use an``outer'' fsolve to find the values of $\left\{ \hat k_{it}, \hat k^f_{it}, \hat n_{ijt}, \hat{bq}_{it} \right\}\; \forall i,j,t$, that make equations \eqref{eq_5ksum}, \eqref{eq_5nsum}, \eqref{eq_5bqfunc} and \eqref{eq_5requal} true, subject to the constraint from \eqref{eq_5kfsum}.  Each period from 1 to $T$ we need to find: $I$ values for $\hat k_{it}$, $I-1$ values for $\hat k^f_{it}$, $IJ$ values for $\hat n_{ijt}$, and $I$ values for $\hat{bq}_{it}$.  This is a total of $T(2I+J-1)$ values that the fsolve needs to find.
 
 
 	% The analogue \eqref{eq_3wfunc} is found by solving equations \eqref{eq_5rfunc} and \eqref{eq_5wfunc} for $k_{it}$.
