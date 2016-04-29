@@ -102,16 +102,21 @@ def Multi_Country(S,I,J,sigma):
     #Model.immigrationplot()
 
     #STEADY STATE INITIAL GUESSES
-    r_ss_guess = .25
-    bq_ss_guess = np.ones((I,J))*.2
+    k_ss_guess = np.ones((I))*1.1
+    kf_ss_guess = np.ones((I))*.3
+    kf_ss_guess[0] = -np.sum(kf_ss_guess[:I])
+    n_ss_guess = np.ones((I,J))*3.
+    bq_ss_guess = np.ones((I))*1.5
+
+
 
     #Steady State
-    Model.SteadyState(r_ss_guess, bq_ss_guess, PrintSSEulErrors)
+    Model.SteadyState(k_ss_guess,kf_ss_guess,n_ss_guess, bq_ss_guess, PrintSSEulErrors)
     if PrintSS: Model.PrintSSResults()
     if ShowSSGraphs: Model.plotSSResults()
 
     #Timepath Iteration
-    
+    '''
     r_init = Model.r_ss*1.05
     bq_init = Model.bqindiv_ss*.95
     a_init = Model.avec_ss*.7
@@ -121,6 +126,7 @@ def Multi_Country(S,I,J,sigma):
 
     Model.Timepath_optimize(Print_HH_Eulers, Print_caTimepaths, iterations_to_plot)
     if SaveFinalTPIPlot: Model.plot_timepaths(SAVE=True)
+    '''
 
 
 

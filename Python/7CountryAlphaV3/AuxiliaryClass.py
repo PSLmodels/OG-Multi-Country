@@ -444,6 +444,15 @@ class OLG(object):
 
     #STEADY STATE
 
+    def get_w(self, alphaj, y, n):
+
+        if n.ndim==2:
+            w=np.zeros((self.I,self.J))
+            for j in xrange(self.J):
+                w[:,j] = alphaj[j]*(y[:]/n[:,j])
+
+        return w
+
     def get_Gamma(self, w, e):
         """
             Description:
@@ -471,8 +480,8 @@ class OLG(object):
 
         #If getting the SS
         if e.ndim == 3:
-            print w.shape
-            print e.shape
+            #print w.shape
+            #print e.shape
             we =  np.einsum("ij,ijs->ijs", w, e)
 
         #If getting transition path
@@ -545,7 +554,7 @@ class OLG(object):
 
         return n
 
-    def get_Y(self, kd, n):
+    def get_Y(self, alphaj, kd, n):
         """
             Description:
                 -Calculates the aggregate output based on equation (3.15)
@@ -566,11 +575,20 @@ class OLG(object):
         """
 
         if kd.ndim ==1:
-            Y = (kd**self.alpha) * ((self.A*n)**(1-self.alpha))
+            Y = (kd**self.alpha)
+            for j in xrange(self.J):
+                Y*=((self.A*n[:,j])**(alphaj[j]))
         elif kd.ndim== 2:
             Y = (kd**self.alpha) * (np.einsum("i,is->is",self.A,n)**(1-self.alpha))
 
         return Y
+
+    def get_r(self, y, k):
+
+
+        r = self.alpha*(y/k)
+
+        return r
     
     def get_lifetime_decisionsSS(self, cK_1, w_ss, r_ss, Gamma_ss, bq_ss):
             """
@@ -622,25 +640,30 @@ class OLG(object):
 
             for s in xrange(self.S-1):
                 #Equation 4.26
-                cKvec_ss[:,:,s+1] = (  ( (self.beta*(1-self.Mortality_ss[:,:,s])*(1+r_ss-self.delta) )**(1/self.sigma) )*cKvec_ss[:,:,s]  )/np.exp(self.g_A)
+                for j in xrange(self.J):
+                    cKvec_ss[:,j,s+1] = (  ( (self.beta*(1-self.Mortality_ss[:,j,s])*(1+r_ss-self.delta) )**(1/self.sigma) )*cKvec_ss[:,j,s]  )/np.exp(self.g_A)
 
                 #Equation 4.25
                 cvec_ss[:,:,s+1] = cKvec_ss[:,:,s+1]/Gamma_ss[:,:,s+1]
 
-                print w_ss.shape
-
                 #Equation 4.23
-                avec_ss[:,:,s+1] = (w_ss*self.e_ss[:,:,s]*self.lbar_ss + (1 + r_ss - self.delta)*avec_ss[:,:,s] + bq_ss[:,:,s] \
-                        - cvec_ss[:,:,s]*(1+self.Kids_ss[:,:,s]*Gamma_ss[:,:,s]+w_ss*self.e_ss[:,:,s]*(self.chi/(w_ss[:]*self.e_ss[:,s]))**self.rho))*np.exp(-self.g_A)
+                for j in xrange(self.J):
+                    avec_ss[:,j,s+1] = (w_ss[:,j]*self.e_ss[:,j,s]*self.lbar_ss + (1 + r_ss - self.delta)*avec_ss[:,j,s] + bq_ss[:,s] \
+                            - cvec_ss[:,j,s]*(1+self.Kids_ss[:,j,s]*Gamma_ss[:,j,s]+w_ss[:,j]*self.e_ss[:,j,s]*(self.chi/(w_ss[:,j]*\
+                            self.e_ss[:,j,s]))**self.rho))*np.exp(-self.g_A)
 
             #Equation 4.23 for final assets
-            avec_ss[:,:,s+2] = (w_ss*self.e_ss[:,:,s+1] + (1 + r_ss - self.delta)*avec_ss[:,:,s+1] - cvec_ss[:,:,s+1]*\
-                    (1+self.Kids_ss[:,:,s+1]*Gamma_ss[:,:,s+1]+w_ss*self.e_ss[:,:,s+1]*(self.chi/(w_ss*self.e_ss[:,:,s+1]))\
-                                **self.rho))*np.exp(-self.g_A)
+            for j in xrange(self.J):
+                avec_ss[:,j,s+2] = (w_ss[:,j]*self.e_ss[:,j,s+1] + (1 + r_ss - self.delta)*avec_ss[:,j,s+1] - cvec_ss[:,j,s+1]*\
+                        (1+self.Kids_ss[:,j,s+1]*Gamma_ss[:,j,s+1]+w_ss[:,j]*self.e_ss[:,j,s+1]*(self.chi/(w_ss[:,j]*self.e_ss[:,j,s+1]))\
+                                    **self.rho))*np.exp(-self.g_A)
+
+
+            #print avec_ss.shape
 
             return cvec_ss, cKvec_ss, avec_ss
 
-    def GetSSComponents(self, bq_ss, r_ss, PrintSSEulErrors=False):
+    def GetSSComponents(self,k_guess,kf_guess,n_guess, bq_ss, PrintSSEulErrors=False):
         """
             Description:
                 - Solves for all the other variables in the model using bq_ss and r_ss
@@ -716,16 +739,27 @@ class OLG(object):
                     - Euler                     = Array: [I], Final assets for each country. Must = 0 for system to solve
 
             """
+            #print cK_1.shape
 
             cpath, cK_path, assets_path = self.get_lifetime_decisionsSS(cK_1, w_ss, r_ss, Gamma_ss, bq_ss)
 
-            Euler = assets_path[:,-1]
+            #print "assets path shape",assets_path.shape
+
+            Euler = assets_path[:,:,-1]
+
+            #print np.max(np.absolute(assets_path[:,:,-1]))
+
+            #print "I", self.I 
+            #print "J",self.J
+            #print Euler.shape
 
             if np.any(cpath<0):
                 print "WARNING! The fsolve for initial optimal consumption guessed a negative number"
-                Euler = np.ones(Euler.shape[0])*9999.
+                Euler = np.ones(Euler.shape[0])*.9999
 
-            return Euler
+            
+
+            return np.reshape(Euler,(self.I*self.J))
         
         def checkSSEulers(cvec_ss, cKvec_ss, avec_ss, w_ss, r_ss, bq_ss, Gamma_ss):
             """
@@ -776,13 +810,13 @@ class OLG(object):
 
             return Household_Euler, Chained_C_Condition, Modified_Budget_Constraint, Consumption_Ratio
 
+        y_ss = self.get_Y(self.alphaj,k_guess,n_guess)
+
         #Equation 4.19
-        #w_ss = (self.alpha*self.A/r_ss)**(self.alpha/(1-self.alpha))*(1-self.alpha)*self.A  #FIX STARTS HERE
-        for j in xrange(self.J):
-            part1=(self.A)**self.alphaj[j]*n_ss[:,j,:]**(1-alphaj[j])
-            part2=(r_ss/(self.alpha*np.product((self.A*n_ss)**self.alphaj,axis=1)))**(self.alpha/(self.alpha-1))
-        
-        w_ss=(1-alphaj)*part1*part2
+        w_ss = self.get_w(self.alphaj,y_ss,n_guess)  #FIX STARTS HERE
+
+        r_ss = self.get_r(y_ss,k_guess)
+
         #Equation 4.22
         Gamma_ss = self.get_Gamma(w_ss, self.e_ss)
 
@@ -790,11 +824,16 @@ class OLG(object):
         cK1_guess = np.ones((self.I,self.J))*5
 
         #Finds the optimal kids consumption for the first cohort
+        cK1_guess=np.reshape(cK1_guess,(self.I*self.J))
+        #print cK1_guess.shape
         opt_cK1 = opt.fsolve(householdEuler_SS, cK1_guess, args = (w_ss, r_ss, Gamma_ss, bq_ss))
 
         #Gets the optimal paths for consumption, kids consumption and assets as a function of the first cohort's consumption
         cvec_ss, cKvec_ss, avec_ss = self.get_lifetime_decisionsSS(opt_cK1, w_ss, r_ss, Gamma_ss, bq_ss)
 
+        lhat_ss = self.get_lhat(cvec_ss, w_ss, self.e_ss)
+
+        '''
         if PrintSSEulErrors:
             Household_Euler, Chained_C_Condition, Modified_Budget_Constraint, Consumption_Ratio = checkSSEulers(cvec_ss, cKvec_ss, avec_ss, w_ss, r_ss, bq_ss, Gamma_ss)
             print "\nZero final period assets satisfied:", np.isclose(np.max(np.absolute(Household_Euler)), 0)
@@ -803,26 +842,13 @@ class OLG(object):
             print "Equation 4.25 satisfied", np.isclose(np.max(np.absolute(Consumption_Ratio)), 0)
             #print Chained_C_Condition[0,:]
             #print Modified_Budget_Constraint[0,:]
-
+        '''
         #Snips off the final entry of assets since it is just 0 if the equations solved correctly
-        avec_ss = avec_ss[:,:-1]
+        avec_ss = avec_ss[:,:,:-1]
 
         #Equation 4.24
-        lhat_ss = self.get_lhat(cvec_ss, w_ss, self.e_ss)
 
-        #Equation 4.17
-        n_ss = self.get_n(lhat_ss)
-
-        #Equation 4.16
-        kd_ss = np.sum(avec_ss*self.Nhat_ss,axis=1)
-
-        #Equation 4.18
-        y_ss = self.get_Y(kd_ss,n_ss)
-
-        #Equation 4.27
-        kf_ss = (self.alpha*self.A/r_ss)**(1/(1-self.alpha)) * n_ss-kd_ss
-
-        return w_ss, cvec_ss, cKvec_ss, avec_ss, kd_ss, kf_ss, n_ss, y_ss, lhat_ss
+        return w_ss, cvec_ss, cKvec_ss, avec_ss, r_ss, y_ss, lhat_ss
 
     def EulerSystemSS(self, guess, PrintSSEulErrors=False):
         """
@@ -874,38 +900,49 @@ class OLG(object):
                 - Euler_all                 = Array: [I+1], Euler_bq and Euler_kf stacked together. Must = 0 for the ss to correctly solve
                 
         """
-        #Breaking up the input into its 2 components
-        bqindiv_ss = np.reshape(guess[:-1],(self.I,self.J))
-        r_ss = guess[-1]
+        #Slicing Quantities
+        self.A = self.I
+        self.B = 2*self.I
+        self.C = 2*self.I + self.I*self.J
+        self.D = 3*self.I + self.I*self.J
+        #Breaking up the input into its 4 components
+        k_guess = guess[:self.A]
+        kf_guess = guess[self.A:self.B]
+        n_guess = np.reshape(guess[self.B:self.C],(self.I,self.J))
+        bqindiv_ss = guess[self.C:self.D]
 
         #Initializes a vector of bequests received for each individial. Will be = 0 for a block of young and a block of old cohorts
-        bq_ss = np.zeros((self.I,self.J,self.S))
-        bq_ss[:,:,self.FirstFertilityAge:self.FirstDyingAge] = \
-                np.einsum("ij,s->ijs", bqindiv_ss, np.ones(self.FirstDyingAge-self.FirstFertilityAge))
+        bq_ss = np.zeros((self.I,self.S))
+        bq_ss[:,self.FirstFertilityAge:self.FirstDyingAge] = \
+                np.einsum("i,s->is", bqindiv_ss, np.ones(self.FirstDyingAge-self.FirstFertilityAge))
 
         #Calls self.GetSSComponents, which solves for all the other ss variables in terms of bequests and intrest rate
-        w_ss, cvec_ss, cKvec_ss, avec_ss, kd_ss, kf_ss, n_ss, y_ss, lhat_ss = self.GetSSComponents(bq_ss, r_ss, PrintSSEulErrors)
+        w_ss, cvec_ss, cKvec_ss, avec_ss, r_ss, y_ss, lhat_ss = self.GetSSComponents(k_guess,kf_guess,n_guess,bq_ss, PrintSSEulErrors)
 
         #Sum of all assets holdings of dead agents to be distributed evenly among all eligible agents
-        alldeadagent_assets = np.sum(avec_ss[:,self.FirstDyingAge:]*\
-                self.Mortality_ss[:,self.FirstDyingAge:]*self.Nhat_ss[:,self.FirstDyingAge:], axis=1)
+        alldeadagent_assets = np.sum(avec_ss[:,:,self.FirstDyingAge:]*\
+                self.Mortality_ss[:,:,self.FirstDyingAge:]*self.Nhat_ss[:,:,self.FirstDyingAge:], axis=2)
+
+        total_bq = alldeadagent_assets/np.sum(self.Nhat_ss[:,:,self.FirstFertilityAge:self.FirstDyingAge],\
+                axis=2)
+
 
         #Equation 3.29
-        Euler_bq = bqindiv_ss - alldeadagent_assets/np.sum(self.Nhat_ss[:,self.FirstFertilityAge:self.FirstDyingAge],\
-                axis=1)
+        Euler_bq = bqindiv_ss - np.sum(total_bq,axis=1)
 
-        #Equation 3.24
-        Euler_kf = np.sum(kf_ss)
+        Euler_k = k_guess - np.sum(np.sum(avec_ss*self.Nhat_ss,axis=1),axis=1) + kf_guess
 
-        Euler_all = np.append(Euler_bq, Euler_kf)
+        Euler_n = np.reshape(n_guess - np.sum(self.e_ss*(1.0-lhat_ss)*self.Nhat_ss,axis=2),(self.I*self.J))
 
+        Euler_kf = r_ss[0]*np.ones(self.I) - r_ss
 
+        Euler_all = np.concatenate((Euler_k,Euler_kf,Euler_n,Euler_bq))
 
         if PrintSSEulErrors: print "Euler Errors:", Euler_all
                 
         return Euler_all
 
-    def SteadyState(self, rss_guess, bqss_guess, PrintSSEulErrors=False):
+    def SteadyState(self,k_ss_guess,kf_ss_guess,n_ss_guess, bq_ss_guess, PrintSSEulErrors=False):
         """
             Description:
                 - Finds the steady state of the OLG Model by doing the following:
@@ -956,18 +993,20 @@ class OLG(object):
                 - None
 
         """
+        n_ss_guess = np.reshape(n_ss_guess,(self.I*self.J))
 
-        #Prepares the initial guess for the fsolve
-        guess = np.append(bqss_guess, rss_guess)
-
-        print guess
+        #Preparves the initial guess for the fsolve
+        guess = np.concatenate((k_ss_guess,kf_ss_guess,n_ss_guess,bq_ss_guess))
 
         #Searches over bq and r to find values that satisfy the Euler Equations (3.19 and 3.24)
         ss = opt.fsolve(self.EulerSystemSS, guess, args=PrintSSEulErrors)
 
-        #Breaking up the output into its 2 components
-        self.bqindiv_ss = ss[:-1]
-        self.r_ss = ss[-1]
+        #Breaking up the output into its 4 components
+        self.k_ss = ss[:self.A]
+        self.kf_ss = ss[self.A:self.B]
+        self.n_ss = np.reshape(ss[self.B:self.C],(self.I,self.J))
+        self.bqindiv_ss = ss[self.C:self.D]
+
 
         #Initializes a vector for bequests distribution. Will be = 0 for a block of young and a block of old cohorts who don't get bequests
         self.bqvec_ss = np.zeros((self.I,self.S))
@@ -975,30 +1014,45 @@ class OLG(object):
                 np.ones(self.FirstDyingAge-self.FirstFertilityAge))
 
         #Calls self.GetSSComponents, which solves for all the other ss variables in terms of bequests and intrest rate
-        self.w_ss, self.cvec_ss, self.cKvec_ss, self.avec_ss, self.kd_ss, self.kf_ss, self.n_ss, self.y_ss, self.lhat_ss \
-                = self.GetSSComponents(self.bqvec_ss,self.r_ss)
+        self.w_ss, self.cvec_ss, self.cKvec_ss, self.avec_ss, self.r_ss, self.y_ss, self.lhat_ss = \
+                self.GetSSComponents(self.k_ss,self.kf_ss,self.n_ss,self.bqvec_ss)
 
 
         #Calculates and stores the steady state gamma value
         self.Gamma_ss = self.get_Gamma(self.w_ss,self.e_ss)
 
+
         #Sum of all assets holdings of dead agents to be distributed evenly among all eligible agents
-        alldeadagent_assets = np.sum(self.avec_ss[:,self.FirstDyingAge:]*self.Mortality_ss[:,self.FirstDyingAge:]*\
-                self.Nhat_ss[:,self.FirstDyingAge:], axis=1)
+        alldeadagent_assets = np.sum(self.avec_ss[:,:,self.FirstDyingAge:]*\
+                self.Mortality_ss[:,:,self.FirstDyingAge:]*self.Nhat_ss[:,:,self.FirstDyingAge:], axis=2)
+
 
 
         print "\n\nSTEADY STATE FOUND!"
         #Checks to see if the Euler_bq and Euler_kf equations are sufficiently close to 0
         if self.CheckerMode==False:
+            totalbq = alldeadagent_assets/np.sum(self.Nhat_ss[:,:,self.FirstFertilityAge:self.FirstDyingAge],\
+                    axis=2)
 
-            #Equation 3.29
-            Euler_bq = self.bqindiv_ss - alldeadagent_assets/np.sum(self.Nhat_ss[:,self.FirstFertilityAge:self.FirstDyingAge],\
-                axis=1)
+            Euler_bq = self.bqindiv_ss - np.sum(totalbq,axis=1)
 
-            #Equation 3.24
-            Euler_kf = np.sum(self.kf_ss)
+            Euler_k = self.k_ss - np.sum(np.sum(self.avec_ss*self.Nhat_ss,axis=2),axis=1) - self.kf_ss
+
+            Euler_n = self.n_ss - np.sum(self.e_ss*(1.0-self.lhat_ss)*self.Nhat_ss,axis=2)
+
+            Euler_kf = self.r_ss[0]*np.ones(self.I) - self.r_ss
+
             print "-Euler for bq satisfied:", np.isclose(np.max(np.absolute(Euler_bq)), 0)
-            print "-Euler for r satisfied:", np.isclose(Euler_kf, 0), "\n\n"
+            print "-Euler for k satisfied:", np.isclose(np.max(np.absolute(Euler_k)), 0)
+            print "-Euler for n satisfied:", np.isclose(np.max(np.absolute(Euler_n)), 0)
+            print "-Euler for kf satisfied:", np.isclose(np.max(np.absolute(Euler_kf)), 0), "\n\n"
+
+            
+            print "Max Euler bq", np.max(np.absolute(Euler_bq))
+            print "Max Euler k", np.max(np.absolute(Euler_k))
+            print "Max Euler_n", np.max(np.absolute(Euler_n))
+            print "Max Euler_kf", np.max(np.absolute(Euler_kf))
+            
 
     def PrintSSResults(self):
         """
@@ -1259,7 +1313,7 @@ class OLG(object):
         rtest = np.hstack(( self.r_init, func(t,popt[0],popt[1]) ))
 
 
-        plt.plot(range(self.T), rtest)
+        plt.plot(xrange(self.T), rtest)
         #plt.show()
 
         cc = self.r_init
@@ -1268,7 +1322,7 @@ class OLG(object):
         rpath_guess[:self.T] = aa * np.arange(0,self.T)**2 + bb*np.arange(0,self.T) + cc
         #rpath_guess = rtest
 
-        for i in range(self.I):
+        for i in xrange(self.I):
             bqpath_guess[i,:self.T] = np.linspace(self.bq_init[i], self.bqindiv_ss[i], self.T)
 
         return rpath_guess, bqpath_guess
