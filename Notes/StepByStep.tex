@@ -299,19 +299,19 @@
 
 	We can rewrite equations \eqref{eq_3ydef} - \eqref{eq_3rdef} as follows.
 	\begin{align}
-		w_{it} & = (1-\alpha) A_i^{1-\alpha} k_{it}^\alpha n_{it}^{-\alpha} \nonumber \\
-		r_{t} & = \alpha k_{it}^{\alpha-1} (A_i n_{it})^{1-\alpha} \nonumber
+		w_{it} & = (1-\alpha) A_i k_{it}^\alpha n_{it}^{-\alpha} \nonumber \\
+		r_{t} & = \alpha A_i k_{it}^{\alpha-1} n_{it}^{1-\alpha} \nonumber
 	\end{align}
 
 	Solving for $k_{it}$ gives:
 	\begin{align}
-		k_{it} & = \left(\frac{w_{it}}{(1-\alpha)} \right)^{\frac{1}{\alpha}}A_i^{\frac{\alpha-1}{\alpha}} n_{it} \nonumber \\
-		k_{it} & = \left(\frac{\alpha}{r_t} \right)^{\frac{1}{1-\alpha}}A_i n_{it} \nonumber
+		k_{it} & = \left(\frac{w_{it}}{(1-\alpha)A_i} \right)^{\frac{1}{\alpha}} n_{it} \nonumber \\
+		k_{it} & = \left(\frac{\alpha A_i}{r_t} \right)^{\frac{1}{1-\alpha}} n_{it} \nonumber
 	\end{align}
 
 	This can be solved for $w_{it}$.
 	\begin{equation}
-		w_{it} = \left(\frac{\alpha}{r_t} \right)^{\frac{\alpha}{1-\alpha}} (1-\alpha) A_i \label{eq_3wfunc}
+		w_{it} = \left(\frac{\alpha A_i}{r_t} \right)^{\frac{\alpha}{1-\alpha}} (1-\alpha) A_i \label{eq_3wfunc}
 	\end{equation}
 
 	With this information search over the value of $c_{is1}$ for each household to find the value that sets $a_{iS,S-s}$ (their final savings) to zero when we chain equations \eqref{eq_3Psidef2}, \eqref{eq_3Euler2} and \eqref{eq_3cdef2}.  That is, we solve for each households optimal time path of consumption and savings given the assumed history of factor prices.  This step requires the use of \texttt{fsolve}.  Note that it may be more convenient to write \eqref{eq_3cdef} as follows.
@@ -510,51 +510,64 @@
 	\begin{align}
 		y_{it} & = k_{it}^\alpha \prod_{j=1}^J \left( A_{i} n_{ijt} \right)^{\alpha_j}; \alpha + \sum_{j=1}^J \alpha_j = 1 \\
 		r_{it} & = \alpha \frac{y_{it}}{k_{it}} \\
-		w_{ijt} & = \alpha_j \frac{y_{it}}{A_i n_{ijt}}
+		w_{ijt} & = \alpha_j \frac{y_{it}}{n_{ijt}}
 	\end{align}
 
 	Our behavioral equations become:
 	\begin{align}
-		g^N_t & = \sum_{i=1}^I \sum_{j=1}^J \sum_{s=1}^S \hat N_{ijst} (f_{ijst}+m_{ijst}-\rho_{ijst}) ; \forall i\\
-		\hat N_{i,j,1,t+1} & = e^{-g^N_t}\sum_{s=23}^{45} \hat N_{ijst} f_{ijst} ; \forall i,j\\
+		g^N_t & = \sum_{i=1}^I \sum_{j=1}^J \sum_{s=1}^S \hat N_{ijst} (f_{ijst}+m_{ijst}-\rho_{ijst}) ; \forall i \label{eq_5demo1}\\
+		\hat N_{i,j,1,t+1} & = e^{-g^N_t}\sum_{s=23}^{45} \hat N_{ijst} f_{ijst} ; \forall i,j \\
 		\hat N_{i,j,s+1,t+1} & = e^{-g^N_t}\hat N_{ijst} (1+m_{ijst}-\rho_{ijst}); \forall i, 1<s\le S \\
-		KID_{i,j,s+1,t+1} & = \sum_{r=1}^{20} f_{i,j,s-r,t-r}; \forall i, 1<s\le S \\
-		\hat k_{it} & = \sum_{j=1}^J \sum_{s=1}^S \hat a_{ijst} \hat N_{ijst} - \hat k_{it}^f; \forall i \\
-		\hat n_{ijt} & = \sum_{s=1}^S e_{ijs} (\bar \ell - \hat \ell_{ijst} ) \hat N_{ijst}; \forall i,j \\
-		\hat y_{it} & = \hat k_{it}^\alpha \prod_{j=1}^J \left( A_{i} \hat n_{ijt} \right)^{\alpha_j}; \alpha + \sum_{j=1}^J \alpha_j = 1 ; \forall i \\
+		\hat{KID}_{i,j,s+1,t+1} & = \sum_{r=1}^{20} f_{i,j,s-r,t-r}; \forall i, 1<s\le S \label{eq_5demo4}\\
+		\hat k_{it} & = \sum_{j=1}^J \sum_{s=1}^S \hat a_{ijst} \hat N_{ijst} - \hat k_{it}^f; \forall i \label{eq_5ksum}\\
+		\hat n_{ijt} & = \sum_{s=1}^S e_{ijs} (\bar \ell - \hat \ell_{ijst} ) \hat N_{ijst}; \forall i,j \label{eq_5nsum}\\
+		\hat y_{it} & = \hat k_{it}^\alpha \prod_{j=1}^J \left( A_{i} \hat n_{ijt} \right)^{\alpha_j}; \alpha + \sum_{j=1}^J \alpha_j = 1 ; \forall i \label{eq_5yfunc} \\
 		r_{it} & = \alpha \frac{\hat y_{it}}{\hat k_{it}}; \forall i \label{eq_5rfunc}\\
-		w_{ijt} & = \alpha_j \frac{\hat y_{it}}{A_i \hat n_{ijt}}; \forall i.j \label{eq_5wfunc}
+		w_{ijt} & = \alpha_j \frac{\hat y_{it}}{\hat n_{ijt}}; \forall i,j \label{eq_5wfunc}
 	\end{align}
 	\begin{align}
-		\hat bq_{it} & = \frac{\sum_{s=67}^S \sum_j \hat a_{ijst} \rho_{ijst} \hat N_{ijst}}{\sum_{s=23}^{67} \hat N_{ijst}} ; \forall i,s \\
-		\Gamma_{ijt} & = \left\{ \left[1 + \chi \left(\frac{\chi}{w_{ijt} e_{jst}}\right)^{\rho-1}\right]^{\tfrac{1-\rho \sigma}{\rho-1}} \right\}^{-\tfrac{1}{\sigma}}; \forall i,j,s \\
+		\hat {bq}_{it} & = \frac{\sum_{s=67}^S \sum_j \hat a_{ijst} \rho_{ijst} \hat N_{ijst}}{\sum_{s=23}^{67} \hat N_{ijst}} ; \forall i,s \label{eq_5bqfunc}\\
+		\Gamma_{ijt} & = \left\{ \left[1 + \chi \left(\frac{\chi}{w_{ijt} e_{jst}}\right)^{\rho-1}\right]^{\tfrac{1-\rho \sigma}{\rho-1}} \right\}^{-\tfrac{1}{\sigma}}; \forall i,j,s \label{eq_5HH1func}\\
     	\hat c_{ijst} & = \frac{w_{ijt} e_{jst} + (1+r_{it}-\delta)\hat a_{ijst} + \hat{bq}_{jist} - \hat a_{i,j,s+1,t+1} e^{g^A}} {1 + KID_{ist}\Gamma_{ijt} + \left(\tfrac{\chi}{w_{ijt}e_{jst}}\right)^\rho}; \forall i,j,s \\
 		\hat \ell_{ijst} & = \hat c_{ijst} \left(\frac{\chi}{w_{ijt}e_{jst}}\right)^{\frac{1-\rho}{\rho}} ; \forall i,j,s \\
 		\hat c^K_{ijst} & = \hat c_{ijst} \Gamma_{ijt}; \forall i,j,s \\
-		& \left({\hat c^K_{ijst}}\right)^{-\sigma} - \beta (1-\rho_{i,j,s+1,+1}) \left(\hat c^K_{i,j,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,j,s \\
-		& r_{it} - r_{1t} = 0; \forall i>1 \\
-		& \sum_{i=1}^I \hat k^f_{it} = 0
+		& \left({\hat c^K_{ijst}}\right)^{-\sigma} - \beta (1-\rho_{i,j,s+1,+1}) \left(\hat c^K_{i,j,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,j,s \label{eq_5HH5func}\\
+		& r_{it} - r_{1t} = 0; \forall i>1 \label{eq_5requal}\\
+		& \sum_{i=1}^I \hat k^f_{it} = 0 \label{eq_5kfsum}
 	\end{align}
 
-	The analogue \eqref{eq_3wfunc} is found by solving equations \eqref{eq_5rfunc} and \eqref{eq_5wfunc} for $k_{it}$.
+	A solution technique is as follows:
 
-	\begin{align}
-		k_{it} & = \left( \frac{\alpha A_i^{\sum_j \alpha_j} \prod_j n_{ijt}^{\alpha_j}} {r_t} \right)^{\frac{1}{1-\alpha}} \nonumber \\
-		& = \left(\frac{w_{ijt}} {\alpha_j A_i^{\sum_j \alpha_j} \prod_{x \ne j} n_{ixt}^{\alpha_x}} \right)^{\frac{1}{\alpha}}; \quad \forall j \nonumber
-	\end{align}
+	First note that given an initial state described by $\left\{ \hat N_{ijs0}, a_{ijs0} \right\}\; \forall i,j,s$, equations \eqref{eq_5demo1} - \eqref{eq_5demo4} give the entire history of the deomgraphics, $\left\{ g^N_t, \hat N_{ijst}, \hat{KID}_{ijst} \right\}\; \forall i,j,s,t$, separately from the rest of the economy.
+
+	Next, make a guess for the history of capital stocks and labor inputs, $\left\{ \hat k_{it}, \hat k^f_{it}, \hat n_{ijt}, \hat{bq}_{it} \right\}\; \forall i,j,t$.
+
+	Equations \eqref{eq_5yfunc} - \eqref{eq_5wfunc}, then give us $\left\{ \hat y_{it}, r_{it}, \hat n_{ijt} \right\}\; \forall i,j,t$
+
+	Next, given the initial asset holdings (the $a$'s), we can use an ``inner'' fsolve along with equations \eqref{eq_5HH1func} - \eqref{eq_5HH5func} to find $\left\{ \hat c_{ijst}, \hat c^K_{ijst}, \hat \ell_{ijst}, \hat a_{ijst} \right\}\; \forall i,j,s,t$.  We do this by choosing the inititial consumption value that sets final assets to zero for each household.
+
+	Then we use an``outer'' fsolve to find the values of $\left\{ \hat k_{it}, \hat k^f_{it}, \hat n_{ijt}, \hat{bq}_{it} \right\}\; \forall i,j,t$, that make equations \eqref{eq_5ksum}, \eqref{eq_5nsum}, \eqref{eq_5bqfunc} and \eqref{eq_5requal} true, subject to the constraint from \eqref{eq_5kfsum}.  Each period from 1 to $T$ we need to find: $I$ values for $\hat k_{it}$, $I-1$ values for $\hat k^f_{it}$, $IJ$ values for $\hat n_{ijt}$, and $I$ values for $\hat{bq}_{it}$.  This is a total of $T(2I+J-1)$ values that the fsolve needs to find.
+
+
+	% The analogue \eqref{eq_3wfunc} is found by solving equations \eqref{eq_5rfunc} and \eqref{eq_5wfunc} for $k_{it}$.
+
+	% \begin{align}
+	% 	k_{it} & = \left( \frac{\alpha A_i^{\sum_j \alpha_j} \prod_j n_{ijt}^{\alpha_j}} {r_t} \right)^{\frac{1}{1-\alpha}} \nonumber \\
+	% 	& = \left(\frac{w_{ijt}} {\alpha_j A_i^{\sum_j \alpha_j} \prod_{x \ne j} n_{ixt}^{\alpha_x}} \right)^{\frac{1}{\alpha}}; \quad \forall j \nonumber
+	% \end{align}
 	
-	These can be rewritten as:
-	\begin{align}
-		1 & = \frac{ \alpha^\alpha A_i^{\sum_j \alpha_j} n_{ijt}^{2\alpha_j \alpha - \alpha_j - \alpha + 1}} {\alpha_j^{1-\alpha}r_t^\alpha w_{ijt}^{1-\alpha} \prod_{x \ne j} n_{ixt}^{\alpha_x}} \nonumber \\
-		n_{ixt} & = \frac{\alpha_j w_{ixt}} {\alpha_x w_{ijt}} n_{ijt} ; \quad \forall j,k \nonumber
-	\end{align}	
+	% These can be rewritten as:
+	% \begin{align}
+	% 	1 & = \frac{ \alpha^\alpha A_i^{\sum_j \alpha_j} n_{ijt}^{2\alpha_j \alpha - \alpha_j - \alpha + 1}} {\alpha_j^{1-\alpha}r_t^\alpha w_{ijt}^{1-\alpha} \prod_{x \ne j} n_{ixt}^{\alpha_x}} \nonumber \\
+	% 	n_{ixt} & = \frac{\alpha_j w_{ixt}} {\alpha_x w_{ijt}} n_{ijt} ; \quad \forall j,k \nonumber
+	% \end{align}	
 
-	Substituting the second into the first gives:
-	\begin{align}
-		1 & = \frac{ \alpha^\alpha A_i^{\sum_j \alpha_j} n_{ijt}^{2\alpha_j \alpha - \alpha_j - \alpha + 1}} {\alpha_j^{1-\alpha}r_t^\alpha w_{ijt}^{1-\alpha} \prod_{x \ne j} \left( \frac{\alpha_j w_{ixt}} {\alpha_x w_{ijt}} n_{ijt} \right)^{\alpha_x}} \nonumber \\
-		1 & = \frac{ \alpha^\alpha A_i^{\sum_j \alpha_j} n_{ijt}^{2\alpha_j \alpha - \alpha_j - \alpha + 1}} {\alpha_j^{1-\alpha}r_t^\alpha w_{ijt}^{1-\alpha} \prod_{x \ne j} \left( \frac{\alpha_j w_{ixt}} {\alpha_x w_{ijt}} \right)^{\alpha_x} n_{ijt}^{\sum_{x\ne j} \alpha_x}} \nonumber \\
-		1 & = \frac{ \alpha^\alpha A_i^{\sum_j \alpha_j} n_{ijt}^{2\alpha_j \alpha - \sum_j\alpha_j - \alpha + 1}} {\alpha_j^{1-\alpha}r_t^\alpha w_{ijt}^{1-\alpha} \prod_{x \ne j} \left( \frac{\alpha_j w_{ixt}} {\alpha_x w_{ijt}} \right)^{\alpha_x} } \nonumber
-	\end{align}
+	% Substituting the second into the first gives:
+	% \begin{align}
+	% 	1 & = \frac{ \alpha^\alpha A_i^{\sum_j \alpha_j} n_{ijt}^{2\alpha_j \alpha - \alpha_j - \alpha + 1}} {\alpha_j^{1-\alpha}r_t^\alpha w_{ijt}^{1-\alpha} \prod_{x \ne j} \left( \frac{\alpha_j w_{ixt}} {\alpha_x w_{ijt}} n_{ijt} \right)^{\alpha_x}} \nonumber \\
+	% 	1 & = \frac{ \alpha^\alpha A_i^{\sum_j \alpha_j} n_{ijt}^{2\alpha_j \alpha - \alpha_j - \alpha + 1}} {\alpha_j^{1-\alpha}r_t^\alpha w_{ijt}^{1-\alpha} \prod_{x \ne j} \left( \frac{\alpha_j w_{ixt}} {\alpha_x w_{ijt}} \right)^{\alpha_x} n_{ijt}^{\sum_{x\ne j} \alpha_x}} \nonumber \\
+	% 	1 & = \frac{ \alpha^\alpha A_i^{\sum_j \alpha_j} n_{ijt}^{2\alpha_j \alpha - \sum_j\alpha_j - \alpha + 1}} {\alpha_j^{1-\alpha}r_t^\alpha w_{ijt}^{1-\alpha} \prod_{x \ne j} \left( \frac{\alpha_j w_{ixt}} {\alpha_x w_{ijt}} \right)^{\alpha_x} } \nonumber
+	% \end{align}
 
 
 \newpage

@@ -26,7 +26,7 @@ def Multi_Country(S,I,sigma):
     rho = .4 #Intratemporal elasticity of substitution
 
     #Convergence Tolerances
-    demog_ss_tol = 1e-14 #Used in getting ss for population share
+    demog_ss_tol = 1e-8 #Used in getting ss for population share
 
     #PROGRAM LEVERS:
     #For terminal output
@@ -107,7 +107,7 @@ def Multi_Country(S,I,sigma):
 start = time.time()
 # S-Number of Cohorts, I-Number of Countries
 # S, I, and sigma. S and I are integers. Sigma may not be.
-Multi_Country(20,3,4)
+Multi_Country(20,2,2)
 tottime=time.time()-start
 
 if TimeModel==True:

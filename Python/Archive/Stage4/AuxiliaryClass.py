@@ -834,7 +834,7 @@ class OLG(object):
         alldeadagent_assets = np.sum(avec_ss[:,self.FirstDyingAge:]*\
                 self.Mortality_ss[:,self.FirstDyingAge:]*self.Nhat_ss[:,self.FirstDyingAge:], axis=1)
 
-        #Equation 3.30
+        #Equation 3.29
         Euler_bq = bqindiv_ss - alldeadagent_assets/np.sum(self.Nhat_ss[:,self.FirstFertilityAge:self.FirstDyingAge],\
                 axis=1)
 
@@ -842,6 +842,7 @@ class OLG(object):
         Euler_kf = np.sum(kf_ss)
 
         Euler_all = np.append(Euler_bq, Euler_kf)
+
 
 
         if PrintSSEulErrors: print "Euler Errors:", Euler_all
@@ -1633,7 +1634,7 @@ class OLG(object):
             #Fills in c_matrix and a_matrix with the correct decisions for agents currently alive
 
             start=time.time()
-            opt.root(Alive_EulerSystem, cK0alive_guess, args=(c_matrix, cK_matrix, a_matrix, w_path, r_path, Gamma, bqvec_path), method="krylov", tol=1e-12)
+            opt.root(Alive_EulerSystem, cK0alive_guess, args=(c_matrix, cK_matrix, a_matrix, w_path, r_path, Gamma, bqvec_path), method="krylov", tol=1e-8)
             if self.Matrix_Time: print "\nFill time: NEW UPPER USING KRYLOV", time.time()-start
 
             #Initializes a guess for the first vector for the fsolve to use
@@ -1643,7 +1644,7 @@ class OLG(object):
 
             #Solves for the entire consumption and assets matrices for agents not currently born
             start=time.time()
-            opt.root(Future_EulerSystem, cK0future_guess, args=(c_matrix, cK_matrix, a_matrix, w_path, r_path, Gamma, bqvec_path), method="krylov", tol=1e-12)
+            opt.root(Future_EulerSystem, cK0future_guess, args=(c_matrix, cK_matrix, a_matrix, w_path, r_path, Gamma, bqvec_path), method="krylov", tol=1e-8)
             if self.Matrix_Time: print "lower triangle fill time NOW USING KRYLOV", time.time()-start
 
             #Prints consumption and assets matrices for country 0. 
@@ -1675,7 +1676,7 @@ class OLG(object):
         #GetTPIComponents continues here
         #Equation 3.25, note that this hasn't changed from stage 3 to stage 4
         alphvec=np.ones(self.I)*self.alpha
-        w_path = np.einsum(  "t,i->it", (self.alpha/r_path)**(self.alpha/(1-self.alpha)),  (1-self.alpha)*self.A  )
+        w_path = np.einsum("it,i->it",np.einsum("i,t->it",alphvec,1/r_path)**(self.alpha/(1-self.alpha)),(1-self.alpha)*self.A)
 
         #Equation 4.22
         Gamma = self.get_Gamma(w_path,self.e)
