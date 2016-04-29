@@ -725,7 +725,7 @@ class OLG(object):
             return Household_Euler, Chained_C_Condition, Modified_Budget_Constraint, Consumption_Ratio
 
         #Equation 4.19
-        w_ss = (self.alpha*self.A/r_ss)**(self.alpha/(1-self.alpha))*(1-self.alpha)*self.A
+        w_ss = (self.alpha/r_ss)**(self.alpha/(1-self.alpha))*(1-self.alpha)*self.A
 
         #Equation 4.22
         Gamma_ss = self.get_Gamma(w_ss, self.e_ss)
@@ -834,7 +834,7 @@ class OLG(object):
         alldeadagent_assets = np.sum(avec_ss[:,self.FirstDyingAge:]*\
                 self.Mortality_ss[:,self.FirstDyingAge:]*self.Nhat_ss[:,self.FirstDyingAge:], axis=1)
 
-        #Equation 3.29
+        #Equation 3.30
         Euler_bq = bqindiv_ss - alldeadagent_assets/np.sum(self.Nhat_ss[:,self.FirstFertilityAge:self.FirstDyingAge],\
                 axis=1)
 
@@ -842,7 +842,6 @@ class OLG(object):
         Euler_kf = np.sum(kf_ss)
 
         Euler_all = np.append(Euler_bq, Euler_kf)
-
 
 
         if PrintSSEulErrors: print "Euler Errors:", Euler_all
@@ -1674,8 +1673,9 @@ class OLG(object):
             return c_matrix[:,:,:self.T], cK_matrix[:,:,:self.T], a_matrix[:,:-1,:self.T]
 
         #GetTPIComponents continues here
-        #Equation 4.20
-        w_path = np.einsum("it,i->it",np.einsum("i,t->it",self.alpha*self.A,1/r_path)**(self.alpha/(1-self.alpha)),(1-self.alpha)*self.A)
+        #Equation 3.25, note that this hasn't changed from stage 3 to stage 4
+        alphvec=np.ones(self.I)*self.alpha
+        w_path = np.einsum(  "t,i->it", (self.alpha/r_path)**(self.alpha/(1-self.alpha)),  (1-self.alpha)*self.A  )
 
         #Equation 4.22
         Gamma = self.get_Gamma(w_path,self.e)
