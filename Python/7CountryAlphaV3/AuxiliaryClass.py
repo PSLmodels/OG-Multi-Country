@@ -451,6 +451,7 @@ class OLG(object):
             for j in xrange(self.J):
                 w[:,j] = self.alphaj[j]*(y/n[:,j])
 
+
         return w
 
     def get_Gamma(self, w, e):
@@ -480,8 +481,7 @@ class OLG(object):
 
         #If getting the SS
         if e.ndim == 3:
-            #print w.shape
-            #print e.shape
+
             we =  np.einsum("ij,ijs->ijs", w, e)
 
         #If getting transition path
@@ -523,36 +523,6 @@ class OLG(object):
 
         return lhat
 
-    def get_n(self, lhat):
-        """
-            Description:
-                -Calculates the aggregate labor productivity based on equation (3.14)
-            Inputs:
-                - lhat          = Array: [I,S,T+S] or [I,S], Leisure for either the transition path or the steady steady-state
-            Variables Called from Object:
-                - self.e        = Array: [I,S,T+S], Labor productivities for the transition path  
-                - self.e_ss     = Array: [I,S], Labor produtivities for the Steady State
-                - self.lbar     = Array: [T+S], Time endowment in each year
-                - self.Nhat     = Array: [I,S,T+S], World population share of each country for each age cohort and year
-                - self.Nhat_ss  = Array: [I,S], Population of each country for each age cohort in the steady state
-                - self.lbar_ss  = Int: Steady state time endowment. Normalized to 1.0
-                - self.T        = Int: Number of Time Periods
-            Variables Stored in Object:
-                - None
-            Other Functions Called:
-                - None
-            Objects in Function:
-                - None
-            Outputs:
-                - n          = Array: [I,S,T] or [I,S], Aggregate labor productivity for either the transition path or the steady steady-state
-        """
-
-        if lhat.ndim == 3:
-            n = np.sum(self.e_ss*(self.lbar_ss-lhat)*self.Nhat_ss,axis=1)
-        elif lhat.ndim == 4:
-            n = np.sum(self.e[:,:,:self.T]*(self.lbar[:self.T]-lhat)*self.Nhat[:,:,:self.T],axis=1)
-
-        return n
 
     def get_Y(self, kd, n):
         """
@@ -578,6 +548,15 @@ class OLG(object):
             Y = (kd**self.alpha)
             for j in xrange(self.J):
                 Y*=((self.A*n[:,j])**(self.alphaj[j]))
+        elif kd.ndim== 2:
+            Y = (kd**self.alpha) * (np.einsum("i,is->is",self.A,n)**(1-self.alpha))
+
+        return Y
+
+        if kd.ndim ==1:
+            Y = (kd**self.alpha)
+            for j in xrange(self.J):
+                Y*=((self.A*n[:,j])**(self.alphaj[j]))
 
             Y2 = kd**self.alpha * np.prod(np.einsum("i,ij->ij",self.A,n)**self.alphaj)
         elif kd.ndim== 2:
@@ -587,7 +566,25 @@ class OLG(object):
         return Y
 
     def get_r(self, y, k):
+        """
+            Description:
+                - Calculates the interest rate based on equation ()
+            Inputs:
+                - y          = Array: [I,S,T+S] or [I,J,S], total output for either the transition path or steady-state.
+                - k          = Array: [I,S,T+S] or [I,J,S], total capital stock in each country either the transition path or the steady steady-state
+            Variables Called from Object:
+                - self.A     = Array: [I], Technology level for each country
+                - self.alpha = Scalar: Capital share of production
+            Variables Stored in Object:
+                - None
+            Other Functions Called:
+                - None
+            Objects in Function:
+                - None
+            Outputs:
+                - r          = Array: [I,J,S,T+S] or [I,J,S], Calculated interest rates for each country the transition path or the steady steady-state
 
+        """
         r = self.alpha*(y/k)
 
         return r
@@ -656,12 +653,10 @@ class OLG(object):
 
             #Equation 4.23 for final assets
             for j in xrange(self.J):
-                avec_ss[:,j,s+2] = (w_ss[:,j]*self.e_ss[:,j,s+1] + (1 + r_ss - self.delta)*avec_ss[:,j,s+1] - cvec_ss[:,j,s+1]*\
+
+                avec_ss[:,j,s+2] = (w_ss[:,j]*self.e_ss[:,j,s+1]*self.lbar_ss + (1 + r_ss - self.delta)*avec_ss[:,j,s+1] - cvec_ss[:,j,s+1]*\
                         (1+self.Kids_ss[:,j,s+1]*Gamma_ss[:,j,s+1]+w_ss[:,j]*self.e_ss[:,j,s+1]*(self.chi/(w_ss[:,j]*self.e_ss[:,j,s+1]))\
                                     **self.rho))*np.exp(-self.g_A)
-
-
-            #print avec_ss.shape
 
             return cvec_ss, cKvec_ss, avec_ss
 
@@ -749,7 +744,8 @@ class OLG(object):
 
             Euler = assets_path[:,:,-1]
 
-            #print np.max(np.absolute(assets_path[:,:,-1]))
+
+            #print "Inner Fsovles solves:", np.isclose(np.max(np.absolute(assets_path[:,:,-1])),0)
 
             #print "I", self.I 
             #print "J",self.J
@@ -757,8 +753,9 @@ class OLG(object):
 
             if np.any(cpath<0):
                 print "WARNING! The fsolve for initial optimal consumption guessed a negative number"
-                Euler = np.ones(Euler.shape[0])*9999
+                Euler = np.ones(Euler.shape)*9999
 
+            #print Euler.shape
             return np.reshape(Euler,(self.I*self.J))
         
         def checkSSEulers(cvec_ss, cKvec_ss, avec_ss, w_ss, r_ss, bq_ss, Gamma_ss):
@@ -820,9 +817,12 @@ class OLG(object):
         Gamma_ss = self.get_Gamma(w_ss, self.e_ss)
 
         #Initial guess for the first cohort's kids consumption
+
         cK1_guess = np.ones((self.I,self.J))*.5
 
         #Finds the optimal kids consumption for the first cohort
+        cK1_guess=np.reshape(cK1_guess,(self.I*self.J))
+        
         opt_cK1 = opt.fsolve(householdEuler_SS, cK1_guess, args = (w_ss, r_ss, Gamma_ss, bq_ss))
 
         #Gets the optimal paths for consumption, kids consumption and assets as a function of the first cohort's consumption
@@ -917,6 +917,7 @@ class OLG(object):
         w_ss, cvec_ss, cKvec_ss, avec_ss, r_ss, y_ss, lhat_ss = self.GetSSComponents(k_guess,kf_guess,n_guess,bq_ss, PrintSSEulErrors)
 
         #Sum of all assets holdings of dead agents to be distributed evenly among all eligible agents
+        """<<<<<<< HEAD
         alldeadagent_assets = np.sum(avec_ss[:,:,self.FirstDyingAge:]*\
                 self.Mortality_ss[:,:,self.FirstDyingAge:]*self.Nhat_ss[:,:,self.FirstDyingAge:], axis=2)
 
@@ -929,6 +930,20 @@ class OLG(object):
         Euler_k = k_guess - np.sum(np.sum(avec_ss*self.Nhat_ss,axis=1),axis=1) + kf_guess
 
         Euler_n = np.reshape(n_guess - np.sum(self.e_ss*(1.0-lhat_ss)*self.Nhat_ss,axis=2),(self.I*self.J))
+        """#=======
+        alldeadagent_assets = np.sum(np.sum(avec_ss[:,:,self.FirstDyingAge:]*\
+                self.Mortality_ss[:,:,self.FirstDyingAge:]*self.Nhat_ss[:,:,self.FirstDyingAge:], axis=1),axis=1)
+
+        total_bq = np.sum(np.sum(self.Nhat_ss[:,:,self.FirstFertilityAge:self.FirstDyingAge],axis=1),axis=1)
+
+
+        #Equation 3.29
+        Euler_bq = bqindiv_ss - alldeadagent_assets/total_bq
+
+        Euler_k = k_guess - np.sum(np.sum(avec_ss*self.Nhat_ss,axis=1),axis=1) + kf_guess
+
+        Euler_n = np.reshape(n_guess - np.sum(self.e_ss*(self.lbar_ss-lhat_ss)*self.Nhat_ss,axis=2),(self.I*self.J))
+        #>>>>>>> upstream/master
 
         Euler_kf = r_ss[0]*np.ones(self.I) - r_ss
 
@@ -1019,22 +1034,22 @@ class OLG(object):
 
 
         #Sum of all assets holdings of dead agents to be distributed evenly among all eligible agents
-        alldeadagent_assets = np.sum(self.avec_ss[:,:,self.FirstDyingAge:]*\
-                self.Mortality_ss[:,:,self.FirstDyingAge:]*self.Nhat_ss[:,:,self.FirstDyingAge:], axis=2)
+        alldeadagent_assets = np.sum(np.sum(self.avec_ss[:,:,self.FirstDyingAge:]*\
+                self.Mortality_ss[:,:,self.FirstDyingAge:]*self.Nhat_ss[:,:,self.FirstDyingAge:], axis=1),axis=1)
 
 
 
         print "\n\nSTEADY STATE FOUND!"
         #Checks to see if the Euler_bq and Euler_kf equations are sufficiently close to 0
         if self.CheckerMode==False:
-            totalbq = alldeadagent_assets/np.sum(self.Nhat_ss[:,:,self.FirstFertilityAge:self.FirstDyingAge],\
-                    axis=2)
 
-            Euler_bq = self.bqindiv_ss - np.sum(totalbq,axis=1)
+            totalbq = np.sum(np.sum(self.Nhat_ss[:,:,self.FirstFertilityAge:self.FirstDyingAge],axis=1),axis=1)
 
-            Euler_k = self.k_ss - np.sum(np.sum(self.avec_ss*self.Nhat_ss,axis=2),axis=1) - self.kf_ss
+            Euler_bq = self.bqindiv_ss - alldeadagent_assets/totalbq
 
-            Euler_n = self.n_ss - np.sum(self.e_ss*(1.0-self.lhat_ss)*self.Nhat_ss,axis=2)
+            Euler_k = self.k_ss - np.sum(np.sum(self.avec_ss*self.Nhat_ss,axis=2),axis=1) + self.kf_ss
+
+            Euler_n = self.n_ss - np.sum(self.e_ss*(self.lbar_ss-self.lhat_ss)*self.Nhat_ss,axis=2)
 
             Euler_kf = self.r_ss[0]*np.ones(self.I) - self.r_ss
 
@@ -1077,6 +1092,7 @@ class OLG(object):
         print "assets steady state:", self.avec_ss
         print "kf steady state", self.kf_ss
         print "kd steady state", self.kd_ss
+        print "bq steady state", self.bqindiv_ss
         print "n steady state", self.n_ss
         print "y steady state", self.y_ss
         print "r steady state", self.r_ss

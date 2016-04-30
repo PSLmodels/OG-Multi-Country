@@ -970,12 +970,13 @@ class OLG(object):
         print "assets steady state:", self.avec_ss
         print "kf steady state", self.kf_ss
         print "kd steady state", self.kd_ss
+        print "bq steady state", self.bqindiv_ss
         print "n steady state", self.n_ss
         print "y steady state", self.y_ss
         print "r steady state", self.r_ss
         print "w steady state", self.w_ss
         print "c_vec steady state", self.cvec_ss
-        print "cK_vec steady state", self.cK_vec_ss
+        print "cK_vec steady state", self.cKvec_ss
 
     def plotSSResults(self):
         """

@@ -32,7 +32,7 @@ def Multi_Country(S,I,sigma):
     #For terminal output
     PrintAges = False #Displays the current locations of the program inside key TPI functions
     PrintSSEulErrors = False #Prints the euler errors in each attempt of calculating the steady state
-    PrintSS = False #Prints the result of the Steady State functions
+    PrintSS = True #Prints the result of the Steady State functions
     Print_caTimepaths = False #Prints the consumption, assets, and bequests timepath as it gets filled in for each iteration of TPI
     Print_HH_Eulers = False #Prints whether the equations for the household decisions are satisfied (Equations 3.22, 3.19, and sum(assets) = 0)
     Print_Fill_Matricies_Time = False #Activiates Printing the total time it takes to fill the upper and lower diagonal matricies
@@ -90,7 +90,7 @@ def Multi_Country(S,I,sigma):
     if ShowSSGraphs: Model.plotSSResults()
 
     #Timepath Iteration
-    
+    ''' 
     r_init = Model.r_ss*1.05
     bq_init = Model.bqindiv_ss*.95
     a_init = Model.avec_ss*.7
@@ -99,7 +99,7 @@ def Multi_Country(S,I,sigma):
 
     Model.Timepath_optimize(Print_HH_Eulers, Print_caTimepaths, iterations_to_plot)
     if SaveFinalTPIPlot: Model.plot_timepaths(SAVE=False)
-
+    '''
 
 #Input parameters for S, I and sigma here then execute this file to
 #run the model.
@@ -107,7 +107,7 @@ def Multi_Country(S,I,sigma):
 start = time.time()
 # S-Number of Cohorts, I-Number of Countries
 # S, I, and sigma. S and I are integers. Sigma may not be.
-Multi_Country(20,2,2)
+Multi_Country(40,7,4)
 tottime=time.time()-start
 
 if TimeModel==True:
