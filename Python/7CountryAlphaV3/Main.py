@@ -17,7 +17,7 @@ def Multi_Country(S,I,J,sigma):
     I_dict = {"usa":0,"eu":1,"japan":2,"china":3,"india":4,"russia":5,"korea":6} #DONT CHANGE
     #TO JEFF: I this the percentages below are for the lower skill class just FYI. 
     #         So all we'll need to do is change the variable name to I_LowSkill or something
-    I_HighSkill = np.array([.7,.7,.7,.75,.75,.7,.7]) #CAN CHANGE
+    I_HighSkill = np.array([.3,.3,.3,.25,.25,.3,.3]) #CAN CHANGE
     I_touse = ["eu","russia","usa","japan","korea","china","india"] #CAN CHANGE
 
     #NOTE: I_HighSkill sets the portion of each country's population that's deemed 
@@ -27,8 +27,8 @@ def Multi_Country(S,I,J,sigma):
     g_A = 0.015 #Technical growth rate
     beta_ann=.95 #Annual discount rate
     delta_ann=.08 #Annual depreciation rate
-    alpha = .3 #Capital Share of production
-    alphaj = np.array([.4,.3]) #Share of production for each labor class
+    alpha = .35 #Capital Share of production
+    alphaj = np.array([.25,.4]) #Share of production for each labor class
     chi = 1.5 #Preference for lesiure
     rho = .4 #Intratemporal elasticity of substitution
 
@@ -102,12 +102,21 @@ def Multi_Country(S,I,J,sigma):
     #Model.immigrationplot()
 
     #STEADY STATE INITIAL GUESSES
-    k_ss_guess = np.ones((I))*1.1
-    kf_ss_guess = np.ones((I))*.3
-    kf_ss_guess[0] = -np.sum(kf_ss_guess[:I])
-    n_ss_guess = np.ones((I,J))*3.
-    bq_ss_guess = np.ones((I))*1.5
-
+    '''
+    k_ss_guess = np.ones((I))*.001
+    kf_ss_guess = np.ones((I))*.001
+    n_ss_guess = np.ones((I,J))*.001
+    bq_ss_guess = np.ones((I))*.001
+    '''
+    #Stage 4 steady state values
+    kf_ss_guess = np.array([-0.00114016, -0.00044732, -0.0018603,  -0.00008244, -0.00002364, -0.00024034,  0.00379419])
+    kd = np.array([ 0.01698662,  0.00846439,  0.04745413,  0.00315368,  0.00173553,  0.14954846,  0.38189816])
+    k_ss_guess = kd + kf_ss_guess
+    bq_ss_guess = np.array([ 0.00106,     0.00114345,  0.00122827,  0.00131439,  0.00140174,  0.00149025,  0.00157986])
+    n_ss_guess = np.zeros((I,J))
+    for j in xrange(J): #Same n values for both classes
+        n_ss_guess[:,j] = np.array([ 0.0171871,   0.00810991,  0.0431563,   0.00272818,  0.00143097,  0.11773649,  0.28756455])
+    
 
 
     #Steady State
