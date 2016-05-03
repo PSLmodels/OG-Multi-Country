@@ -619,16 +619,28 @@ class OLG(object):
             cvec_ss = np.zeros((self.I,self.J,self.S))
             avec_ss = np.zeros((self.I,self.J,self.S+1))
 
-            cK_1=np.reshape(cK_1,(self.I,self.J))
+            cK_copy = np.zeros((self.I,self.J))
 
-            cKvec_ss[:,:,0] = cK_1
-            cvec_ss[:,:,0] = cK_1/Gamma_ss[:,:,0]
+            #cK_1=np.reshape(cK_1,(self.I,self.J))
+            '''
+            for j in xrange(self.J):
+                A=j*self.I
+                B=(j+1)*self.I
+                cK_copy[:,j] = cK_1[A:B]
+            '''
+            for i in xrange(self.I):
+                cK_copy[i,0]=cK_1[i]
+                cK_copy[i,1]=cK_1[self.I+i]
+            
+            cKvec_ss[:,:,0] = cK_copy
+            cvec_ss[:,:,0] = cK_copy/Gamma_ss[:,:,0]
 
 
             for s in xrange(self.S-1):
                 #Equation 4.26
                 for j in xrange(self.J):
-                    cKvec_ss[:,j,s+1] = (  ( (self.beta*(1-self.Mortality_ss[:,j,s])*(1+r_ss-self.delta) )**(1/self.sigma) )*cKvec_ss[:,j,s]  )/np.exp(self.g_A)
+                    cKvec_ss[:,j,s+1] = (  ( (self.beta*(1-self.Mortality_ss[:,j,s])*(1+r_ss-self.delta) )**(1/self.sigma) )\
+                            *cKvec_ss[:,j,s]  )/np.exp(self.g_A)
 
                 #Equation 4.25
                 cvec_ss[:,:,s+1] = cKvec_ss[:,:,s+1]/Gamma_ss[:,:,s+1]
@@ -785,13 +797,21 @@ class OLG(object):
                     - None
             """
 
-            we = np.einsum("i,is->is",w_ss,self.e_ss)
+            we = np.einsum("ij,ijs->ijs",w_ss,self.e_ss)
 
-            Household_Euler = avec_ss[:,-1]
-            Chained_C_Condition = cKvec_ss[:,:-1]**(-self.sigma) - \
-                                 self.beta*(1-self.Mortality_ss[:,:-1])*(cKvec_ss[:,1:]*np.exp(self.g_A))**-self.sigma * (1+r_ss-self.delta)
-            Modified_Budget_Constraint = cvec_ss -( we*self.lbar_ss + (1+r_ss-self.delta)*avec_ss[:,:-1] + bq_ss - avec_ss[:,1:]*np.exp(self.g_A) )\
-            /(1+self.Kids_ss*Gamma_ss+we*(self.chi/we)**self.rho)
+            Household_Euler = avec_ss[:,:,-1]
+
+            Chained_C_Condition = np.zeros((self.I,self.J,self.S-1))
+            Modified_Budget_Constraint = np.zeros((self.I,self.J,self.S))
+
+            for i in xrange(self.I):
+                Chained_C_Condition[i,:,:] = cKvec_ss[i,:,:-1]**(-self.sigma) - \
+                        self.beta*(1-self.Mortality_ss[i,:,:-1])*(cKvec_ss[i,:,1:]*np.exp(self.g_A))**-self.sigma * (1+r_ss[i]-self.delta)
+
+                Modified_Budget_Constraint[i,:,:] = cvec_ss[i,:,:] -( we[i,:,:]*self.lbar_ss + (1+r_ss[i]-self.delta)*\
+                        avec_ss[i,:,:-1] + bq_ss[i,:] - avec_ss[i,:,1:]*np.exp(self.g_A) )\
+                        /(1+self.Kids_ss[i,:,:]*Gamma_ss[i,:,:]+we[i,:,:]*(self.chi/we[i,:,:])**self.rho)
+
             Consumption_Ratio = cKvec_ss - cvec_ss*Gamma_ss
 
             return Household_Euler, Chained_C_Condition, Modified_Budget_Constraint, Consumption_Ratio
@@ -819,16 +839,17 @@ class OLG(object):
 
         lhat_ss = self.get_lhat(cvec_ss, w_ss, self.e_ss)
 
-        '''
+        
         if PrintSSEulErrors:
             Household_Euler, Chained_C_Condition, Modified_Budget_Constraint, Consumption_Ratio = checkSSEulers(cvec_ss, cKvec_ss, avec_ss, w_ss, r_ss, bq_ss, Gamma_ss)
             print "\nZero final period assets satisfied:", np.isclose(np.max(np.absolute(Household_Euler)), 0)
-            print "Equation 4.26 satisfied:", np.isclose(np.max(np.absolute(Chained_C_Condition)), 0)
-            print "Equation 4.23 satisfied:", np.isclose(np.max(np.absolute(Modified_Budget_Constraint)), 0)
-            print "Equation 4.25 satisfied", np.isclose(np.max(np.absolute(Consumption_Ratio)), 0)
+            print "Equation 5.20 satisfied:", np.isclose(np.max(np.absolute(Chained_C_Condition)), 0)
+            print "Equation 5.17 satisfied:", np.isclose(np.max(np.absolute(Modified_Budget_Constraint)), 0)
+            print "Equation 5.19 satisfied", np.isclose(np.max(np.absolute(Consumption_Ratio)), 0)
             #print Chained_C_Condition[0,:]
             #print Modified_Budget_Constraint[0,:]
-        '''
+
+
         #Snips off the final entry of assets since it is just 0 if the equations solved correctly
         avec_ss = avec_ss[:,:,:-1]
 
@@ -1065,14 +1086,14 @@ class OLG(object):
         """
         print "assets steady state:", self.avec_ss
         print "kf steady state", self.kf_ss
-        print "kd steady state", self.kd_ss
+        print "k steady state", self.k_ss
         print "bq steady state", self.bqindiv_ss
         print "n steady state", self.n_ss
         print "y steady state", self.y_ss
         print "r steady state", self.r_ss
         print "w steady state", self.w_ss
         print "c_vec steady state", self.cvec_ss
-        print "cK_vec steady state", self.cK_vec_ss
+        print "cK_vec steady state", self.cKvec_ss
 
     def plotSSResults(self):
         """
@@ -1098,35 +1119,40 @@ class OLG(object):
         """
         plt.title("Steady state")
         plt.subplot(231)
-        for i in range(self.I):
-            plt.plot(range(self.S),self.cvec_ss[i,:])
+        for i in xrange(self.I):
+            for j in xrange(self.J):
+                plt.plot(xrange(self.S),self.cvec_ss[i,j,:])
         plt.title("Consumption")
         #plt.legend(self.I_touse[:self.I])
 
         plt.subplot(232)
-        for i in range(self.I):
-            plt.plot(range(self.S),self.cKvec_ss[i,:])
+        for i in xrange(self.I):
+            for j in xrange(self.J):
+                plt.plot(xrange(self.S),self.cKvec_ss[i,j,:])
         plt.title("Kids' Consumption")
         #plt.legend(self.I_touse[:self.I])
         #plt.show()
 
         plt.subplot(233)
-        for i in range(self.I):
-            plt.plot(range(self.S),self.avec_ss[i,:])
+        for i in xrange(self.I):
+            for j in xrange(self.J):
+                plt.plot(xrange(self.S),self.avec_ss[i,j,:])
         plt.title("Assets")
         #plt.legend(self.I_touse[:self.I])
         #plt.show()
 
         plt.subplot(234)
-        for i in range(self.I):
-            plt.plot(range(self.S),self.lhat_ss[i,:])
+        for i in xrange(self.I):
+            for j in xrange(self.J):
+                plt.plot(xrange(self.S),self.lhat_ss[i,j,:])
         plt.title("Leisure")
         #plt.legend(self.I_touse[:self.I])
         #plt.show()
 
         plt.subplot(235)
-        for i in range(self.I):
-            plt.plot(range(self.S),self.bqvec_ss[i,:])
+        for i in xrange(self.I):
+            for j in xrange(self.J):
+                plt.plot(xrange(self.S),self.bqvec_ss[i,:])
         plt.title("Bequests")
         #plt.legend(self.I_touse[:self.I])
 
