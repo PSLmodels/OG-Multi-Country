@@ -39,8 +39,8 @@ def Multi_Country(S,I,J,sigma):
     #PROGRAM LEVERS:
     #For terminal output
     PrintAges = False #Displays the current locations of the program inside key TPI functions
-    PrintSSEulErrors = False #Prints the euler errors in each attempt of calculating the steady state
-    PrintSS = False #Prints the result of the Steady State functions
+    PrintSSEulErrors = True #Prints the euler errors in each attempt of calculating the steady state
+    PrintSS = True #Prints the result of the Steady State functions
     Print_caTimepaths = False #Prints the consumption, assets, and bequests timepath as it gets filled in for each iteration of TPI
     Print_HH_Eulers = False #Prints whether the equations for the household decisions are satisfied (Equations 3.22, 3.19, and sum(assets) = 0)
     Print_Fill_Matricies_Time = False #Activiates Printing the total time it takes to fill the upper and lower diagonal matricies
@@ -50,7 +50,7 @@ def Multi_Country(S,I,J,sigma):
 
     #For plots to display or save
     DemogGraphs = False #Activates graphing graphs with demographic data and population shares
-    ShowSSGraphs = False #Activates graphs for steady-state solutions for consumption, assets, and bequests
+    ShowSSGraphs = True #Activates graphs for steady-state solutions for consumption, assets, and bequests
     iterations_to_plot = set([]) #Which iterations of the timepath fsolve you want to plot
     SaveFinalTPIPlot = True #Saves the final (and hopefully converged) time path plot as a .png file
 
@@ -61,18 +61,17 @@ def Multi_Country(S,I,J,sigma):
     UseSamePopRates = True #Activates using the same Demographics across labor classes. Leave as true.
 
     #Adjusts the country list if we are using less than 7 Countries
-    if CheckerMode==False:
-        if len(I_touse) < I:
-            print "WARNING: We are changing I from", I, "to", len(I_touse), "to fit the length of I_touse. So the countries we are using now are", I_touse
-            I = len(I_touse)
-            I_HighSkill = I_HighSkill[:I]
-            time.sleep(2)
+    if len(I_touse) < I:
+        print "WARNING: We are changing I from", I, "to", len(I_touse), "to fit the length of I_touse. So the countries we are using now are", I_touse
+        I = len(I_touse)
+        I_HighSkill = I_HighSkill[:I]
+        time.sleep(2)
 
-        elif len(I_touse) > I:
-            print "WARNING: We are changing I_touse from", I_touse, "to", I_touse[:I], "so there are", I, "regions"
-            I_touse = I_touse[:I]
-            I_HighSkill = I_HighSkill[:I]
-            time.sleep(2)
+    elif len(I_touse) > I:
+        print "WARNING: We are changing I_touse from", I_touse, "to", I_touse[:I], "so there are", I, "regions"
+        I_touse = I_touse[:I]
+        I_HighSkill = I_HighSkill[:I]
+        time.sleep(2)
 
     #Does a quick check on labor classes and their share of production, to make sure the conditions are met
     if len(alphaj)==J:
@@ -102,22 +101,11 @@ def Multi_Country(S,I,J,sigma):
     #Model.immigrationplot()
 
     #STEADY STATE INITIAL GUESSES
-    '''
-    k_ss_guess = np.ones((I))*.001
-    kf_ss_guess = np.ones((I))*.001
-    n_ss_guess = np.ones((I,J))*.001
-    bq_ss_guess = np.ones((I))*.001
-    '''
-    #Stage 4 steady state values
-    kf_ss_guess = np.array([-0.00114016, -0.00044732, -0.0018603,  -0.00008244, -0.00002364, -0.00024034,  0.00379419])
-    kd = np.array([ 0.01698662,  0.00846439,  0.04745413,  0.00315368,  0.00173553,  0.14954846,  0.38189816])
-    k_ss_guess = kd + kf_ss_guess
-    bq_ss_guess = np.array([ 0.00106,     0.00114345,  0.00122827,  0.00131439,  0.00140174,  0.00149025,  0.00157986])
-    n_ss_guess = np.zeros((I,J))
-    for j in xrange(J): #Same n values for both classes
-        n_ss_guess[:,j] = np.array([ 0.0171871,   0.00810991,  0.0431563,   0.00272818,  0.00143097,  0.11773649,  0.28756455])
-    
-
+    k_ss_guess = np.ones((I))*.2
+    kf_ss_guess = np.ones((I))*.2
+    kf_ss_guess[0] = -np.sum(kf_ss_guess,axis=0)
+    n_ss_guess = np.ones((I,J))*.2
+    bq_ss_guess = np.ones((I))*.2    
 
     #Steady State
     Model.SteadyState(k_ss_guess,kf_ss_guess,n_ss_guess, bq_ss_guess, PrintSSEulErrors)
@@ -145,7 +133,7 @@ def Multi_Country(S,I,J,sigma):
 start = time.time()
 # S-Number of Cohorts, I-Number of Countries, J-Number of Skill classes
 # S, I, J and sigma. S and I are integers. Sigma may not be.
-Multi_Country(40,7,2,4)
+Multi_Country(20,2,2,4)
 tottime=time.time()-start
 
 if TimeModel==True:
