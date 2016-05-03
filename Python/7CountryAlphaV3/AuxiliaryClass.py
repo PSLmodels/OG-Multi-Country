@@ -619,21 +619,10 @@ class OLG(object):
             cvec_ss = np.zeros((self.I,self.J,self.S))
             avec_ss = np.zeros((self.I,self.J,self.S+1))
 
-            cK_copy = np.zeros((self.I,self.J))
 
-            #cK_1=np.reshape(cK_1,(self.I,self.J))
-            '''
-            for j in xrange(self.J):
-                A=j*self.I
-                B=(j+1)*self.I
-                cK_copy[:,j] = cK_1[A:B]
-            '''
-            for i in xrange(self.I):
-                cK_copy[i,0]=cK_1[i]
-                cK_copy[i,1]=cK_1[self.I+i]
-            
-            cKvec_ss[:,:,0] = cK_copy
-            cvec_ss[:,:,0] = cK_copy/Gamma_ss[:,:,0]
+            cK_1=np.reshape(cK_1,(self.I,self.J))
+            cKvec_ss[:,:,0] = cK_1
+            cvec_ss[:,:,0] = cK_1/Gamma_ss[:,:,0]
 
 
             for s in xrange(self.S-1):
@@ -1123,38 +1112,40 @@ class OLG(object):
             for j in xrange(self.J):
                 plt.plot(xrange(self.S),self.cvec_ss[i,j,:])
         plt.title("Consumption")
-        #plt.legend(self.I_touse[:self.I])
 
         plt.subplot(232)
         for i in xrange(self.I):
             for j in xrange(self.J):
                 plt.plot(xrange(self.S),self.cKvec_ss[i,j,:])
         plt.title("Kids' Consumption")
-        #plt.legend(self.I_touse[:self.I])
-        #plt.show()
 
         plt.subplot(233)
         for i in xrange(self.I):
             for j in xrange(self.J):
                 plt.plot(xrange(self.S),self.avec_ss[i,j,:])
         plt.title("Assets")
-        #plt.legend(self.I_touse[:self.I])
-        #plt.show()
 
         plt.subplot(234)
         for i in xrange(self.I):
             for j in xrange(self.J):
                 plt.plot(xrange(self.S),self.lhat_ss[i,j,:])
         plt.title("Leisure")
-        #plt.legend(self.I_touse[:self.I])
-        #plt.show()
 
         plt.subplot(235)
         for i in xrange(self.I):
             for j in xrange(self.J):
                 plt.plot(xrange(self.S),self.bqvec_ss[i,:])
         plt.title("Bequests")
-        #plt.legend(self.I_touse[:self.I])
+
+        plt.subplot(236)
+        plt.title("Legend")
+        for i in xrange(self.I):
+            for j in xrange(self.J):
+                label1= str(self.I_touse[i]) + " " + str(j)
+                plt.plot(xrange(self.S),np.zeros(self.S),label=label1)
+
+
+        plt.legend()
 
         plt.show()
 
