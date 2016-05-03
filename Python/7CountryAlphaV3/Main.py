@@ -27,8 +27,8 @@ def Multi_Country(S,I,J,sigma):
     g_A = 0.015 #Technical growth rate
     beta_ann=.95 #Annual discount rate
     delta_ann=.08 #Annual depreciation rate
-    alpha = .35 #Capital Share of production
-    alphaj = np.array([.25,.4]) #Share of production for each labor class
+    alpha = .3 #Capital Share of production
+    alphaj = np.array([.25,.45]) #Share of production for each labor class
     chi = 1.5 #Preference for lesiure
     rho = .4 #Intratemporal elasticity of substitution
 
@@ -102,8 +102,8 @@ def Multi_Country(S,I,J,sigma):
 
     #STEADY STATE INITIAL GUESSES
     k_ss_guess = np.ones((I))*.2
-    kf_ss_guess = np.ones((I))*.2
-    kf_ss_guess[0] = -np.sum(kf_ss_guess,axis=0)
+    kf_ss_guess = np.ones((I))*.02
+    kf_ss_guess[0] = -np.sum(kf_ss_guess[1:],axis=0)
     n_ss_guess = np.ones((I,J))*.2
     bq_ss_guess = np.ones((I))*.2    
 
@@ -133,7 +133,7 @@ def Multi_Country(S,I,J,sigma):
 start = time.time()
 # S-Number of Cohorts, I-Number of Countries, J-Number of Skill classes
 # S, I, J and sigma. S and I are integers. Sigma may not be.
-Multi_Country(20,2,2,4)
+Multi_Country(20,7,2,4)
 tottime=time.time()-start
 
 if TimeModel==True:
