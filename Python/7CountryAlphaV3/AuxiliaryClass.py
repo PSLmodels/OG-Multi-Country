@@ -444,13 +444,12 @@ class OLG(object):
 
     #STEADY STATE
 
-    def get_w(self, y, n):
+    def get_w(self, alphaj, y, n):
 
         if n.ndim==2:
             w=np.zeros((self.I,self.J))
             for j in xrange(self.J):
-                w[:,j] = self.alphaj[j]*(y/n[:,j])
-
+                w[:,j] = alphaj[j]*(y[:]/n[:,j])
 
         return w
 
@@ -481,7 +480,6 @@ class OLG(object):
 
         #If getting the SS
         if e.ndim == 3:
-
             we =  np.einsum("ij,ijs->ijs", w, e)
 
         #If getting transition path
@@ -523,7 +521,6 @@ class OLG(object):
 
         return lhat
 
-
     def get_Y(self, kd, n):
         """
             Description:
@@ -553,18 +550,6 @@ class OLG(object):
 
         return Y
 
-        if kd.ndim ==1:
-            Y = (kd**self.alpha)
-            for j in xrange(self.J):
-                Y*=((self.A*n[:,j])**(self.alphaj[j]))
-
-            Y2 = kd**self.alpha * np.prod(np.einsum("i,ij->ij",self.A,n)**self.alphaj)
-        elif kd.ndim== 2:
-            
-            Y = (kd**self.alpha) * (np.einsum("i,is->is",self.A,n)**(1-self.alpha))
-
-        return Y
-
     def get_r(self, y, k):
         """
             Description:
@@ -585,6 +570,8 @@ class OLG(object):
                 - r          = Array: [I,J,S,T+S] or [I,J,S], Calculated interest rates for each country the transition path or the steady steady-state
 
         """
+
+
         r = self.alpha*(y/k)
 
         return r
@@ -653,10 +640,12 @@ class OLG(object):
 
             #Equation 4.23 for final assets
             for j in xrange(self.J):
-
                 avec_ss[:,j,s+2] = (w_ss[:,j]*self.e_ss[:,j,s+1]*self.lbar_ss + (1 + r_ss - self.delta)*avec_ss[:,j,s+1] - cvec_ss[:,j,s+1]*\
                         (1+self.Kids_ss[:,j,s+1]*Gamma_ss[:,j,s+1]+w_ss[:,j]*self.e_ss[:,j,s+1]*(self.chi/(w_ss[:,j]*self.e_ss[:,j,s+1]))\
                                     **self.rho))*np.exp(-self.g_A)
+
+
+            #print avec_ss.shape
 
             return cvec_ss, cKvec_ss, avec_ss
 
@@ -744,7 +733,6 @@ class OLG(object):
 
             Euler = assets_path[:,:,-1]
 
-
             #print "Inner Fsovles solves:", np.isclose(np.max(np.absolute(assets_path[:,:,-1])),0)
 
             #print "I", self.I 
@@ -753,9 +741,9 @@ class OLG(object):
 
             if np.any(cpath<0):
                 print "WARNING! The fsolve for initial optimal consumption guessed a negative number"
-                Euler = np.ones(Euler.shape)*9999
+                Euler = np.ones((self.I,self.J))*9999.
 
-            #print Euler.shape
+            
             return np.reshape(Euler,(self.I*self.J))
         
         def checkSSEulers(cvec_ss, cKvec_ss, avec_ss, w_ss, r_ss, bq_ss, Gamma_ss):
@@ -795,13 +783,13 @@ class OLG(object):
                 Outputs:
                     - None
             """
+            print "HERE", bq_ss.shape
+            we = np.einsum("ij,ijs->ijs",w_ss,self.e_ss)
 
-            we = np.einsum("i,is->is",w_ss,self.e_ss)
-
-            Household_Euler = avec_ss[:,-1]
-            Chained_C_Condition = cKvec_ss[:,:-1]**(-self.sigma) - \
-                                 self.beta*(1-self.Mortality_ss[:,:-1])*(cKvec_ss[:,1:]*np.exp(self.g_A))**-self.sigma * (1+r_ss-self.delta)
-            Modified_Budget_Constraint = cvec_ss -( we*self.lbar_ss + (1+r_ss-self.delta)*avec_ss[:,:-1] + bq_ss - avec_ss[:,1:]*np.exp(self.g_A) )\
+            Household_Euler = avec_ss[:,:,-1]
+            Chained_C_Condition = cKvec_ss[:,:,:-1]**(-self.sigma) - \
+                                 np.einsum("ijs,i->ijs",self.beta*(1-self.Mortality_ss[:,:,:-1])*(cKvec_ss[:,:,1:]*np.exp(self.g_A))**-self.sigma , (1+r_ss-self.delta) )
+            Modified_Budget_Constraint = cvec_ss -( we*self.lbar_ss + np.einsum("i,ijs->ijs",(1+r_ss-self.delta), avec_ss[:,:,:-1]) + bq_ss - avec_ss[:,:,1:]*np.exp(self.g_A) )\
             /(1+self.Kids_ss*Gamma_ss+we*(self.chi/we)**self.rho)
             Consumption_Ratio = cKvec_ss - cvec_ss*Gamma_ss
 
@@ -810,15 +798,15 @@ class OLG(object):
         y_ss = self.get_Y(k_guess,n_guess)
 
         #Equation 4.19
-        w_ss = self.get_w(y_ss,n_guess)
+        w_ss = self.get_w(self.alphaj,y_ss,n_guess)  #FIX STARTS HERE
+
         r_ss = self.get_r(y_ss,k_guess)
 
         #Equation 4.22
         Gamma_ss = self.get_Gamma(w_ss, self.e_ss)
 
         #Initial guess for the first cohort's kids consumption
-
-        cK1_guess = np.ones((self.I,self.J))*.5
+        cK1_guess = np.ones((self.I,self.J))*.2
 
         #Finds the optimal kids consumption for the first cohort
         cK1_guess=np.reshape(cK1_guess,(self.I*self.J))
@@ -830,7 +818,7 @@ class OLG(object):
 
         lhat_ss = self.get_lhat(cvec_ss, w_ss, self.e_ss)
 
-        '''
+        
         if PrintSSEulErrors:
             Household_Euler, Chained_C_Condition, Modified_Budget_Constraint, Consumption_Ratio = checkSSEulers(cvec_ss, cKvec_ss, avec_ss, w_ss, r_ss, bq_ss, Gamma_ss)
             print "\nZero final period assets satisfied:", np.isclose(np.max(np.absolute(Household_Euler)), 0)
@@ -839,7 +827,7 @@ class OLG(object):
             print "Equation 4.25 satisfied", np.isclose(np.max(np.absolute(Consumption_Ratio)), 0)
             #print Chained_C_Condition[0,:]
             #print Modified_Budget_Constraint[0,:]
-        '''
+        
         #Snips off the final entry of assets since it is just 0 if the equations solved correctly
         avec_ss = avec_ss[:,:,:-1]
 
@@ -917,20 +905,6 @@ class OLG(object):
         w_ss, cvec_ss, cKvec_ss, avec_ss, r_ss, y_ss, lhat_ss = self.GetSSComponents(k_guess,kf_guess,n_guess,bq_ss, PrintSSEulErrors)
 
         #Sum of all assets holdings of dead agents to be distributed evenly among all eligible agents
-        """<<<<<<< HEAD
-        alldeadagent_assets = np.sum(avec_ss[:,:,self.FirstDyingAge:]*\
-                self.Mortality_ss[:,:,self.FirstDyingAge:]*self.Nhat_ss[:,:,self.FirstDyingAge:], axis=2)
-
-        total_bq = alldeadagent_assets/np.sum(self.Nhat_ss[:,:,self.FirstFertilityAge:self.FirstDyingAge],\
-                axis=2)
-
-        #Equation 3.29
-        Euler_bq = bqindiv_ss - np.sum(total_bq,axis=1)
-
-        Euler_k = k_guess - np.sum(np.sum(avec_ss*self.Nhat_ss,axis=1),axis=1) + kf_guess
-
-        Euler_n = np.reshape(n_guess - np.sum(self.e_ss*(1.0-lhat_ss)*self.Nhat_ss,axis=2),(self.I*self.J))
-        """#=======
         alldeadagent_assets = np.sum(np.sum(avec_ss[:,:,self.FirstDyingAge:]*\
                 self.Mortality_ss[:,:,self.FirstDyingAge:]*self.Nhat_ss[:,:,self.FirstDyingAge:], axis=1),axis=1)
 
@@ -943,7 +917,6 @@ class OLG(object):
         Euler_k = k_guess - np.sum(np.sum(avec_ss*self.Nhat_ss,axis=1),axis=1) + kf_guess
 
         Euler_n = np.reshape(n_guess - np.sum(self.e_ss*(self.lbar_ss-lhat_ss)*self.Nhat_ss,axis=2),(self.I*self.J))
-        #>>>>>>> upstream/master
 
         Euler_kf = r_ss[0]*np.ones(self.I) - r_ss
 
@@ -1016,8 +989,7 @@ class OLG(object):
         self.k_ss = ss[:self.I]
         self.kf_ss = ss[self.I:self.B]
         self.n_ss = np.reshape(ss[self.B:self.C],(self.I,self.J))
-        self.bqindiv_ss = ss[self.C:self.D]
-
+        self.bqindiv_ss = ss[self.C:]
 
         #Initializes a vector for bequests distribution. Will be = 0 for a block of young and a block of old cohorts who don't get bequests
         self.bqvec_ss = np.zeros((self.I,self.S))
@@ -1042,12 +1014,11 @@ class OLG(object):
         print "\n\nSTEADY STATE FOUND!"
         #Checks to see if the Euler_bq and Euler_kf equations are sufficiently close to 0
         if self.CheckerMode==False:
-
             totalbq = np.sum(np.sum(self.Nhat_ss[:,:,self.FirstFertilityAge:self.FirstDyingAge],axis=1),axis=1)
 
             Euler_bq = self.bqindiv_ss - alldeadagent_assets/totalbq
 
-            Euler_k = self.k_ss - np.sum(np.sum(self.avec_ss*self.Nhat_ss,axis=2),axis=1) + self.kf_ss
+            Euler_k = self.k_ss - np.sum(np.sum(self.avec_ss*self.Nhat_ss,axis=1),axis=1) + self.kf_ss
 
             Euler_n = self.n_ss - np.sum(self.e_ss*(self.lbar_ss-self.lhat_ss)*self.Nhat_ss,axis=2)
 
@@ -1063,7 +1034,7 @@ class OLG(object):
             print "Max Euler k", np.max(np.absolute(Euler_k))
             print "Max Euler_n", np.max(np.absolute(Euler_n))
             print "Max Euler_kf", np.max(np.absolute(Euler_kf))
-
+            
     def PrintSSResults(self):
         """
             Description:
@@ -1091,14 +1062,14 @@ class OLG(object):
         """
         print "assets steady state:", self.avec_ss
         print "kf steady state", self.kf_ss
-        print "kd steady state", self.kd_ss
+        print "kd steady state", self.k_ss
         print "bq steady state", self.bqindiv_ss
         print "n steady state", self.n_ss
         print "y steady state", self.y_ss
         print "r steady state", self.r_ss
         print "w steady state", self.w_ss
         print "c_vec steady state", self.cvec_ss
-        print "cK_vec steady state", self.cK_vec_ss
+        print "cK_vec steady state", self.cKvec_ss
 
     def plotSSResults(self):
         """
@@ -1122,36 +1093,36 @@ class OLG(object):
             Outputs:
                 - None
         """
-        print self.cvec_ss.shape
-        plt.title("Steady state")
+        plt.title("Steady state across J")
         plt.subplot(231)
         for i in range(self.I):
-            plt.plot(range(self.S),self.cvec_ss[i,:])
+            plt.plot(range(self.S),self.cvec_ss[i,:,:].sum(axis=0))
         plt.title("Consumption")
         #plt.legend(self.I_touse[:self.I])
 
         plt.subplot(232)
         for i in range(self.I):
-            plt.plot(range(self.S),self.cKvec_ss[i,:])
+            plt.plot(range(self.S),self.cKvec_ss[i,:,:].sum(axis=0))
         plt.title("Kids' Consumption")
         #plt.legend(self.I_touse[:self.I])
         #plt.show()
 
         plt.subplot(233)
         for i in range(self.I):
-            plt.plot(range(self.S),self.avec_ss[i,:])
+            plt.plot(range(self.S),self.avec_ss[i,:,:].sum(axis=0))
         plt.title("Assets")
         #plt.legend(self.I_touse[:self.I])
         #plt.show()
 
         plt.subplot(234)
         for i in range(self.I):
-            plt.plot(range(self.S),self.lhat_ss[i,:])
+            plt.plot(range(self.S),self.lhat_ss[i,:,:].sum(axis=0))
         plt.title("Leisure")
         #plt.legend(self.I_touse[:self.I])
         #plt.show()
 
         plt.subplot(235)
+        print self.bqvec_ss.shape
         for i in range(self.I):
             plt.plot(range(self.S),self.bqvec_ss[i,:])
         plt.title("Bequests")
@@ -2118,4 +2089,5 @@ class OLG(object):
 
         else:
             plt.show()
+
 
