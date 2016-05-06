@@ -15,8 +15,6 @@ def Multi_Country(S,I,J,sigma):
 
     #Country Rosters
     I_dict = {"usa":0,"eu":1,"japan":2,"china":3,"india":4,"russia":5,"korea":6} #DONT CHANGE
-    #TO JEFF: I this the percentages below are for the lower skill class just FYI. 
-    #         So all we'll need to do is change the variable name to I_LowSkill or something
     I_HighSkill = np.array([.3,.3,.3,.25,.25,.3,.3]) #CAN CHANGE
     I_touse = ["eu","russia","usa","japan","korea","china","india"] #CAN CHANGE
 
@@ -27,8 +25,8 @@ def Multi_Country(S,I,J,sigma):
     g_A = 0.015 #Technical growth rate
     beta_ann=.95 #Annual discount rate
     delta_ann=.08 #Annual depreciation rate
-    alpha = .3 #Capital Share of production
-    alphaj = np.array([.25,.45]) #Share of production for each labor class
+    alpha = .35 #Capital Share of production
+    alphaj = np.array([.25,.4]) #Share of production for each labor class
     chi = 1.5 #Preference for lesiure
     rho = .4 #Intratemporal elasticity of substitution
 
@@ -55,10 +53,9 @@ def Multi_Country(S,I,J,sigma):
     SaveFinalTPIPlot = True #Saves the final (and hopefully converged) time path plot as a .png file
 
     #For using differing ways to solve the model
-    UseDiffDemog = True #Turns on different demographics for each country
-    UseSSDemog = False #Activates using only steady state demographics for TPI calculation
+    UseDiffDemog = False #Turns on different demographics for each country
+    UseSSDemog = True #Activates using only steady state demographics for TPI calculation
     UseDiffProductivities = False #Activates having e vary across cohorts
-    UseSamePopRates = True #Activates using the same Demographics across labor classes. Leave as true.
 
     #Adjusts the country list if we are using less than 7 Countries
     if len(I_touse) < I:
@@ -90,7 +87,7 @@ def Multi_Country(S,I,J,sigma):
 
     Firm_Params = (alpha, delta_ann, chi, rho, g_A,alphaj)
 
-    Levers = (PrintAges,CheckerMode,Iterate,UseDiffDemog,UseDiffProductivities,Print_Fill_Matricies_Time,ShaveTime,UseSamePopRates)
+    Levers = (PrintAges,CheckerMode,Iterate,UseDiffDemog,UseDiffProductivities,Print_Fill_Matricies_Time,ShaveTime)
 
     #Initialize the class instance
     Model = AUX.OLG(Country_Roster,HH_params,Firm_Params,Levers)
@@ -103,7 +100,7 @@ def Multi_Country(S,I,J,sigma):
     #STEADY STATE INITIAL GUESSES
     k_ss_guess = np.ones((I))*.2
     kf_ss_guess = np.ones((I))*.02
-    kf_ss_guess[0] = -np.sum(kf_ss_guess[1:],axis=0)
+    kf_ss_guess[0] = -np.sum(kf_ss_guess[1:])
     n_ss_guess = np.ones((I,J))*.2
     bq_ss_guess = np.ones((I))*.2    
 
@@ -133,7 +130,7 @@ def Multi_Country(S,I,J,sigma):
 start = time.time()
 # S-Number of Cohorts, I-Number of Countries, J-Number of Skill classes
 # S, I, J and sigma. S and I are integers. Sigma may not be.
-Multi_Country(20,7,2,4)
+Multi_Country(20,2,2,4)
 tottime=time.time()-start
 
 if TimeModel==True:

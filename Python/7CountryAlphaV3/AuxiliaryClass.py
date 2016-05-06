@@ -110,12 +110,9 @@ class OLG(object):
 
         #The User inputs the portion of the population they deem "high skill"
         #Then the remaining portion is split evenly between the remaining classes
-        #TO JEFF: I think we can assume that the data for percentage of population in each J will be from some outside
-        #         data file, so I'm not sure we need this
-
         if self.J>1:
+            remainder=(1.0-self.I_High)/(self.J-1)
             for j in xrange(self.J):
-                remainder=(1.0-self.I_High)/(self.J-1)
                 if j==0:
                     self.classportion[:,0]=self.I_High
                 else:
@@ -134,7 +131,7 @@ class OLG(object):
         self.delta=1-(1-delta_annual)**(70/self.S)
 
         #Lever Parameters
-        (PrintAges,self.CheckerMode,self.Iterate,self.UseDiffDemog,self.UseDiffProductivities,self.Matrix_Time,self.ShaveTime,self.SameRates) = Lever_Params
+        (PrintAges,self.CheckerMode,self.Iterate,self.UseDiffDemog,self.UseDiffProductivities,self.Matrix_Time,self.ShaveTime) = Lever_Params
 
         #Getting key ages for calculating demographic dynamics
         self.LeaveHouseAge, self.FirstFertilityAge, self.LastFertilityAge,\
@@ -218,68 +215,58 @@ class OLG(object):
 
         I_all = list(sorted(self.I_dict, key=self.I_dict.get))
 
-        if self.SameRates:
-            #We loop over each country to import its demographic data
-            for i in xrange(self.I):
+        #We loop over each country to import its demographic data
+        for i in xrange(self.I):
 
-                #If the bool UseDiffDemog == True, we get the unique country index number for importing from the .CSVs
-                if self.UseDiffDemog:
-                    index = self.I_dict[self.I_touse[i]]
+            #If the bool UseDiffDemog == True, we get the unique country index number for importing from the .CSVs
+            if self.UseDiffDemog:
+                index = self.I_dict[self.I_touse[i]]
 
-                #Otherwise we just only use the data for one specific country
-                else:
-                    index = 0
+            #Otherwise we just only use the data for one specific country
+            else:
+                index = 0
 
-                #Importing the data and correctly storing it in our demographics matrices
-                self.N[i,:,:,0] = np.loadtxt(("Data_Files/population.csv"),delimiter=',',\
-                        skiprows=1, usecols=[index+1])[self.agestopull]*1000
+            #Importing the data and correctly storing it in our demographics matrices
+            self.N[i,:,:,0] = np.loadtxt(("Data_Files/population.csv"),delimiter=',',\
+                    skiprows=1, usecols=[index+1])[self.agestopull]*1000
 
-                for j in xrange(self.J):
-                    self.N[i,j,:,0]*=self.classportion[i,j]
+            for j in xrange(self.J):
+                self.N[i,j,:,0]*=self.classportion[i,j]
 
-                self.all_FertilityRates[i,:,self.FirstFertilityAge:self.LastFertilityAge+1,\
-                        :self.frange+self.T_1] =  np.transpose(np.loadtxt(str("Data_Files/" + I_all[index] + "_fertility.csv"),delimiter=',',skiprows=1\
-                        ,usecols=(self.agestopull[self.FirstFertilityAge:self.LastFertilityAge+1]-22))[48-self.frange:48+self.T_1,:])
+            self.all_FertilityRates[i,:,self.FirstFertilityAge:self.LastFertilityAge+1,\
+                    :self.frange+self.T_1] =  np.transpose(np.loadtxt(str("Data_Files/" + I_all[index] + "_fertility.csv"),delimiter=',',skiprows=1\
+                    ,usecols=(self.agestopull[self.FirstFertilityAge:self.LastFertilityAge+1]-22))[48-self.frange:48+self.T_1,:])
 
-                self.MortalityRates[i,:,self.FirstDyingAge:,:self.T_1] = np.transpose(np.loadtxt(str("Data_Files/" + I_all[index] + "_mortality.csv")\
-                        ,delimiter=',',skiprows=1, usecols=(self.agestopull[self.FirstDyingAge:]-67))[:self.T_1,:])
+            self.MortalityRates[i,:,self.FirstDyingAge:,:self.T_1] = np.transpose(np.loadtxt(str("Data_Files/" + I_all[index] + "_mortality.csv")\
+                    ,delimiter=',',skiprows=1, usecols=(self.agestopull[self.FirstDyingAge:]-67))[:self.T_1,:])
 
-                self.Migrants[i,:,:self.MaxImmigrantAge,:self.T_1] = np.einsum("s,t->st",np.loadtxt(("Data_Files/net_migration.csv"),delimiter=','\
-                        ,skiprows=1, usecols=[index+1])[self.agestopull[:self.MaxImmigrantAge]]*100, np.ones(self.T_1))
+            self.Migrants[i,:,:self.MaxImmigrantAge,:self.T_1] = np.einsum("s,t->st",np.loadtxt(("Data_Files/net_migration.csv"),delimiter=','\
+                    ,skiprows=1, usecols=[index+1])[self.agestopull[:self.MaxImmigrantAge]]*100, np.ones(self.T_1))
 
-            #Gets initial population share
-            self.Nhat[:,:,:,0] = self.N[:,:,:,0]/np.sum(self.N[:,:,:,0])
-
-
-            #Increases fertility rates to account for different number of periods lived
-            self.all_FertilityRates = self.all_FertilityRates*80/self.S
-            self.MortalityRates = self.MortalityRates*80/self.S
+        #Gets initial population share
+        self.Nhat[:,:,:,0] = self.N[:,:,:,0]/np.sum(self.N[:,:,:,0])
 
 
-            #The last generation dies with probability 1
-            self.MortalityRates[:,:,-1,:] = np.ones((self.I, self.J,self.T))
-
-            #Gets steady-state values for all countries by taking the mean at year T_1-1 across countries
-            f_bar = np.mean(self.all_FertilityRates[:,:,:,self.frange+self.T_1-1], axis=0)
-            rho_bar = np.mean(self.MortalityRates[:,:,:,self.T_1-1], axis=0)
-
-            #Set to the steady state for every year beyond year T_1
-            self.all_FertilityRates[:,:,:,self.frange+self.T_1:] = np.tile(np.expand_dims(f_bar, axis=2), (self.I,1,1,self.T-self.T_1))
-            self.MortalityRates[:,:,:,self.T_1:] = np.tile(np.expand_dims(rho_bar, axis=2), (self.I,1,1,self.T-self.T_1))
-
-            #print self.MortalityRates[:,0,:,:]==self.MortalityRates[:,1,:,:]
-            #print self.FertilityRates[:,0,:,:]==self.FertilityRates[:,1,:,:]
-            #print self.Migrants[:,0,:,:]==self.Migrants[:,1,:,:]
+        #Increases fertility rates to account for different number of periods lived
+        self.all_FertilityRates = self.all_FertilityRates*80/self.S
+        self.MortalityRates = self.MortalityRates*80/self.S
 
 
-            #FertilityRates is exactly like all_FertilityRates except it begins at time t=0 rather than time t=-self.frange
-            self.FertilityRates[:,:,self.FirstFertilityAge:self.LastFertilityAge+1,:] = self.all_FertilityRates[:,:,self.FirstFertilityAge:self.LastFertilityAge+1,self.frange:]
-        else:
-            #TO JEFF: What is this?
-            print "Currently not configured for different rates among labor classes"
-            print "Please change UseSamePopRates back to true"
-            raise NotImplementedError("NOT DONE YET")
+        #The last generation dies with probability 1
+        self.MortalityRates[:,:,-1,:] = np.ones((self.I,self.J,self.T))
 
+        #Gets steady-state values for all countries by taking the mean at year T_1-1 across countries
+        f_bar = np.mean(self.all_FertilityRates[:,:,:,self.frange+self.T_1-1], axis=0)
+        rho_bar = np.mean(self.MortalityRates[:,:,:,self.T_1-1], axis=0)
+
+        #Set to the steady state for every year beyond year T_1
+        self.all_FertilityRates[:,:,:,self.frange+self.T_1:] = np.tile(np.expand_dims(f_bar, axis=2), (self.I,1,1,self.T-self.T_1))
+        self.MortalityRates[:,:,:,self.T_1:] = np.tile(np.expand_dims(rho_bar, axis=2), (self.I,1,1,self.T-self.T_1))
+
+        #FertilityRates is exactly like all_FertilityRates except it begins at time t=0 rather than time t=-self.frange
+        self.FertilityRates[:,:,self.FirstFertilityAge:self.LastFertilityAge+1,:] = self.all_FertilityRates[:,:,self.FirstFertilityAge:self.LastFertilityAge+1,self.frange:]
+
+        
     def Demographics(self, demog_ss_tol, UseSSDemog=False):
         """
             Description:
@@ -442,14 +429,35 @@ class OLG(object):
 
         plt.show()
 
+
+
     #STEADY STATE
 
-    def get_w(self, alphaj, y, n):
+    def get_w(self, y, n):
+        """
+            Description:
+                - Calculates the wage rate based on equation ()
+            Inputs:
+                - y           = Array: [I,S,T+S] or [I,J,S], total output for either the transition path or steady-state.
+                - n           = Array: [I,S,T+S] or [I,J,S], total labor force in each country either the transition path or the steady steady-state
+            Variables Called from Object:
+                - self.alphaj = Array: [J], Labor share of production for each skill class
+            Variables Stored in Object:
+                - None
+            Other Functions Called:
+                - None
+            Objects in Function:
+                - None
+            Outputs:
+                - w          = Array: [I,J,S,T+S] or [I,J,S], Calculated wage rate for each country the transition path or the steady steady-state
 
+        """
+
+        #Only if getting SS, For now.
         if n.ndim==2:
             w=np.zeros((self.I,self.J))
             for j in xrange(self.J):
-                w[:,j] = alphaj[j]*(y[:]/n[:,j])
+                w[:,j] = self.alphaj[j]*(y[:]/n[:,j])
 
         return w
 
@@ -546,6 +554,7 @@ class OLG(object):
             Y = (kd**self.alpha)
             for j in xrange(self.J):
                 Y*=((self.A*n[:,j])**(self.alphaj[j]))
+
         elif kd.ndim== 2:
             Y = (kd**self.alpha) * (np.einsum("i,is->is",self.A,n)**(1-self.alpha))
 
@@ -555,18 +564,22 @@ class OLG(object):
         """
             Description:
                 - Calculates the interest rate based on equation ()
+
             Inputs:
                 - y          = Array: [I,S,T+S] or [I,J,S], total output for either the transition path or steady-state.
                 - k          = Array: [I,S,T+S] or [I,J,S], total capital stock in each country either the transition path or the steady steady-state
             Variables Called from Object:
-                - self.A     = Array: [I], Technology level for each country
                 - self.alpha = Scalar: Capital share of production
+
             Variables Stored in Object:
                 - None
+
             Other Functions Called:
                 - None
+
             Objects in Function:
                 - None
+
             Outputs:
                 - r          = Array: [I,J,S,T+S] or [I,J,S], Calculated interest rates for each country the transition path or the steady steady-state
 
@@ -629,7 +642,7 @@ class OLG(object):
                 #Equation 4.26
                 for j in xrange(self.J):
                     cKvec_ss[:,j,s+1] = (  ( (self.beta*(1-self.Mortality_ss[:,j,s])*(1+r_ss-self.delta) )**(1/self.sigma) )\
-                            *cKvec_ss[:,j,s]  )/np.exp(self.g_A)
+                            *cKvec_ss[:,j,s]  )*np.exp(-self.g_A)
 
                 #Equation 4.25
                 cvec_ss[:,:,s+1] = cKvec_ss[:,:,s+1]/Gamma_ss[:,:,s+1]
@@ -637,17 +650,17 @@ class OLG(object):
                 #Equation 4.23
                 for j in xrange(self.J):
                     avec_ss[:,j,s+1] = (w_ss[:,j]*self.e_ss[:,j,s]*self.lbar_ss + (1 + r_ss - self.delta)*avec_ss[:,j,s] + bq_ss[:,s] \
-                            - cvec_ss[:,j,s]*(1+self.Kids_ss[:,j,s]*Gamma_ss[:,j,s]+w_ss[:,j]*self.e_ss[:,j,s]*(self.chi/(w_ss[:,j]*\
+                            - cvec_ss[:,j,s]*(1.+self.Kids_ss[:,j,s]*Gamma_ss[:,j,s]+(self.chi/(w_ss[:,j]*\
                             self.e_ss[:,j,s]))**self.rho))*np.exp(-self.g_A)
 
             #Equation 4.23 for final assets
             for j in xrange(self.J):
                 avec_ss[:,j,s+2] = (w_ss[:,j]*self.e_ss[:,j,s+1]*self.lbar_ss + (1 + r_ss - self.delta)*avec_ss[:,j,s+1] - cvec_ss[:,j,s+1]*\
-                        (1+self.Kids_ss[:,j,s+1]*Gamma_ss[:,j,s+1]+w_ss[:,j]*self.e_ss[:,j,s+1]*(self.chi/(w_ss[:,j]*self.e_ss[:,j,s+1]))\
+                        (1.+self.Kids_ss[:,j,s+1]*Gamma_ss[:,j,s+1]+(self.chi/(w_ss[:,j]*self.e_ss[:,j,s+1]))\
                                     **self.rho))*np.exp(-self.g_A)
 
+            #SPARE BIT IN BETWEEN GAMMA+ AND (SELF.CHI...): w_ss[:,j]*self.e_ss[:,j,s+1]*
 
-            #print avec_ss.shape
 
             return cvec_ss, cKvec_ss, avec_ss
 
@@ -727,19 +740,9 @@ class OLG(object):
                     - Euler                     = Array: [I], Final assets for each country. Must = 0 for system to solve
 
             """
-            #print cK_1.shape
-
             cpath, cK_path, assets_path = self.get_lifetime_decisionsSS(cK_1, w_ss, r_ss, Gamma_ss, bq_ss)
 
-            #print "assets path shape",assets_path.shape
-
             Euler = assets_path[:,:,-1]
-
-            #print "Inner Fsovles solves:", np.isclose(np.max(np.absolute(assets_path[:,:,-1])),0)
-
-            #print "I", self.I 
-            #print "J",self.J
-            #print Euler.shape
 
             if np.any(cpath<0):
                 print "WARNING! The fsolve for initial optimal consumption guessed a negative number"
@@ -795,10 +798,12 @@ class OLG(object):
 
             for i in xrange(self.I):
                 Chained_C_Condition[i,:,:] = cKvec_ss[i,:,:-1]**(-self.sigma) - \
-                        self.beta*(1-self.Mortality_ss[i,:,:-1])*(cKvec_ss[i,:,1:]*np.exp(self.g_A))**-self.sigma * (1+r_ss[i]-self.delta)
+                        self.beta*(1-self.Mortality_ss[i,:,:-1])*(cKvec_ss[i,:,1:]*\
+                        np.exp(self.g_A))**-self.sigma * (1+r_ss[i]-self.delta)
 
-                Modified_Budget_Constraint[i,:,:] = cvec_ss[i,:,:] -( we[i,:,:]*self.lbar_ss + (1+r_ss[i]-self.delta)*\
-                        avec_ss[i,:,:-1] + bq_ss[i,:] - avec_ss[i,:,1:]*np.exp(self.g_A) )\
+                Modified_Budget_Constraint[i,:,:] = cvec_ss[i,:,:] -( we[i,:,:]*\
+                        self.lbar_ss + (1+r_ss[i]-self.delta)*avec_ss[i,:,:-1] +\
+                        bq_ss[i,:] - avec_ss[i,:,1:]*np.exp(self.g_A) )\
                         /(1+self.Kids_ss[i,:,:]*Gamma_ss[i,:,:]+we[i,:,:]*(self.chi/we[i,:,:])**self.rho)
 
             Consumption_Ratio = cKvec_ss - cvec_ss*Gamma_ss
@@ -808,7 +813,7 @@ class OLG(object):
         y_ss = self.get_Y(k_guess,n_guess)
 
         #Equation 4.19
-        w_ss = self.get_w(self.alphaj,y_ss,n_guess)  #FIX STARTS HERE
+        w_ss = self.get_w(y_ss,n_guess)  
 
         r_ss = self.get_r(y_ss,k_guess)
 
@@ -830,19 +835,19 @@ class OLG(object):
 
         
         if PrintSSEulErrors:
-            Household_Euler, Chained_C_Condition, Modified_Budget_Constraint, Consumption_Ratio = checkSSEulers(cvec_ss, cKvec_ss, avec_ss, w_ss, r_ss, bq_ss, Gamma_ss)
-            print "\nZero final period assets satisfied:", np.isclose(np.max(np.absolute(Household_Euler)), 0)
+            print "Inner Fsolve"
+            Household_Euler, Chained_C_Condition, Modified_Budget_Constraint, Consumption_Ratio = \
+                    checkSSEulers(cvec_ss, cKvec_ss, avec_ss, w_ss, r_ss, bq_ss, Gamma_ss)
+            print "Zero final period assets satisfied:", np.isclose(np.max(np.absolute(Household_Euler)), 0)
             print "Equation 5.20 satisfied:", np.isclose(np.max(np.absolute(Chained_C_Condition)), 0)
             print "Equation 5.17 satisfied:", np.isclose(np.max(np.absolute(Modified_Budget_Constraint)), 0)
-            print "Equation 5.19 satisfied", np.isclose(np.max(np.absolute(Consumption_Ratio)), 0)
+            print "Equation 5.19 satisfied", np.isclose(np.max(np.absolute(Consumption_Ratio)), 0),
             #print Chained_C_Condition[0,:]
             #print Modified_Budget_Constraint[0,:]
 
 
         #Snips off the final entry of assets since it is just 0 if the equations solved correctly
         avec_ss = avec_ss[:,:,:-1]
-
-        #Equation 4.24
 
         return w_ss, cvec_ss, cKvec_ss, avec_ss, r_ss, y_ss, lhat_ss
 
@@ -925,11 +930,11 @@ class OLG(object):
         #Equation 3.29
         Euler_bq = bqindiv_ss - alldeadagent_assets/total_bq
 
-        Euler_k = k_guess - np.sum(np.sum(avec_ss*self.Nhat_ss,axis=1),axis=1) + kf_guess
+        Euler_k = k_guess - np.sum(np.sum(avec_ss*self.Nhat_ss,axis=1),axis=1) - kf_guess
 
         Euler_n = np.reshape(n_guess - np.sum(self.e_ss*(self.lbar_ss-lhat_ss)*self.Nhat_ss,axis=2),(self.I*self.J))
 
-        Euler_kf = r_ss[0]*np.ones(self.I) - r_ss
+        Euler_kf = r_ss - r_ss[0]*np.ones(self.I)
 
         Euler_all = np.concatenate((Euler_k,Euler_kf,Euler_n,Euler_bq))
 
@@ -1016,25 +1021,24 @@ class OLG(object):
         #Calculates and stores the steady state gamma value
         self.Gamma_ss = self.get_Gamma(self.w_ss,self.e_ss)
 
-
-        #Sum of all assets holdings of dead agents to be distributed evenly among all eligible agents
-        alldeadagent_assets = np.sum(np.sum(self.avec_ss[:,:,self.FirstDyingAge:]*\
-                self.Mortality_ss[:,:,self.FirstDyingAge:]*self.Nhat_ss[:,:,self.FirstDyingAge:], axis=1),axis=1)
-
-
-
         print "\n\nSTEADY STATE FOUND!"
         #Checks to see if the Euler_bq and Euler_kf equations are sufficiently close to 0
         if self.CheckerMode==False:
+
+            print "OUTER F-SOLVE"
+            #Sum of all assets holdings of dead agents to be distributed evenly among all eligible agents
+            alldeadagent_assets = np.sum(np.sum(self.avec_ss[:,:,self.FirstDyingAge:]*\
+                    self.Mortality_ss[:,:,self.FirstDyingAge:]*self.Nhat_ss[:,:,self.FirstDyingAge:], axis=1),axis=1)
+
             totalbq = np.sum(np.sum(self.Nhat_ss[:,:,self.FirstFertilityAge:self.FirstDyingAge],axis=1),axis=1)
 
             Euler_bq = self.bqindiv_ss - alldeadagent_assets/totalbq
 
-            Euler_k = self.k_ss - np.sum(np.sum(self.avec_ss*self.Nhat_ss,axis=2),axis=1) + self.kf_ss
+            Euler_k = self.k_ss - np.sum(np.sum(self.avec_ss*self.Nhat_ss,axis=1),axis=1) - self.kf_ss
 
             Euler_n = self.n_ss - np.sum(self.e_ss*(self.lbar_ss-self.lhat_ss)*self.Nhat_ss,axis=2)
 
-            Euler_kf = self.r_ss[0]*np.ones(self.I) - self.r_ss
+            Euler_kf = self.r_ss -self.r_ss[0]*np.ones(self.I) 
 
             print "-Euler for bq satisfied:", np.isclose(np.max(np.absolute(Euler_bq)), 0)
             print "-Euler for k satisfied:", np.isclose(np.max(np.absolute(Euler_k)), 0)

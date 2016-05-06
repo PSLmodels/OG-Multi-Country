@@ -1,0 +1,315 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 10.2' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      8928,        306]
+NotebookOptionsPosition[      8010,        268]
+NotebookOutlinePosition[      8364,        284]
+CellTagsIndexPosition[      8321,        281]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell[BoxData[
+ RowBox[{"c", " ", "=", " ", 
+  RowBox[{
+   RowBox[{"(", 
+    RowBox[{
+     RowBox[{"(", 
+      RowBox[{"w", " ", "\[Epsilon]", " ", "l"}], ")"}], "+", 
+     RowBox[{
+      RowBox[{"(", 
+       RowBox[{"1", "+", "r", "-", "\[Delta]"}], ")"}], " ", "a1"}], " ", "+",
+      "bq", "-", 
+     RowBox[{"a2", " ", 
+      RowBox[{"\[Epsilon]", "^", 
+       RowBox[{"(", "gA", ")"}]}]}]}], ")"}], "/", 
+   RowBox[{"(", 
+    RowBox[{"1", "+", 
+     RowBox[{"K", " ", "\[CapitalGamma]"}], " ", "+", " ", 
+     RowBox[{
+      RowBox[{"(", 
+       RowBox[{"\[Chi]", "/", 
+        RowBox[{"(", 
+         RowBox[{"w", " ", "\[Epsilon]"}], ")"}]}], ")"}], "^", "\[Rho]"}]}], 
+    ")"}]}]}]], "Input",
+ CellChangeTimes->{{3.671409539411622*^9, 3.671409651345125*^9}, {
+  3.671410772954714*^9, 3.671410785041237*^9}}],
+
+Cell[BoxData[
+ FractionBox[
+  RowBox[{"bq", "+", 
+   RowBox[{"a1", " ", 
+    RowBox[{"(", 
+     RowBox[{"1", "+", "r", "-", "\[Delta]"}], ")"}]}], "+", 
+   RowBox[{"l", " ", "w", " ", "\[Epsilon]"}], "-", 
+   RowBox[{"a2", " ", 
+    SuperscriptBox["\[Epsilon]", "gA"]}]}], 
+  RowBox[{"1", "+", 
+   RowBox[{"K", " ", "\[CapitalGamma]"}], "+", 
+   SuperscriptBox[
+    RowBox[{"(", 
+     FractionBox["\[Chi]", 
+      RowBox[{"w", " ", "\[Epsilon]"}]], ")"}], "\[Rho]"]}]]], "Output",
+ CellChangeTimes->{3.6714096528265257`*^9, 3.671410786794229*^9}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"solve", "[", 
+  RowBox[{
+   RowBox[{"c", "\[Equal]", "C"}], ",", "a2"}], "]"}]], "Input",
+ CellChangeTimes->{{3.671409657208815*^9, 3.671409684039496*^9}}],
+
+Cell[BoxData[
+ RowBox[{"solve", "[", 
+  RowBox[{
+   RowBox[{
+    FractionBox[
+     RowBox[{"bq", "-", 
+      RowBox[{"a2", " ", 
+       SuperscriptBox["e", "gA"]}], "+", 
+      RowBox[{"e", " ", "l", " ", "w"}], "+", 
+      RowBox[{"a1", " ", 
+       RowBox[{"(", 
+        RowBox[{"1", "+", "r", "-", "\[Delta]"}], ")"}]}]}], 
+     RowBox[{"1", "+", 
+      RowBox[{"K", " ", "\[CapitalGamma]"}], "+", 
+      SuperscriptBox[
+       RowBox[{"(", 
+        FractionBox["\[Chi]", 
+         RowBox[{"e", " ", "w"}]], ")"}], "\[Rho]"]}]], "\[Equal]", "C"}], 
+   ",", "a2"}], "]"}]], "Output",
+ CellChangeTimes->{3.6714096855425577`*^9}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Solve", "[", 
+  RowBox[{
+   RowBox[{"c", "\[Equal]", "C"}], ",", "a2"}], "]"}]], "Input",
+ CellChangeTimes->{{3.671409689056917*^9, 3.671409697279248*^9}}],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"{", 
+   RowBox[{"a2", "\[Rule]", 
+    RowBox[{
+     SuperscriptBox["\[Epsilon]", 
+      RowBox[{"-", "gA"}]], " ", 
+     RowBox[{"(", 
+      RowBox[{"a1", "+", "bq", "-", "C", "+", 
+       RowBox[{"a1", " ", "r"}], "-", 
+       RowBox[{"C", " ", "K", " ", "\[CapitalGamma]"}], "-", 
+       RowBox[{"a1", " ", "\[Delta]"}], "+", 
+       RowBox[{"l", " ", "w", " ", "\[Epsilon]"}], "-", 
+       RowBox[{"C", " ", 
+        SuperscriptBox[
+         RowBox[{"(", 
+          FractionBox["\[Chi]", 
+           RowBox[{"w", " ", "\[Epsilon]"}]], ")"}], "\[Rho]"]}]}], ")"}]}]}],
+    "}"}], "}"}]], "Output",
+ CellChangeTimes->{3.671409697904914*^9, 3.6714107930801373`*^9}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"FullSimplify", "[", 
+  RowBox[{
+   SuperscriptBox["\[Epsilon]", 
+    RowBox[{"-", "gA"}]], " ", 
+   RowBox[{"(", 
+    RowBox[{"a1", "+", "bq", "-", "C", "+", 
+     RowBox[{"a1", " ", "r"}], "-", 
+     RowBox[{"C", " ", "K", " ", "\[CapitalGamma]"}], "-", 
+     RowBox[{"a1", " ", "\[Delta]"}], "+", 
+     RowBox[{"l", " ", "w", " ", "\[Epsilon]"}], "-", 
+     RowBox[{"C", " ", 
+      SuperscriptBox[
+       RowBox[{"(", 
+        FractionBox["\[Chi]", 
+         RowBox[{"w", " ", "\[Epsilon]"}]], ")"}], "\[Rho]"]}]}], ")"}]}], 
+  "]"}]], "Input",
+ CellChangeTimes->{{3.671409705585411*^9, 3.671409716415874*^9}, 
+   3.671410813099874*^9}],
+
+Cell[BoxData[
+ RowBox[{
+  SuperscriptBox["\[Epsilon]", 
+   RowBox[{"-", "gA"}]], " ", 
+  RowBox[{"(", 
+   RowBox[{"bq", "+", 
+    RowBox[{"a1", " ", 
+     RowBox[{"(", 
+      RowBox[{"1", "+", "r", "-", "\[Delta]"}], ")"}]}], "+", 
+    RowBox[{"l", " ", "w", " ", "\[Epsilon]"}], "-", 
+    RowBox[{"C", " ", 
+     RowBox[{"(", 
+      RowBox[{"1", "+", 
+       RowBox[{"K", " ", "\[CapitalGamma]"}], "+", 
+       SuperscriptBox[
+        RowBox[{"(", 
+         FractionBox["\[Chi]", 
+          RowBox[{"w", " ", "\[Epsilon]"}]], ")"}], "\[Rho]"]}], ")"}]}]}], 
+   ")"}]}]], "Output",
+ CellChangeTimes->{3.6714097171800747`*^9, 3.671410814120525*^9}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Solve", "[", 
+  RowBox[{
+   RowBox[{
+    RowBox[{
+     RowBox[{
+      RowBox[{"(", "cK", ")"}], "^", 
+      RowBox[{"(", 
+       RowBox[{"-", "\[Sigma]"}], ")"}]}], "-", " ", 
+     RowBox[{"\[Beta]", 
+      RowBox[{"(", 
+       RowBox[{"1", "-", "\[Rho]"}], ")"}], 
+      RowBox[{
+       RowBox[{"(", 
+        RowBox[{"c1K", " ", 
+         RowBox[{"e", "^", 
+          RowBox[{"(", "gA", ")"}]}]}], ")"}], "^", 
+       RowBox[{"(", 
+        RowBox[{"-", "\[Sigma]"}], ")"}]}], " ", 
+      RowBox[{"(", 
+       RowBox[{"1", "+", "r", "-", "\[Delta]"}], ")"}]}]}], "\[Equal]", "0"}],
+    ",", "c1K"}], "]"}]], "Input",
+ CellChangeTimes->{{3.67140980094979*^9, 3.67140991149055*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  StyleBox[
+   RowBox[{"Solve", "::", "ifun"}], "MessageName"], 
+  RowBox[{
+  ":", " "}], "\<\"Inverse functions are being used by \
+\[NoBreak]\\!\\(Solve\\)\[NoBreak], so some solutions may not be found; use \
+Reduce for complete solution information. \\!\\(\\*ButtonBox[\\\"\
+\[RightSkeleton]\\\", ButtonStyle->\\\"Link\\\", ButtonFrame->None, \
+ButtonData:>\\\"paclet:ref/message/Solve/ifun\\\", ButtonNote -> \
+\\\"Solve::ifun\\\"]\\)\"\>"}]], "Message", "MSG",
+ CellChangeTimes->{3.671409927381521*^9}],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"{", 
+   RowBox[{"c1K", "\[Rule]", 
+    RowBox[{
+     SuperscriptBox["e", 
+      RowBox[{"-", "gA"}]], " ", 
+     SuperscriptBox[
+      RowBox[{"(", 
+       RowBox[{
+        RowBox[{"-", 
+         SuperscriptBox["cK", "\[Sigma]"]}], " ", "\[Beta]", " ", 
+        RowBox[{"(", 
+         RowBox[{"1", "+", "r", "-", "\[Delta]"}], ")"}], " ", 
+        RowBox[{"(", 
+         RowBox[{
+          RowBox[{"-", "1"}], "+", "\[Rho]"}], ")"}]}], ")"}], 
+      FractionBox["1", "\[Sigma]"]]}]}], "}"}], "}"}]], "Output",
+ CellChangeTimes->{3.67140992738418*^9}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"FullSimplify", "[", 
+  RowBox[{
+   SuperscriptBox["e", 
+    RowBox[{"-", "gA"}]], " ", 
+   SuperscriptBox[
+    RowBox[{"(", 
+     RowBox[{
+      RowBox[{"-", 
+       SuperscriptBox["cK", "\[Sigma]"]}], " ", "\[Beta]", " ", 
+      RowBox[{"(", 
+       RowBox[{"1", "+", "r", "-", "\[Delta]"}], ")"}], " ", 
+      RowBox[{"(", 
+       RowBox[{
+        RowBox[{"-", "1"}], "+", "\[Rho]"}], ")"}]}], ")"}], 
+    FractionBox["1", "\[Sigma]"]]}], "]"}]], "Input",
+ CellChangeTimes->{{3.6714099315034037`*^9, 3.671409941714594*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  SuperscriptBox["e", 
+   RowBox[{"-", "gA"}]], " ", 
+  SuperscriptBox[
+   RowBox[{"(", 
+    RowBox[{
+     RowBox[{"-", 
+      SuperscriptBox["cK", "\[Sigma]"]}], " ", "\[Beta]", " ", 
+     RowBox[{"(", 
+      RowBox[{"1", "+", "r", "-", "\[Delta]"}], ")"}], " ", 
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{"-", "1"}], "+", "\[Rho]"}], ")"}]}], ")"}], 
+   FractionBox["1", "\[Sigma]"]]}]], "Output",
+ CellChangeTimes->{3.671409942425661*^9}]
+}, Open  ]]
+},
+WindowSize->{808, 683},
+WindowMargins->{{Automatic, -56}, {-9, Automatic}},
+FrontEndVersion->"10.2 for Mac OS X x86 (32-bit, 64-bit Kernel) (July 6, \
+2015)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 814, 24, 28, "Input"],
+Cell[1397, 48, 546, 15, 62, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[1980, 68, 179, 4, 28, "Input"],
+Cell[2162, 74, 629, 19, 62, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[2828, 98, 179, 4, 28, "Input"],
+Cell[3010, 104, 705, 19, 46, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[3752, 128, 663, 18, 46, "Input"],
+Cell[4418, 148, 647, 19, 80, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[5102, 172, 704, 22, 28, "Input"],
+Cell[5809, 196, 531, 11, 41, "Message"],
+Cell[6343, 209, 590, 18, 45, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[6970, 232, 549, 16, 45, "Input"],
+Cell[7522, 250, 472, 15, 39, "Output"]
+}, Open  ]]
+}
+]
+*)
+
+(* End of internal cache information *)
