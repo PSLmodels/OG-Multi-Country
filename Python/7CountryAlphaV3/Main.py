@@ -38,9 +38,10 @@ def Multi_Country(S,I,J,sigma):
     #PROGRAM LEVERS:
     #For terminal output
     PrintAges = False #Displays the current locations of the program inside key TPI functions
+
     PrintSSEulErrors = True #Prints the euler errors in each attempt of calculating the 
                             #steady state
-    PrintSS = True #Prints the result of the Steady State functions
+    PrintSS = False #Prints the result of the Steady State functions
     Print_caTimepaths = False #Prints the consumption, assets, and bequests 
                               #timepath as it gets filled in for each iteration of TPI
     Print_HH_Eulers = False #Prints whether the equations for the household decisions 
@@ -49,6 +50,7 @@ def Multi_Country(S,I,J,sigma):
                                       #fill the upper and lower diagonal matricies
     CheckerMode = False #Activates not printing much of anything, used in conjunction 
                         #with RobustChecker.py
+
     Iterate = True #Shows the current iteration number and the associated Eulers
     ShaveTime = False #Shaves off a little more time for TPI.
 
@@ -62,8 +64,8 @@ def Multi_Country(S,I,J,sigma):
                             #path plot as a .png file
 
     #For using differing ways to solve the model
-    UseDiffDemog = False #Turns on different demographics for each country
-    UseSSDemog = True #Activates using only steady state demographics for TPI calculation
+    UseDiffDemog = True #Turns on different demographics for each country
+    UseSSDemog = False #Activates using only steady state demographics for TPI calculation
     UseDiffProductivities = False #Activates having e vary across cohorts
 
     #Adjusts the country list if we are using less than 7 Countries
@@ -144,7 +146,9 @@ def Multi_Country(S,I,J,sigma):
 start = time.time()
 # S-Number of Cohorts, I-Number of Countries, J-Number of Skill classes
 # S, I, J and sigma. S and I are integers. Sigma may not be.
-Multi_Country(20,3,2,4)
+
+Multi_Country(80,7,2,4)
+
 tottime=time.time()-start
 
 if TimeModel==True:
@@ -154,5 +158,4 @@ if TimeModel==True:
     minutes=minutes-hours*60
     print "The code took:", hours, "hours,", minutes, "minutes and", seconds,\
             "seconds to complete"
-
 

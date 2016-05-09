@@ -182,6 +182,7 @@ class OLG(object):
 
         else:
             self.A = np.ones(self.I) #Techonological Change, used for idential countries
+            self.classportion[1:,:] = self.classportion[0,:]
 
         #Initialize Labor Productivities
         if self.UseDiffProductivities:
@@ -301,6 +302,7 @@ class OLG(object):
                     ,delimiter=',',skiprows=1, usecols=\
                     (self.agestopull[self.FirstDyingAge:]-67))[:self.T_1,:])
 
+
             self.Migrants[i,:,:self.MaxImmigrantAge,:self.T_1] = \
                     np.einsum("s,t->st",np.loadtxt(("Data_Files/net_migration.csv")\
                     ,delimiter=',',skiprows=1, usecols=[index+1])\
@@ -336,7 +338,6 @@ class OLG(object):
                 self.all_FertilityRates[:,:,self.FirstFertilityAge:self.LastFertilityAge+1,\
                 self.frange:]
 
-        
     def Demographics(self, demog_ss_tol, UseSSDemog=False):
         """
             Description:
@@ -430,7 +431,6 @@ class OLG(object):
         #Initializes immigration rates
         self.ImmigrationRates = np.zeros((self.I,self.J,self.S,self.T))
         self.Kids=np.zeros((self.I,self.J,self.S,self.T))
-
         #Getting the population and population shares from the present to year T
         for t in xrange(1,self.T):
 
@@ -466,6 +466,7 @@ class OLG(object):
                         t:t+self.LeaveHouseAge],axis1=2, axis2=3)
                 self.Kids[:,:,s,t-1] = np.sum(kidsvec,axis=2)
 
+
         #Gets Immigration rates for the final year
 
         self.ImmigrationRates[:,:,:,-1] = np.mean(\
@@ -479,16 +480,14 @@ class OLG(object):
         pop_new = self.N[:,:,:,-1]
         future_year_iter = 0
 
+
         #Calculates new years of population shares until the greatest absolute 
         #difference between 2 consecutive years is less than demog_ss_tol
         while np.max(np.abs(self.Nhat[:,:,:,-1] - self.Nhat[:,:,:,-2])) > demog_ss_tol:
             pop_new[:,:,0] = np.sum((pop_old[:,:,:]*self.FertilityRates[:,:,:,-1]),axis=2)
-            pop_new[:,:,1:] = pop_old[:,:,:-1]*(1+self.ImmigrationRates[:,:,:-1,-1]-\
-                    self.MortalityRates[:,:,:-1,-1])
-            temp = pop_new/np.sum(pop_new)
-            temp2 = np.zeros((self.I,self.J,self.S,1))
-            temp2[:,:,:,0] = temp
-            self.Nhat = np.concatenate((self.Nhat,temp2),axis=3)
+            pop_new[:,:,1:] = pop_old[:,:,:-1]*(1+self.ImmigrationRates[:,:,:-1,-1]-self.MortalityRates[:,:,:-1,-1])
+            self.Nhat = np.concatenate( (self.Nhat, (pop_new/np.sum(pop_new)).reshape(self.I,self.J,self.S,1) ), axis=3)
+            resid = np.max(np.abs(self.Nhat[:,:,:,-1] - self.Nhat[:,:,:,-2]))
             future_year_iter += 1
 
 
@@ -557,8 +556,6 @@ class OLG(object):
             ax.set_ylabel('T')
 
         plt.show()
-
-
 
     #STEADY STATE
 
@@ -678,7 +675,6 @@ class OLG(object):
         lhat=c*(self.chi/we)**self.rho
 
         return lhat
-
 
     def get_Y(self, kd, n):
         """
@@ -812,22 +808,10 @@ class OLG(object):
             cKvec_ss[:,:,0] = cK_1
             cvec_ss[:,:,0] = cK_1/Gamma_ss[:,:,0]
 
-            r_ss2 = np.tile(r_ss,(self.J,1))
-            r_ss2 = np.reshape(r_ss2,(self.I,self.J))
-            #for j in xrange(self.J):
-                #print r_ss2[:,0]==r_ss2[:,j]
-            #print r_ss2
+            r_ss2 = np.einsum("i,j->ij", r_ss, np.ones(self.J))
 
-            w_ss2 = np.tile(w_ss,(self.S,1,1))
-            w_ss2 = np.reshape(w_ss2,(self.I,self.J,self.S))
+            bq_ss2 = np.einsum("is,j->ijs", bq_ss, np.ones(self.J))
 
-            #print w_ss.shape
-            #print w_ss2.shape
-
-            bq_ss2 = np.tile(bq_ss,(self.J,1,1))
-            bq_ss2 = np.reshape(bq_ss2,(self.I,self.J,self.S))
-
-            #print bq_ss2.shape
 
 
             for s in xrange(self.S-1):
@@ -836,25 +820,25 @@ class OLG(object):
                         *(1+r_ss2[:,:]-self.delta) )**(1/self.sigma) )\
                         *cKvec_ss[:,:,s]  )*np.exp(-self.g_A)
 
+
+
                 #Equation 4.25
                 cvec_ss[:,:,s+1] = cKvec_ss[:,:,s+1]/Gamma_ss[:,:,s+1]
 
                 #Equation 4.23
-                avec_ss[:,:,s+1] = (w_ss2[:,:,s]*self.e_ss[:,:,s]*self.lbar_ss +\
-                        (1 + r_ss2[:,:] - self.delta)*avec_ss[:,:,s] + bq_ss2[:,:,s] \
-                        - cvec_ss[:,:,s]*(1.+self.Kids_ss[:,:,s]*Gamma_ss[:,:,s]+\
-                        (self.chi/(w_ss2[:,:,s]*\
-                        self.e_ss[:,:,s]))**self.rho))*np.exp(-self.g_A)
+                avec_ss[:,:,s+1] = (w_ss*self.e_ss[:,:,s]*self.lbar_ss +\
+                    (1 + r_ss2[:,:] - self.delta)*avec_ss[:,:,s] + bq_ss2[:,:,s] \
+                    - cvec_ss[:,:,s]*(1+self.Kids_ss[:,:,s]*Gamma_ss[:,:,s]+\
+                    (self.chi/(w_ss*self.e_ss[:,:,s]))**self.rho))*np.exp(-self.g_A)
 
             #Equation 4.23 for final assets
                 
-            avec_ss[:,:,s+2] = (w_ss2[:,:,s]*self.e_ss[:,:,s+1]*self.lbar_ss +\
-                    (1 + r_ss2[:,:] - self.delta)*avec_ss[:,:,s+1] - cvec_ss[:,:,s+1]*\
-                    (1 +self.Kids_ss[:,:,s+1]*Gamma_ss[:,:,s+1]+(self.chi/(w_ss2[:,:,s]*\
-                    self.e_ss[:,:,s+1]))**self.rho))*np.exp(-self.g_A)
+            avec_ss[:,:,s+2] = (w_ss*self.e_ss[:,:,s+1]*self.lbar_ss +\
+                    (1 + r_ss2[:,:] - self.delta)*avec_ss[:,:,s+1] + bq_ss2[:,:,s+1] \
+                    - cvec_ss[:,:,s+1]*(1+self.Kids_ss[:,:,s+1]*Gamma_ss[:,:,s+1]+\
+                    (self.chi/(w_ss*self.e_ss[:,:,s+1]))**self.rho))*np.exp(-self.g_A)
 
             #SPARE BIT IN BETWEEN GAMMA+ AND (SELF.CHI...): w_ss[:,j]*self.e_ss[:,j,s+1]*
-
 
             return cvec_ss, cKvec_ss, avec_ss
 
@@ -1018,21 +1002,35 @@ class OLG(object):
 
             we = np.einsum("ij,ijs->ijs",w_ss,self.e_ss)
 
-            Household_Euler = avec_ss[:,:,-1]
+            bq_ss2 = np.einsum("is,j->ijs",bq_ss,np.ones(self.J))
 
+            r_ss2 = np.einsum( "i,js->ijs",r_ss,np.ones((self.J,self.S)) )
+
+            Household_Euler = avec_ss[:,:,-1]
+            
+            Chained_C_Condition = cKvec_ss[:,:,:-1]**(-self.sigma) - \
+                                 np.einsum("ijs,i->ijs",self.beta*(1-self.Mortality_ss[:,:,:-1])*(cKvec_ss[:,:,1:]*np.exp(self.g_A))**-self.sigma , (1+r_ss-self.delta) )
+            
+            Modified_Budget_Constraint = cvec_ss -( we*self.lbar_ss \
+                            +(1+r_ss2-self.delta)*avec_ss[:,:,:-1] + bq_ss2 \
+                            -avec_ss[:,:,1:]*np.exp(self.g_A) )\
+                            /(1+self.Kids_ss*Gamma_ss+(self.chi/we)**self.rho)
+            """
             Chained_C_Condition = np.zeros((self.I,self.J,self.S-1))
             Modified_Budget_Constraint = np.zeros((self.I,self.J,self.S))
-
+            
             for i in xrange(self.I):
                 Chained_C_Condition[i,:,:] = cKvec_ss[i,:,:-1]**(-self.sigma) - \
                         self.beta*(1-self.Mortality_ss[i,:,:-1])*(cKvec_ss[i,:,1:]*\
                         np.exp(self.g_A))**-self.sigma * (1+r_ss[i]-self.delta)
+
 
                 Modified_Budget_Constraint[i,:,:] = cvec_ss[i,:,:] -( we[i,:,:]*\
                         self.lbar_ss + (1+r_ss[i]-self.delta)*avec_ss[i,:,:-1] +\
                         bq_ss[i,:] - avec_ss[i,:,1:]*np.exp(self.g_A) )\
                         /(1+self.Kids_ss[i,:,:]*Gamma_ss[i,:,:]+we[i,:,:]*\
                         (self.chi/we[i,:,:])**self.rho)
+            """
 
             Consumption_Ratio = cKvec_ss - cvec_ss*Gamma_ss
 
@@ -1045,7 +1043,6 @@ class OLG(object):
         w_ss = self.get_w(y_ss,n_guess)  
 
         r_ss = self.get_r(y_ss,k_guess)
-        #print "r shape",r_ss.shape
 
         #Equation 4.22
         Gamma_ss = self.get_Gamma(w_ss, self.e_ss)
@@ -1068,6 +1065,7 @@ class OLG(object):
 
         
         if PrintSSEulErrors:
+
             print "Inner Fsolve"
             Household_Euler, Chained_C_Condition, Modified_Budget_Constraint,Consumption_Ratio\
                     = checkSSEulers(cvec_ss, cKvec_ss, avec_ss, w_ss, r_ss, bq_ss, Gamma_ss)
@@ -1079,8 +1077,9 @@ class OLG(object):
                     np.isclose(np.max(np.absolute(Modified_Budget_Constraint)), 0)
             print "Equation 5.19 satisfied",\
                     np.isclose(np.max(np.absolute(Consumption_Ratio)), 0)
-            #print Chained_C_Condition[0,:]
-            #print Modified_Budget_Constraint[0,:]
+            print "\n"
+            #print "\n\n", Chained_C_Condition[0,:,:], "\n\n"
+            #print "\n\n", Modified_Budget_Constraint[0,:,:], "\n\n"
 
 
         #Snips off the final entry of assets since it is just 0 
@@ -1326,8 +1325,7 @@ class OLG(object):
         self.k_ss = ss[:self.I]
         self.kf_ss = ss[self.I:self.B]
         self.n_ss = np.reshape(ss[self.B:self.C],(self.I,self.J))
-        self.bqindiv_ss = ss[self.C:self.D]
-
+        self.bqindiv_ss = ss[self.C:]
 
         #Initializes a vector for bequests distribution. 
         #Will be = 0 for a block of young and a block of old cohorts who don't get bequests
@@ -1362,8 +1360,10 @@ class OLG(object):
 
             Euler_bq = self.bqindiv_ss - alldeadagent_assets/totalbq
 
+
             Euler_k = self.k_ss - \
                     np.sum(np.sum(self.avec_ss*self.Nhat_ss,axis=1),axis=1) - self.kf_ss
+
 
             Euler_n = self.n_ss - \
                     np.sum(self.e_ss*(self.lbar_ss-self.lhat_ss)*self.Nhat_ss,axis=2)
@@ -1385,7 +1385,6 @@ class OLG(object):
             print "Max Euler_n", np.max(np.absolute(Euler_n))
             print "Max Euler_r", np.max(np.absolute(Euler_kf))
             
-
     def PrintSSResults(self):
         """
             Description:
@@ -1415,7 +1414,7 @@ class OLG(object):
                 - None
         """
         print "kf steady state", self.kf_ss
-        print "k steady state", self.k_ss
+        print "kd steady state", self.k_ss
         print "bq steady state", self.bqindiv_ss
         print "n steady state", self.n_ss
         print "y steady state", self.y_ss
@@ -1448,43 +1447,36 @@ class OLG(object):
             Outputs:
                 - None
         """
-        plt.title("Steady state")
+        plt.title("Steady state across J")
         plt.subplot(231)
-        for i in xrange(self.I):
-            for j in xrange(self.J):
-                plt.plot(xrange(self.S),self.cvec_ss[i,j,:])
+        for i in range(self.I):
+            plt.plot(range(self.S),self.cvec_ss[i,:,:].sum(axis=0))
+
         plt.title("Consumption")
 
         plt.subplot(232)
-        for i in xrange(self.I):
-            for j in xrange(self.J):
-                plt.plot(xrange(self.S),self.cKvec_ss[i,j,:])
+        for i in range(self.I):
+            plt.plot(range(self.S),self.cKvec_ss[i,:,:].sum(axis=0))
+
         plt.title("Kids' Consumption")
 
         plt.subplot(233)
-        for i in xrange(self.I):
-            for j in xrange(self.J):
-                plt.plot(xrange(self.S),self.avec_ss[i,j,:])
+        for i in range(self.I):
+            plt.plot(range(self.S),self.avec_ss[i,:,:].sum(axis=0))
         plt.title("Assets")
 
         plt.subplot(234)
-        for i in xrange(self.I):
-            for j in xrange(self.J):
-                plt.plot(xrange(self.S),self.lhat_ss[i,j,:])
+        for i in range(self.I):
+            plt.plot(range(self.S),self.lhat_ss[i,:,:].sum(axis=0))
         plt.title("Leisure")
 
         plt.subplot(235)
-        for i in xrange(self.I):
-            for j in xrange(self.J):
-                plt.plot(xrange(self.S),self.bqvec_ss[i,:])
+
+        for i in range(self.I):
+            plt.plot(range(self.S),self.bqvec_ss[i,:])
         plt.title("Bequests")
 
-        plt.subplot(236)
-        plt.title("Legend")
-        for i in xrange(self.I):
-            for j in xrange(self.J):
-                label1= str(self.I_touse[i]) + " " + str(j)
-                plt.plot(xrange(self.S),np.zeros(self.S),label=label1)
+
 
 
         plt.legend()
