@@ -1183,7 +1183,7 @@ class OLG(object):
         bqindiv_ss = guess[self.C:self.D]
 
         #Forces the Foreign Owned Capital of all countries to sum to 0
-        kf_guess[0]=-np.sum(kf_guess[1:])
+        
 
         #Initializes a vector of bequests received for each individial. 
         #Will be = 0 for a block of young and a block of old cohorts
@@ -1215,7 +1215,10 @@ class OLG(object):
         Euler_n = np.reshape(n_guess - np.sum(self.e_ss*(self.lbar_ss-lhat_ss)*\
                 self.Nhat_ss,axis=2),(self.I*self.J))
 
-        Euler_kf = r_ss - r_ss[0]*np.ones(self.I)
+        Euler_kf = np.zeros(self.I)
+        Euler_kf[1:] = r_ss[1:] - r_ss[0]*np.ones(self.I-1)
+
+        Euler_kf[0:] = kf_guess[0]-np.sum(kf_guess[1:])
         '''
         expo = np.zeros((self.I,self.J))
         for j in xrange(self.J):

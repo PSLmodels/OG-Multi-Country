@@ -57,7 +57,7 @@ def Multi_Country(S,I,J,sigma):
     #For plots to display or save
     DemogGraphs = False #Activates graphing graphs with demographic data 
                         #and population shares
-    ShowSSGraphs = True #Activates graphs for steady-state solutions for 
+    ShowSSGraphs = False #Activates graphs for steady-state solutions for 
                         #consumption, assets, and bequests
     iterations_to_plot = set([]) #Which iterations of the timepath fsolve you want to plot
     SaveFinalTPIPlot = True #Saves the final (and hopefully converged) time 
@@ -147,7 +147,7 @@ start = time.time()
 # S-Number of Cohorts, I-Number of Countries, J-Number of Skill classes
 # S, I, J and sigma. S and I are integers. Sigma may not be.
 
-Multi_Country(80,7,2,4)
+Multi_Country(20,3,2,4)
 
 tottime=time.time()-start
 
