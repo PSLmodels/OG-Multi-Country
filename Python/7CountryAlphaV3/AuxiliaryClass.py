@@ -592,7 +592,7 @@ class OLG(object):
             w=np.zeros((self.I,self.J))
             for j in xrange(self.J):
                 w[:,j] = self.alphaj[j]*(y[:]/n[:,j])
-
+            
         return w
 
     def get_Gamma(self, w, e):
@@ -704,7 +704,8 @@ class OLG(object):
             Y = (kd**self.alpha)
             PROD = np.zeros((self.I,self.J))
             for j in xrange(self.J):
-                PROD[:,j] = (self.A*n[:,j])**(self.alphaj[j])
+                PROD[:,j] = (self.A[:]*n[:,j])**(self.alphaj[j])
+
             Y*=np.prod(PROD,axis=1)
 
         #elif kd.ndim== 2:
@@ -801,15 +802,14 @@ class OLG(object):
             cvec_ss = np.zeros((self.I,self.J,self.S))
             avec_ss = np.zeros((self.I,self.J,self.S+1))
 
-            cK_1=np.reshape(cK_1,(self.I,self.J))
-            cKvec_ss[:,:,0] = cK_1
-            cvec_ss[:,:,0] = cK_1/Gamma_ss[:,:,0]
-
             r_ss2 = np.einsum("i,j->ij", r_ss, np.ones(self.J))
             bq_ss2 = np.einsum("is,j->ijs", bq_ss, np.ones(self.J))
             we = np.einsum("ij,ijs->ijs",w_ss,self.e_ss)
-
             chiwe = (self.chi/we)**self.rho
+
+            cK_1=np.reshape(cK_1,(self.I,self.J))
+            cKvec_ss[:,:,0] = cK_1
+            cvec_ss[:,:,0] = cK_1/Gamma_ss[:,:,0]
 
             for s in xrange(self.S-1):
                 
@@ -955,7 +955,7 @@ class OLG(object):
                     - cKvec_ss                  = Array: [I,S], Steady state kids consumption 
                                                          for each country and cohort
                     - avec_ss                   = Array: [I,S], Steady state assets holdings 
-                                                          for each country and cohort           
+                                                          for each country and cohort       
                     - w_ss                      = Array: [I], Steady state wage rate
                     - r_ss                      = Scalar: Steady state interest rate
                     - bq_ss                     = Array: [I,S], Steady state bequests level
@@ -1026,10 +1026,7 @@ class OLG(object):
         Gamma_ss = self.get_Gamma(w_ss, self.e_ss)
 
         #Initial guess for the first cohort's kids consumption
-        cK1_guess = np.ones((self.I,self.J))*.2
-
-        #Finds the optimal kids consumption for the first cohort
-        cK1_guess=np.reshape(cK1_guess,(self.I*self.J))
+        cK1_guess = np.reshape(self.innerguess,(self.I*self.J))
         
         opt_cK1 = opt.fsolve(householdEuler_SS, cK1_guess, args =\
                 (w_ss, r_ss, Gamma_ss, bq_ss))
@@ -1210,7 +1207,7 @@ class OLG(object):
                 
         return Euler_all
 
-    def SteadyState(self,k_ss_guess,kf_ss_guess,n_ss_guess,bq_ss_guess,PrintSSEulErrors=False):
+    def SteadyState(self,k_ss_guess,kf_ss_guess,n_ss_guess,bq_ss_guess,ck_guess,PrintSSEulErrors=False):
         """
             Description:
                 - Finds the steady state of the OLG Model by doing the following:
@@ -1287,7 +1284,12 @@ class OLG(object):
                 - None
 
         """
+
         self.ss_iter = 0
+
+        #Saves this for later
+        self.innerguess = ck_guess
+
         n_ss_guess = np.reshape(n_ss_guess,(self.I*self.J))
 
         #Preparves the initial guess for the fsolve
@@ -1298,7 +1300,11 @@ class OLG(object):
 
         #Breaking up the output into its 4 components
         self.k_ss = ss[:self.I]
-        self.kf_ss = ss[self.I:self.B]
+
+        self.kf_ss = np.zeros((self.I))
+        self.kf_ss[1:] = ss[self.I:self.B]
+        self.kf_ss[0] = -np.sum(self.kf_ss[1:])
+  
         self.n_ss = np.reshape(ss[self.B:self.C],(self.I,self.J))
         self.bqindiv_ss = ss[self.C:]
 
@@ -1314,10 +1320,6 @@ class OLG(object):
         self.w_ss, self.cvec_ss, self.cKvec_ss, self.avec_ss, \
                 self.r_ss, self.y_ss, self.lhat_ss = \
                 self.GetSSComponents(self.k_ss,self.kf_ss,self.n_ss,self.bqvec_ss)
-
-        self.kf_full = np.zeros((self.I))
-        self.kf_full[0] = -np.sum(self.kf_ss)
-        self.kf_full[1:] = self.kf_ss
 
 
         #Calculates and stores the steady state gamma value
@@ -1341,7 +1343,7 @@ class OLG(object):
 
 
             Euler_k = np.abs(self.k_ss - \
-                    np.sum(np.sum(self.avec_ss*self.Nhat_ss,axis=1),axis=1) - self.kf_full)
+                    np.sum(np.sum(self.avec_ss*self.Nhat_ss,axis=1),axis=1) - self.kf_ss)
 
 
             Euler_n = np.abs(self.n_ss - \
@@ -1392,8 +1394,8 @@ class OLG(object):
             Outputs:
                 - None
         """
-        print "kf steady state", self.kf_ss
-        print "kd steady state", self.k_ss
+        print "kf steady state", self.kf_full
+        print "k steady state", self.k_ss
         print "bq steady state", self.bqindiv_ss
         print "n steady state", self.n_ss
         print "y steady state", self.y_ss
@@ -1403,7 +1405,7 @@ class OLG(object):
         print "c_vec steady state", self.cvec_ss
         print "cK_vec steady state", self.cKvec_ss
 
-    def plotSSResults(self):
+    def plotSSResults(self,ShowSSSkill):
         """
             Description:
                 - Plots the final calculations of the Steady State
@@ -1426,42 +1428,119 @@ class OLG(object):
             Outputs:
                 - None
         """
-        plt.title("Steady state across J")
-        plt.subplot(231)
+
+        
+        if ShowSSSkill:
+            skilllevel = {0:"Low",1:"High"}
+            for j in range(self.J-1,-1,-1):
+                plt.subplot(self.J*100+45-4*j)
+                plt.ylim([min(np.min(self.cvec_ss)*1.1,0), np.max(self.cvec_ss)*1.1])
+                for i in range(self.I):
+                    plt.plot(range(self.S),self.cvec_ss[i,j,:])
+                plt.title(str(skilllevel[j])+"-Skill "+"Consumption")
+
+                plt.subplot(self.J*100+46-4*j)
+                plt.ylim([min(np.min(self.cKvec_ss)*1.1,0), np.max(self.cKvec_ss)*1.1])
+                for i in range(self.I):
+                    plt.plot(range(self.S),self.cKvec_ss[i,j,:])
+                plt.title(str(skilllevel[j])+"-Skill "+"Kids' Consumption")
+
+                plt.subplot(self.J*100+47-4*j)
+                plt.ylim([min(np.min(self.avec_ss)*1.1,0), np.max(self.avec_ss)*1.1])
+                for i in range(self.I):
+                    plt.plot(range(self.S),self.avec_ss[i,j,:])
+                plt.title(str(skilllevel[j])+"-Skill "+"Assets")
+
+                plt.subplot(self.J*100+48-4*j)
+                plt.ylim([min(np.min(self.lhat_ss)*1.1,0), np.max(self.lhat_ss)*1.1])
+                for i in range(self.I):
+                    plt.plot(range(self.S),self.lhat_ss[i,j,:])
+                plt.title(str(skilllevel[j])+"-Skill "+"Leisure")
+
+            plt.legend()
+            plt.show()
+            titles = ["Low-Skill Labor", "High-Skill Labor", "Low-Skill Wage", "High-Skill Wage",\
+                      "Capital Stock (K)","Foreign Capital", "Rental Rate", "Bequests"]
+
+            for itr, var in enumerate(\
+                [self.n_ss[:,0],self.n_ss[:,1],self.w_ss[:,0],self.w_ss[:,1],self.k_ss,self.kf_ss,self.r_ss,self.bqindiv_ss]):
+
+                plt.subplot(241+itr)
+                plt.title(titles[itr])
+                for i in range(self.I):
+                    plt.plot(range(self.S), np.ones(self.S)*var[i])
+
+        else:
+            plt.title("Steady state across J")
+            plt.subplot(231)
+            for i in range(self.I):
+                plt.plot(range(self.S),self.cvec_ss[i,:,:].sum(axis=0))
+
+            plt.title("Consumption")
+
+            plt.subplot(222)
+            for i in range(self.I):
+                plt.plot(range(self.S),self.cKvec_ss[i,:,:].sum(axis=0))
+
+            plt.title("Kids' Consumption")
+
+            plt.subplot(223)
+            for i in range(self.I):
+                plt.plot(range(self.S),self.avec_ss[i,:,:].sum(axis=0))
+            plt.title("Assets")
+
+            plt.subplot(224)
+            for i in range(self.I):
+                plt.plot(range(self.S),self.lhat_ss[i,:,:].sum(axis=0))
+            plt.title("Leisure")
+
+        plt.legend()
+
+        plt.show()
+
+    def plotSSResults2(self):
+
+        plt.subplot(331)
+        bigk_ss = np.einsum("i,s->is",self.k_ss,np.ones(self.S))
+        for i in range(I):
+            plt.plot(range(self.S),bigk_ss[i,:])
+        plt.title("k_ss")
+
+        plt.subplot(332)
+        bigkf_ss = np.einsum("i,s->is",self.kf_ss,np.ones(self.S))
+        for i in range(I):
+            plt.plot(range(self.S),bigkf_ss[i,:])
+        plt.title("kf_ss")
+
+        plt.subplot(333)
+        bign_ss = np.einsum("i,s->is",self.n_ss,np.ones(self.S))
+        for i in range(I):
+            plt.plot(range(self.S),bigkf_ss[i,:])
+        plt.title("kf_ss")
+
+        """
+        plt.subplot(334)
         for i in range(self.I):
             plt.plot(range(self.S),self.cvec_ss[i,:,:].sum(axis=0))
-
         plt.title("Consumption")
 
-        plt.subplot(232)
+        plt.subplot(335)
         for i in range(self.I):
             plt.plot(range(self.S),self.cKvec_ss[i,:,:].sum(axis=0))
-
         plt.title("Kids' Consumption")
 
-        plt.subplot(233)
+        plt.subplot(338)
         for i in range(self.I):
             plt.plot(range(self.S),self.avec_ss[i,:,:].sum(axis=0))
         plt.title("Assets")
 
-        plt.subplot(234)
+        plt.subplot(336)
         for i in range(self.I):
             plt.plot(range(self.S),self.lhat_ss[i,:,:].sum(axis=0))
         plt.title("Leisure")
+        """
 
-        plt.subplot(235)
-
-        for i in range(self.I):
-            plt.plot(range(self.S),self.bqvec_ss[i,:])
-        plt.title("Bequests")
-
-
-
-
-        #plt.legend()
-
-        plt.show()
-
+    
     def plotSSUtility(self, cK_1):
         """
             Description: 
