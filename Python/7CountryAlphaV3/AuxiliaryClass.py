@@ -713,7 +713,6 @@ class OLG(object):
 
         return Y
 
-
     def get_r(self, y, k):
         """
             Description:
@@ -1158,10 +1157,16 @@ class OLG(object):
         bqindiv_ss = guess[self.C:]
 
         #Forces the Foreign Owned Capital of all countries to sum to 0
+        kf_full = kf_guess
         kf_full=np.zeros((self.I))
 
         kf_full[0]=-np.sum(kf_guess)
         kf_full[1:]=kf_guess
+
+
+        #k_guess[k_guess <= 0] = .0001
+        #n_guess[n_guess <=0] = .0001
+
 
         #Initializes a vector of bequests received for each individial. 
         #Will be = 0 for a block of young and a block of old cohorts
@@ -1186,23 +1191,23 @@ class OLG(object):
 
 
         #Equation 3.29
-        Euler_bq = np.abs(bqindiv_ss - alldeadagent_assets/total_bq)
+        Euler_bq = bqindiv_ss - alldeadagent_assets/total_bq
 
-        Euler_k = np.abs(k_guess-np.sum(np.sum(avec_ss*self.Nhat_ss,axis=1),axis=1)-kf_full)
+        Euler_k = k_guess-np.sum(np.sum(avec_ss*self.Nhat_ss,axis=1),axis=1)-kf_full
 
-        Euler_n = np.abs(np.reshape(n_guess - np.sum(self.e_ss*(self.lbar_ss-lhat_ss)*\
-                self.Nhat_ss,axis=2),(self.I*self.J)))
+        Euler_n = np.reshape(n_guess - np.sum(self.e_ss*(self.lbar_ss-lhat_ss)*\
+                self.Nhat_ss,axis=2),(self.I*self.J))
 
-        Euler_kf = np.abs(r_ss[1:] - r_ss[0]*np.ones(self.I-1))
+        Euler_kf = r_ss[1:] - r_ss[0]*np.ones(self.I-1)
 
         Euler_all = np.concatenate((Euler_k,Euler_kf,Euler_n,Euler_bq))
 
-        if PrintSSEulErrors: print "Euler Errors:", Euler_all
+        self.ss_iter+=1
+        if PrintSSEulErrors: print "Euler Errors:", Euler_all, "\nIter:", self.ss_iter
                 
         return Euler_all
 
-    def SteadyState(self,k_ss_guess,kf_ss_guess,n_ss_guess,bq_ss_guess,\
-            ck_guess,PrintSSEulErrors=False):
+    def SteadyState(self,k_ss_guess,kf_ss_guess,n_ss_guess,bq_ss_guess,ck_guess,PrintSSEulErrors=False):
         """
             Description:
                 - Finds the steady state of the OLG Model by doing the following:
@@ -1279,8 +1284,12 @@ class OLG(object):
                 - None
 
         """
+
+        self.ss_iter = 0
+
         #Saves this for later
         self.innerguess = ck_guess
+
         n_ss_guess = np.reshape(n_ss_guess,(self.I*self.J))
 
         #Preparves the initial guess for the fsolve
@@ -1291,7 +1300,11 @@ class OLG(object):
 
         #Breaking up the output into its 4 components
         self.k_ss = ss[:self.I]
-        self.kf_ss = ss[self.I:self.B]
+
+        self.kf_ss = np.zeros((self.I))
+        self.kf_ss[1:] = ss[self.I:self.B]
+        self.kf_ss[0] = -np.sum(self.kf_ss[1:])
+  
         self.n_ss = np.reshape(ss[self.B:self.C],(self.I,self.J))
         self.bqindiv_ss = ss[self.C:]
 
@@ -1307,10 +1320,6 @@ class OLG(object):
         self.w_ss, self.cvec_ss, self.cKvec_ss, self.avec_ss, \
                 self.r_ss, self.y_ss, self.lhat_ss = \
                 self.GetSSComponents(self.k_ss,self.kf_ss,self.n_ss,self.bqvec_ss)
-
-        self.kf_full = np.zeros((self.I))
-        self.kf_full[0] = -np.sum(self.kf_ss)
-        self.kf_full[1:] = self.kf_ss
 
 
         #Calculates and stores the steady state gamma value
@@ -1334,7 +1343,7 @@ class OLG(object):
 
 
             Euler_k = np.abs(self.k_ss - \
-                    np.sum(np.sum(self.avec_ss*self.Nhat_ss,axis=1),axis=1) - self.kf_full)
+                    np.sum(np.sum(self.avec_ss*self.Nhat_ss,axis=1),axis=1) - self.kf_ss)
 
 
             Euler_n = np.abs(self.n_ss - \
@@ -1396,7 +1405,7 @@ class OLG(object):
         print "c_vec steady state", self.cvec_ss
         print "cK_vec steady state", self.cKvec_ss
 
-    def plotSSResults(self):
+    def plotSSResults(self,ShowSSSkill):
         """
             Description:
                 - Plots the final calculations of the Steady State
@@ -1419,42 +1428,119 @@ class OLG(object):
             Outputs:
                 - None
         """
-        plt.title("Steady state across J")
-        plt.subplot(231)
+
+        
+        if ShowSSSkill:
+            skilllevel = {0:"Low",1:"High"}
+            for j in range(self.J-1,-1,-1):
+                plt.subplot(self.J*100+45-4*j)
+                plt.ylim([min(np.min(self.cvec_ss)*1.1,0), np.max(self.cvec_ss)*1.1])
+                for i in range(self.I):
+                    plt.plot(range(self.S),self.cvec_ss[i,j,:])
+                plt.title(str(skilllevel[j])+"-Skill "+"Consumption")
+
+                plt.subplot(self.J*100+46-4*j)
+                plt.ylim([min(np.min(self.cKvec_ss)*1.1,0), np.max(self.cKvec_ss)*1.1])
+                for i in range(self.I):
+                    plt.plot(range(self.S),self.cKvec_ss[i,j,:])
+                plt.title(str(skilllevel[j])+"-Skill "+"Kids' Consumption")
+
+                plt.subplot(self.J*100+47-4*j)
+                plt.ylim([min(np.min(self.avec_ss)*1.1,0), np.max(self.avec_ss)*1.1])
+                for i in range(self.I):
+                    plt.plot(range(self.S),self.avec_ss[i,j,:])
+                plt.title(str(skilllevel[j])+"-Skill "+"Assets")
+
+                plt.subplot(self.J*100+48-4*j)
+                plt.ylim([min(np.min(self.lhat_ss)*1.1,0), np.max(self.lhat_ss)*1.1])
+                for i in range(self.I):
+                    plt.plot(range(self.S),self.lhat_ss[i,j,:])
+                plt.title(str(skilllevel[j])+"-Skill "+"Leisure")
+
+            plt.legend()
+            plt.show()
+            titles = ["Low-Skill Labor", "High-Skill Labor", "Low-Skill Wage", "High-Skill Wage",\
+                      "Capital Stock (K)","Foreign Capital", "Rental Rate", "Bequests"]
+
+            for itr, var in enumerate(\
+                [self.n_ss[:,0],self.n_ss[:,1],self.w_ss[:,0],self.w_ss[:,1],self.k_ss,self.kf_ss,self.r_ss,self.bqindiv_ss]):
+
+                plt.subplot(241+itr)
+                plt.title(titles[itr])
+                for i in range(self.I):
+                    plt.plot(range(self.S), np.ones(self.S)*var[i])
+
+        else:
+            plt.title("Steady state across J")
+            plt.subplot(231)
+            for i in range(self.I):
+                plt.plot(range(self.S),self.cvec_ss[i,:,:].sum(axis=0))
+
+            plt.title("Consumption")
+
+            plt.subplot(222)
+            for i in range(self.I):
+                plt.plot(range(self.S),self.cKvec_ss[i,:,:].sum(axis=0))
+
+            plt.title("Kids' Consumption")
+
+            plt.subplot(223)
+            for i in range(self.I):
+                plt.plot(range(self.S),self.avec_ss[i,:,:].sum(axis=0))
+            plt.title("Assets")
+
+            plt.subplot(224)
+            for i in range(self.I):
+                plt.plot(range(self.S),self.lhat_ss[i,:,:].sum(axis=0))
+            plt.title("Leisure")
+
+        plt.legend()
+
+        plt.show()
+
+    def plotSSResults2(self):
+
+        plt.subplot(331)
+        bigk_ss = np.einsum("i,s->is",self.k_ss,np.ones(self.S))
+        for i in range(I):
+            plt.plot(range(self.S),bigk_ss[i,:])
+        plt.title("k_ss")
+
+        plt.subplot(332)
+        bigkf_ss = np.einsum("i,s->is",self.kf_ss,np.ones(self.S))
+        for i in range(I):
+            plt.plot(range(self.S),bigkf_ss[i,:])
+        plt.title("kf_ss")
+
+        plt.subplot(333)
+        bign_ss = np.einsum("i,s->is",self.n_ss,np.ones(self.S))
+        for i in range(I):
+            plt.plot(range(self.S),bigkf_ss[i,:])
+        plt.title("kf_ss")
+
+        """
+        plt.subplot(334)
         for i in range(self.I):
             plt.plot(range(self.S),self.cvec_ss[i,:,:].sum(axis=0))
-
         plt.title("Consumption")
 
-        plt.subplot(232)
+        plt.subplot(335)
         for i in range(self.I):
             plt.plot(range(self.S),self.cKvec_ss[i,:,:].sum(axis=0))
-
         plt.title("Kids' Consumption")
 
-        plt.subplot(233)
+        plt.subplot(338)
         for i in range(self.I):
             plt.plot(range(self.S),self.avec_ss[i,:,:].sum(axis=0))
         plt.title("Assets")
 
-        plt.subplot(234)
+        plt.subplot(336)
         for i in range(self.I):
             plt.plot(range(self.S),self.lhat_ss[i,:,:].sum(axis=0))
         plt.title("Leisure")
+        """
 
-        plt.subplot(235)
-
-        for i in range(self.I):
-            plt.plot(range(self.S),self.bqvec_ss[i,:])
-        plt.title("Bequests")
-
-
-
-
-        #plt.legend()
-
-        plt.show()
-
+    
     def plotSSUtility(self, cK_1):
         """
             Description: 

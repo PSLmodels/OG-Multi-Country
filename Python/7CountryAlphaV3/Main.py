@@ -41,10 +41,10 @@ def Multi_Country(S,I,J,sigma):
 
     PrintSSEulErrors = True #Prints the euler errors in each attempt of calculating the 
                             #steady state
-    PrintSS = True #Prints the result of the Steady State functions
+    PrintSS = False #Prints the result of the Steady State functions
     Print_caTimepaths = False #Prints the consumption, assets, and bequests 
                               #timepath as it gets filled in for each iteration of TPI
-    Print_HH_Eulers = False #Prints whether the equations for the household decisions 
+    Print_HH_Eulers = True #Prints whether the equations for the household decisions 
                             #are satisfied (Equations 3.22, 3.19, and sum(assets) = 0)
     Print_Fill_Matricies_Time = False #Activiates Printing the total time it takes to 
                                       #fill the upper and lower diagonal matricies
@@ -59,6 +59,7 @@ def Multi_Country(S,I,J,sigma):
                         #and population shares
     ShowSSGraphs = True #Activates graphs for steady-state solutions for 
                         #consumption, assets, and bequests
+    ShowSSSkill = True
     iterations_to_plot = set([]) #Which iterations of the timepath fsolve you want to plot
     SaveFinalTPIPlot = True #Saves the final (and hopefully converged) time 
                             #path plot as a .png file
@@ -113,6 +114,7 @@ def Multi_Country(S,I,J,sigma):
     if DemogGraphs: Model.plotDemographics(T_touse="default", compare_across="T", data_year=0)
     #Model.immigrationplot()
 
+
     #STEADY STATE OUTER FSOLVE GUESS
     k_ss_guess = np.ones((I))*.2555
     kf_ss_guess = np.ones((I-1))*.022
@@ -124,9 +126,10 @@ def Multi_Country(S,I,J,sigma):
 
 
     #Steady State
-    Model.SteadyState(k_ss_guess,kf_ss_guess,n_ss_guess, bq_ss_guess,ck_innerfsolve_guess)
+    Model.SteadyState(k_ss_guess,kf_ss_guess,n_ss_guess, bq_ss_guess,ck_innerfsolve_guess,PrintSSEulErrors)
+
     if PrintSS: Model.PrintSSResults()
-    if ShowSSGraphs: Model.plotSSResults()
+    if ShowSSGraphs: Model.plotSSResults(ShowSSSkill)
 
     #Timepath Iteration
     '''
@@ -149,7 +152,8 @@ def Multi_Country(S,I,J,sigma):
 start = time.time()
 # S-Number of Cohorts, I-Number of Countries, J-Number of Skill classes
 # S, I, J and sigma. S and I are integers. Sigma may not be.
-Multi_Country(20,2,2,4)
+
+Multi_Country(80,7,2,4)
 
 tottime=time.time()-start
 
