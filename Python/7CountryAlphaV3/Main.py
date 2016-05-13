@@ -26,7 +26,7 @@ def Multi_Country(S,I,J,sigma):
     g_A = 0.015 #Technical growth rate
     beta_ann=.95 #Annual discount rate
     delta_ann=.08 #Annual depreciation rate
-    alpha = .3 #Capital Share of production
+    alpha = .30 #Capital Share of production
     alphaj = np.array([.25,.45]) #Share of production for each labor class
     chi = 1.5 #Preference for lesiure
     rho = .4 #Intratemporal elasticity of substitution
@@ -41,7 +41,7 @@ def Multi_Country(S,I,J,sigma):
 
     PrintSSEulErrors = True #Prints the euler errors in each attempt of calculating the 
                             #steady state
-    PrintSS = False #Prints the result of the Steady State functions
+    PrintSS = True #Prints the result of the Steady State functions
     Print_caTimepaths = False #Prints the consumption, assets, and bequests 
                               #timepath as it gets filled in for each iteration of TPI
     Print_HH_Eulers = False #Prints whether the equations for the household decisions 
@@ -113,14 +113,18 @@ def Multi_Country(S,I,J,sigma):
     if DemogGraphs: Model.plotDemographics(T_touse="default", compare_across="T", data_year=0)
     #Model.immigrationplot()
 
-    #STEADY STATE INITIAL GUESSES
-    k_ss_guess = np.ones((I))*.2
-    kf_ss_guess = np.ones((I-1))*.02
-    n_ss_guess = np.ones((I,J))*.2
-    bq_ss_guess = np.ones((I))*.2    
+    #STEADY STATE OUTER FSOLVE GUESS
+    k_ss_guess = np.ones((I))*.2555
+    kf_ss_guess = np.ones((I-1))*.022
+    n_ss_guess = np.ones((I,J))*.2555
+    bq_ss_guess = np.ones((I))*.2555
+
+    #STEADY STATE INNER FSOLVE GUESS
+    ck_innerfsolve_guess = np.ones((I,J))*.2
+
 
     #Steady State
-    Model.SteadyState(k_ss_guess,kf_ss_guess,n_ss_guess, bq_ss_guess)
+    Model.SteadyState(k_ss_guess,kf_ss_guess,n_ss_guess, bq_ss_guess,ck_innerfsolve_guess)
     if PrintSS: Model.PrintSSResults()
     if ShowSSGraphs: Model.plotSSResults()
 
@@ -145,7 +149,6 @@ def Multi_Country(S,I,J,sigma):
 start = time.time()
 # S-Number of Cohorts, I-Number of Countries, J-Number of Skill classes
 # S, I, J and sigma. S and I are integers. Sigma may not be.
-
 Multi_Country(20,2,2,4)
 
 tottime=time.time()-start

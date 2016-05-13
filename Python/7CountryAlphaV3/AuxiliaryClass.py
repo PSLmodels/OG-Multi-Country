@@ -592,7 +592,7 @@ class OLG(object):
             w=np.zeros((self.I,self.J))
             for j in xrange(self.J):
                 w[:,j] = self.alphaj[j]*(y[:]/n[:,j])
-
+            
         return w
 
     def get_Gamma(self, w, e):
@@ -704,13 +704,15 @@ class OLG(object):
             Y = (kd**self.alpha)
             PROD = np.zeros((self.I,self.J))
             for j in xrange(self.J):
-                PROD[:,j] = (self.A*n[:,j])**(self.alphaj[j])
+                PROD[:,j] = (self.A[:]*n[:,j])**(self.alphaj[j])
+
             Y*=np.prod(PROD,axis=1)
 
         #elif kd.ndim== 2:
             #Y = (kd**self.alpha) * (np.einsum("i,is->is",self.A,n)**(1-self.alpha))
 
         return Y
+
 
     def get_r(self, y, k):
         """
@@ -801,15 +803,14 @@ class OLG(object):
             cvec_ss = np.zeros((self.I,self.J,self.S))
             avec_ss = np.zeros((self.I,self.J,self.S+1))
 
-            cK_1=np.reshape(cK_1,(self.I,self.J))
-            cKvec_ss[:,:,0] = cK_1
-            cvec_ss[:,:,0] = cK_1/Gamma_ss[:,:,0]
-
             r_ss2 = np.einsum("i,j->ij", r_ss, np.ones(self.J))
             bq_ss2 = np.einsum("is,j->ijs", bq_ss, np.ones(self.J))
             we = np.einsum("ij,ijs->ijs",w_ss,self.e_ss)
-
             chiwe = (self.chi/we)**self.rho
+
+            cK_1=np.reshape(cK_1,(self.I,self.J))
+            cKvec_ss[:,:,0] = cK_1
+            cvec_ss[:,:,0] = cK_1/Gamma_ss[:,:,0]
 
             for s in xrange(self.S-1):
                 
@@ -955,7 +956,7 @@ class OLG(object):
                     - cKvec_ss                  = Array: [I,S], Steady state kids consumption 
                                                          for each country and cohort
                     - avec_ss                   = Array: [I,S], Steady state assets holdings 
-                                                          for each country and cohort           
+                                                          for each country and cohort       
                     - w_ss                      = Array: [I], Steady state wage rate
                     - r_ss                      = Scalar: Steady state interest rate
                     - bq_ss                     = Array: [I,S], Steady state bequests level
@@ -1026,10 +1027,7 @@ class OLG(object):
         Gamma_ss = self.get_Gamma(w_ss, self.e_ss)
 
         #Initial guess for the first cohort's kids consumption
-        cK1_guess = np.ones((self.I,self.J))*.2
-
-        #Finds the optimal kids consumption for the first cohort
-        cK1_guess=np.reshape(cK1_guess,(self.I*self.J))
+        cK1_guess = np.reshape(self.innerguess,(self.I*self.J))
         
         opt_cK1 = opt.fsolve(householdEuler_SS, cK1_guess, args =\
                 (w_ss, r_ss, Gamma_ss, bq_ss))
@@ -1203,7 +1201,8 @@ class OLG(object):
                 
         return Euler_all
 
-    def SteadyState(self,k_ss_guess,kf_ss_guess,n_ss_guess,bq_ss_guess,PrintSSEulErrors=False):
+    def SteadyState(self,k_ss_guess,kf_ss_guess,n_ss_guess,bq_ss_guess,\
+            ck_guess,PrintSSEulErrors=False):
         """
             Description:
                 - Finds the steady state of the OLG Model by doing the following:
@@ -1280,6 +1279,8 @@ class OLG(object):
                 - None
 
         """
+        #Saves this for later
+        self.innerguess = ck_guess
         n_ss_guess = np.reshape(n_ss_guess,(self.I*self.J))
 
         #Preparves the initial guess for the fsolve
@@ -1384,8 +1385,8 @@ class OLG(object):
             Outputs:
                 - None
         """
-        print "kf steady state", self.kf_ss
-        print "kd steady state", self.k_ss
+        print "kf steady state", self.kf_full
+        print "k steady state", self.k_ss
         print "bq steady state", self.bqindiv_ss
         print "n steady state", self.n_ss
         print "y steady state", self.y_ss
