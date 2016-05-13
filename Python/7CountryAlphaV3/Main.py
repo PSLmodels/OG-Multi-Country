@@ -26,8 +26,8 @@ def Multi_Country(S,I,J,sigma):
     g_A = 0.015 #Technical growth rate
     beta_ann=.95 #Annual discount rate
     delta_ann=.08 #Annual depreciation rate
-    alpha = .35 #Capital Share of production
-    alphaj = np.array([.25,.40]) #Share of production for each labor class
+    alpha = .3 #Capital Share of production
+    alphaj = np.array([.25,.45]) #Share of production for each labor class
     chi = 1.5 #Preference for lesiure
     rho = .4 #Intratemporal elasticity of substitution
 
@@ -44,7 +44,7 @@ def Multi_Country(S,I,J,sigma):
     PrintSS = False #Prints the result of the Steady State functions
     Print_caTimepaths = False #Prints the consumption, assets, and bequests 
                               #timepath as it gets filled in for each iteration of TPI
-    Print_HH_Eulers = False #Prints whether the equations for the household decisions 
+    Print_HH_Eulers = True #Prints whether the equations for the household decisions 
                             #are satisfied (Equations 3.22, 3.19, and sum(assets) = 0)
     Print_Fill_Matricies_Time = False #Activiates Printing the total time it takes to 
                                       #fill the upper and lower diagonal matricies
@@ -57,7 +57,7 @@ def Multi_Country(S,I,J,sigma):
     #For plots to display or save
     DemogGraphs = False #Activates graphing graphs with demographic data 
                         #and population shares
-    ShowSSGraphs = False #Activates graphs for steady-state solutions for 
+    ShowSSGraphs = True #Activates graphs for steady-state solutions for 
                         #consumption, assets, and bequests
     iterations_to_plot = set([]) #Which iterations of the timepath fsolve you want to plot
     SaveFinalTPIPlot = True #Saves the final (and hopefully converged) time 
@@ -115,13 +115,12 @@ def Multi_Country(S,I,J,sigma):
 
     #STEADY STATE INITIAL GUESSES
     k_ss_guess = np.ones((I))*.2
-    kf_ss_guess = np.ones((I))*.02
-    kf_ss_guess[0] = -np.sum(kf_ss_guess[1:])
+    kf_ss_guess = np.zeros((I-1))
     n_ss_guess = np.ones((I,J))*.2
     bq_ss_guess = np.ones((I))*.2    
 
     #Steady State
-    Model.SteadyState(k_ss_guess,kf_ss_guess,n_ss_guess, bq_ss_guess, PrintSSEulErrors)
+    Model.SteadyState(k_ss_guess,kf_ss_guess,n_ss_guess, bq_ss_guess,Print_HH_Eulers)
     if PrintSS: Model.PrintSSResults()
     if ShowSSGraphs: Model.plotSSResults()
 
@@ -147,7 +146,9 @@ start = time.time()
 # S-Number of Cohorts, I-Number of Countries, J-Number of Skill classes
 # S, I, J and sigma. S and I are integers. Sigma may not be.
 
-Multi_Country(20,3,2,4)
+
+Multi_Country(80,7,2,4)
+
 
 tottime=time.time()-start
 

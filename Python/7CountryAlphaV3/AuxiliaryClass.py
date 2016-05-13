@@ -485,8 +485,10 @@ class OLG(object):
         #difference between 2 consecutive years is less than demog_ss_tol
         while np.max(np.abs(self.Nhat[:,:,:,-1] - self.Nhat[:,:,:,-2])) > demog_ss_tol:
             pop_new[:,:,0] = np.sum((pop_old[:,:,:]*self.FertilityRates[:,:,:,-1]),axis=2)
-            pop_new[:,:,1:] = pop_old[:,:,:-1]*(1+self.ImmigrationRates[:,:,:-1,-1]-self.MortalityRates[:,:,:-1,-1])
-            self.Nhat = np.concatenate( (self.Nhat, (pop_new/np.sum(pop_new)).reshape(self.I,self.J,self.S,1) ), axis=3)
+            pop_new[:,:,1:] = pop_old[:,:,:-1]*\
+                    (1+self.ImmigrationRates[:,:,:-1,-1]-self.MortalityRates[:,:,:-1,-1])
+            self.Nhat = np.concatenate( (self.Nhat, \
+                    (pop_new/np.sum(pop_new)).reshape(self.I,self.J,self.S,1) ), axis=3)
             resid = np.max(np.abs(self.Nhat[:,:,:,-1] - self.Nhat[:,:,:,-2]))
             future_year_iter += 1
 
@@ -588,12 +590,8 @@ class OLG(object):
         #Only if getting SS, For now.
         if n.ndim==2:
             w=np.zeros((self.I,self.J))
-            #w2 = self.alphaj*(y/n)
             for j in xrange(self.J):
                 w[:,j] = self.alphaj[j]*(y[:]/n[:,j])
-
-            #print w
-            #print w2
 
         return w
 
@@ -709,8 +707,8 @@ class OLG(object):
                 PROD[:,j] = (self.A*n[:,j])**(self.alphaj[j])
             Y*=np.prod(PROD,axis=1)
 
-        elif kd.ndim== 2:
-            Y = (kd**self.alpha) * (np.einsum("i,is->is",self.A,n)**(1-self.alpha))
+        #elif kd.ndim== 2:
+            #Y = (kd**self.alpha) * (np.einsum("i,is->is",self.A,n)**(1-self.alpha))
 
         return Y
 
@@ -803,41 +801,36 @@ class OLG(object):
             cvec_ss = np.zeros((self.I,self.J,self.S))
             avec_ss = np.zeros((self.I,self.J,self.S+1))
 
-
             cK_1=np.reshape(cK_1,(self.I,self.J))
             cKvec_ss[:,:,0] = cK_1
             cvec_ss[:,:,0] = cK_1/Gamma_ss[:,:,0]
 
             r_ss2 = np.einsum("i,j->ij", r_ss, np.ones(self.J))
-
             bq_ss2 = np.einsum("is,j->ijs", bq_ss, np.ones(self.J))
+            we = np.einsum("ij,ijs->ijs",w_ss,self.e_ss)
 
-
+            chiwe = (self.chi/we)**self.rho
 
             for s in xrange(self.S-1):
-                #Equation 4.26
-                cKvec_ss[:,:,s+1] = (  ( (self.beta*(1-self.Mortality_ss[:,:,s])\
-                        *(1+r_ss2[:,:]-self.delta) )**(1/self.sigma) )\
-                        *cKvec_ss[:,:,s]  )*np.exp(-self.g_A)
-
-
-
-                #Equation 4.25
-                cvec_ss[:,:,s+1] = cKvec_ss[:,:,s+1]/Gamma_ss[:,:,s+1]
-
-                #Equation 4.23
-                avec_ss[:,:,s+1] = (w_ss*self.e_ss[:,:,s]*self.lbar_ss +\
-                    (1 + r_ss2[:,:] - self.delta)*avec_ss[:,:,s] + bq_ss2[:,:,s] \
-                    - cvec_ss[:,:,s]*(1+self.Kids_ss[:,:,s]*Gamma_ss[:,:,s]+\
-                    (self.chi/(w_ss*self.e_ss[:,:,s]))**self.rho))*np.exp(-self.g_A)
-
-            #Equation 4.23 for final assets
                 
-            avec_ss[:,:,s+2] = (w_ss*self.e_ss[:,:,s+1]*self.lbar_ss +\
-                    (1 + r_ss2[:,:] - self.delta)*avec_ss[:,:,s+1] + bq_ss2[:,:,s+1] \
-                    - cvec_ss[:,:,s+1]*(1+self.Kids_ss[:,:,s+1]*Gamma_ss[:,:,s+1]+\
-                    (self.chi/(w_ss*self.e_ss[:,:,s+1]))**self.rho))*np.exp(-self.g_A)
+                cKvec_ss[:,:,s+1] = np.exp(-self.g_A) * cKvec_ss[:,:,s] * \
+                        (self.beta*(1+r_ss2-self.delta)*\
+                        (1-self.Mortality_ss[:,:,s]))**(1/self.sigma)
 
+
+                cvec_ss[:,:,s+1] = cKvec_ss[:,:,s+1]/Gamma_ss[:,:,s+1]
+ 
+                avec_ss[:,:,s+1] = np.exp(-self.g_A)*(bq_ss2[:,:,s]+\
+                        (1+r_ss2-self.delta)*avec_ss[:,:,s]+self.lbar_ss*we[:,:,s]-\
+                        cvec_ss[:,:,s]*(1+self.Kids_ss[:,:,s]*Gamma_ss[:,:,s] + chiwe[:,:,s]))
+
+
+            avec_ss[:,:,s+2] = np.exp(-self.g_A)*(bq_ss2[:,:,s+1]+\
+                    (1+r_ss2-self.delta)*avec_ss[:,:,s+1]+self.lbar_ss*we[:,:,s+1]-\
+                    cvec_ss[:,:,s+1]*(1+self.Kids_ss[:,:,s+1]*\
+                    Gamma_ss[:,:,s+1] + chiwe[:,:,s+1]))
+
+            
             #SPARE BIT IN BETWEEN GAMMA+ AND (SELF.CHI...): w_ss[:,j]*self.e_ss[:,j,s+1]*
 
             return cvec_ss, cKvec_ss, avec_ss
@@ -944,10 +937,8 @@ class OLG(object):
                     (cK_1, w_ss, r_ss, Gamma_ss, bq_ss)
 
             Euler = assets_path[:,:,-1]
-
             if np.any(cpath<0):
-                print "WARNING! The fsolve for initial optimal consumption \
-                        guessed a negative number"
+                print "WARNING! The fsolve for optimal consumption guessed a negative number"
                 Euler = np.ones((self.I,self.J))*9999.
 
             
@@ -1009,28 +1000,15 @@ class OLG(object):
             Household_Euler = avec_ss[:,:,-1]
             
             Chained_C_Condition = cKvec_ss[:,:,:-1]**(-self.sigma) - \
-                                 np.einsum("ijs,i->ijs",self.beta*(1-self.Mortality_ss[:,:,:-1])*(cKvec_ss[:,:,1:]*np.exp(self.g_A))**-self.sigma , (1+r_ss-self.delta) )
+                                 np.einsum("ijs,i->ijs",self.beta*\
+                                 (1-self.Mortality_ss[:,:,:-1])*\
+                                 (cKvec_ss[:,:,1:]*np.exp(self.g_A))**-self.sigma ,\
+                                 (1+r_ss-self.delta) )
             
             Modified_Budget_Constraint = cvec_ss -( we*self.lbar_ss \
                             +(1+r_ss2-self.delta)*avec_ss[:,:,:-1] + bq_ss2 \
                             -avec_ss[:,:,1:]*np.exp(self.g_A) )\
                             /(1+self.Kids_ss*Gamma_ss+(self.chi/we)**self.rho)
-            """
-            Chained_C_Condition = np.zeros((self.I,self.J,self.S-1))
-            Modified_Budget_Constraint = np.zeros((self.I,self.J,self.S))
-            
-            for i in xrange(self.I):
-                Chained_C_Condition[i,:,:] = cKvec_ss[i,:,:-1]**(-self.sigma) - \
-                        self.beta*(1-self.Mortality_ss[i,:,:-1])*(cKvec_ss[i,:,1:]*\
-                        np.exp(self.g_A))**-self.sigma * (1+r_ss[i]-self.delta)
-
-
-                Modified_Budget_Constraint[i,:,:] = cvec_ss[i,:,:] -( we[i,:,:]*\
-                        self.lbar_ss + (1+r_ss[i]-self.delta)*avec_ss[i,:,:-1] +\
-                        bq_ss[i,:] - avec_ss[i,:,1:]*np.exp(self.g_A) )\
-                        /(1+self.Kids_ss[i,:,:]*Gamma_ss[i,:,:]+we[i,:,:]*\
-                        (self.chi/we[i,:,:])**self.rho)
-            """
 
             Consumption_Ratio = cKvec_ss - cvec_ss*Gamma_ss
 
@@ -1172,18 +1150,26 @@ class OLG(object):
                 
         """
         #Slicing Quantities
-        self.B = 2*self.I
-        self.C = 2*self.I + self.I*self.J
-        self.D = 3*self.I + self.I*self.J
+        self.B = 2*self.I-1
+        self.C = 2*self.I-1 + self.I*self.J
 
         #Breaking up the input into its 4 components
         k_guess = guess[:self.I]
         kf_guess = guess[self.I:self.B]
         n_guess = np.reshape(guess[self.B:self.C],(self.I,self.J))
-        bqindiv_ss = guess[self.C:self.D]
+        bqindiv_ss = guess[self.C:]
 
         #Forces the Foreign Owned Capital of all countries to sum to 0
-        
+        kf_full = kf_guess
+        kf_full=np.zeros((self.I))
+
+        kf_full[0]=-np.sum(kf_guess)
+        kf_full[1:]=kf_guess
+
+
+        #k_guess[k_guess <= 0] = .0001
+        #n_guess[n_guess <=0] = .0001
+
 
         #Initializes a vector of bequests received for each individial. 
         #Will be = 0 for a block of young and a block of old cohorts
@@ -1195,7 +1181,7 @@ class OLG(object):
         #Calls self.GetSSComponents, which solves for all the other ss variables in 
         #terms of bequests and intrest rate
         w_ss, cvec_ss, cKvec_ss, avec_ss, r_ss, y_ss, lhat_ss = \
-                self.GetSSComponents(k_guess,kf_guess,n_guess,bq_ss, PrintSSEulErrors)
+                self.GetSSComponents(k_guess,kf_full,n_guess,bq_ss, PrintSSEulErrors)
 
         #Sum of all assets holdings of dead agents to be distributed evenly among 
         #all eligible agents
@@ -1210,32 +1196,17 @@ class OLG(object):
         #Equation 3.29
         Euler_bq = bqindiv_ss - alldeadagent_assets/total_bq
 
-        Euler_k = k_guess - np.sum(np.sum(avec_ss*self.Nhat_ss,axis=1),axis=1) - kf_guess
+        Euler_k = k_guess-np.sum(np.sum(avec_ss*self.Nhat_ss,axis=1),axis=1)-kf_full
 
         Euler_n = np.reshape(n_guess - np.sum(self.e_ss*(self.lbar_ss-lhat_ss)*\
                 self.Nhat_ss,axis=2),(self.I*self.J))
 
-        Euler_kf = np.zeros(self.I)
-        Euler_kf[1:] = r_ss[1:] - r_ss[0]*np.ones(self.I-1)
-
-        Euler_kf[0:] = kf_guess[0]-np.sum(kf_guess[1:])
-        '''
-        expo = np.zeros((self.I,self.J))
-        for j in xrange(self.J):
-            expo[:,j] = n_guess[:,j]**(self.alphaj[j])
-
-        print "EXPO SHAPE", expo
-
-        denom = np.prod(expo,axis=1)
-
-        Euler_kf = kf_guess - (r_ss[0]/(self.alpha*denom))**(1/(self.alpha-1)) \
-                + np.sum(np.sum(avec_ss*self.Nhat_ss,axis=1),axis=1)
-        '''
-        #Euler_kf = kf_guess - (k_guess - np.sum(np.sum(avec_ss*self.Nhat_ss,axis=1),axis=1))
+        Euler_kf = r_ss[1:] - r_ss[0]*np.ones(self.I-1)
 
         Euler_all = np.concatenate((Euler_k,Euler_kf,Euler_n,Euler_bq))
 
-        if PrintSSEulErrors: print "Euler Errors:", Euler_all
+        self.ss_iter+=1
+        if PrintSSEulErrors: print "Euler Errors:", Euler_all, "\nIter:", self.ss_iter
                 
         return Euler_all
 
@@ -1316,6 +1287,7 @@ class OLG(object):
                 - None
 
         """
+        self.ss_iter = 0
         n_ss_guess = np.reshape(n_ss_guess,(self.I*self.J))
 
         #Preparves the initial guess for the fsolve
@@ -1343,6 +1315,10 @@ class OLG(object):
                 self.r_ss, self.y_ss, self.lhat_ss = \
                 self.GetSSComponents(self.k_ss,self.kf_ss,self.n_ss,self.bqvec_ss)
 
+        self.kf_full = np.zeros((self.I))
+        self.kf_full[0] = -np.sum(self.kf_ss)
+        self.kf_full[1:] = self.kf_ss
+
 
         #Calculates and stores the steady state gamma value
         self.Gamma_ss = self.get_Gamma(self.w_ss,self.e_ss)
@@ -1361,17 +1337,17 @@ class OLG(object):
             totalbq = np.sum(np.sum(\
                     self.Nhat_ss[:,:,self.FirstFertilityAge:self.FirstDyingAge],axis=1),axis=1)
 
-            Euler_bq = self.bqindiv_ss - alldeadagent_assets/totalbq
+            Euler_bq = np.abs(self.bqindiv_ss - alldeadagent_assets/totalbq)
 
 
-            Euler_k = self.k_ss - \
-                    np.sum(np.sum(self.avec_ss*self.Nhat_ss,axis=1),axis=1) - self.kf_ss
+            Euler_k = np.abs(self.k_ss - \
+                    np.sum(np.sum(self.avec_ss*self.Nhat_ss,axis=1),axis=1) - self.kf_full)
 
 
-            Euler_n = self.n_ss - \
-                    np.sum(self.e_ss*(self.lbar_ss-self.lhat_ss)*self.Nhat_ss,axis=2)
+            Euler_n = np.abs(self.n_ss - \
+                    np.sum(self.e_ss*(self.lbar_ss-self.lhat_ss)*self.Nhat_ss,axis=2))
 
-            Euler_kf = self.r_ss -self.r_ss[0]*np.ones(self.I)
+            Euler_kf = np.abs(self.r_ss[1:] - self.r_ss[0]*np.ones(self.I-1))
             #Euler_kf = self.kf_ss - (self.k_ss - 
             #np.sum(np.sum(self.avec_ss*self.Nhat_ss,axis=1),axis=1))
 
@@ -1482,7 +1458,7 @@ class OLG(object):
 
 
 
-        plt.legend()
+        #plt.legend()
 
         plt.show()
 
