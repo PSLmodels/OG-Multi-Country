@@ -126,7 +126,8 @@ def Multi_Country(S,I,J,sigma):
 
 
     #Steady State
-    Model.SteadyState(k_ss_guess,kf_ss_guess,n_ss_guess, bq_ss_guess,ck_innerfsolve_guess,PrintSSEulErrors)
+    Model.SteadyState(k_ss_guess,kf_ss_guess,n_ss_guess, bq_ss_guess,ck_innerfsolve_guess\
+            ,PrintSSEulErrors)
 
     if PrintSS: Model.PrintSSResults()
     if ShowSSGraphs: Model.plotSSResults(ShowSSSkill)
@@ -152,16 +153,16 @@ def Multi_Country(S,I,J,sigma):
 start = time.time()
 # S-Number of Cohorts, I-Number of Countries, J-Number of Skill classes
 # S, I, J and sigma. S and I are integers. Sigma may not be.
-
-Multi_Country(80,7,2,4)
-
+Multi_Country(20,2,2,4)
 tottime=time.time()-start
 
 if TimeModel==True:
     minutes=int(tottime/60)
     hours=int(minutes/60)
+    days=int(hours/24)
     seconds=tottime-minutes*60
     minutes=minutes-hours*60
-    print "The code took:", hours, "hours,", minutes, "minutes and", seconds,\
+    hours=hours-days*24
+    print "The code took:",days,"days,", hours, "hours,", minutes, "minutes and", seconds,\
             "seconds to complete"
 
