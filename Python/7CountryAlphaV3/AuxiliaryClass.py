@@ -813,10 +813,9 @@ class OLG(object):
 
             for s in xrange(self.S-1):
                 
-                cKvec_ss[:,:,s+1] = np.exp(-self.g_A) * cKvec_ss[:,:,s] * \
+                cKvec_ss[:,:,s+1] = (np.exp(-self.g_A) * cKvec_ss[:,:,s]) * \
                         (self.beta*(1+r_ss2-self.delta)*\
                         (1-self.Mortality_ss[:,:,s]))**(1/self.sigma)
-
 
                 cvec_ss[:,:,s+1] = cKvec_ss[:,:,s+1]/Gamma_ss[:,:,s+1]
  
@@ -941,6 +940,11 @@ class OLG(object):
                 print "WARNING! The fsolve for optimal consumption guessed a negative number"
                 Euler = np.ones((self.I,self.J))*9999.
 
+            if np.any(cK_path[:,:,:-1]**(-self.sigma) - np.einsum("ijs,i->ijs",self.beta*(1-self.Mortality_ss[:,:,:-1])*(cK_path[:,:,1:]*np.exp(self.g_A))**-self.sigma ,(1+r_ss-self.delta) )!=0):
+                print "WARNING! Chained C Condition violated, punishing fsolve"
+                Euler = np.ones((self.I,self.J))*9999.
+
+
             
             return np.reshape(Euler,(self.I*self.J))
         
@@ -1004,6 +1008,11 @@ class OLG(object):
                                  (1-self.Mortality_ss[:,:,:-1])*\
                                  (cKvec_ss[:,:,1:]*np.exp(self.g_A))**-self.sigma ,\
                                  (1+r_ss-self.delta) )
+
+            Chained_C_Condition2 = cKvec_ss[:,:,:-1]**(-self.sigma) - \
+                    self.beta*(1-self.Mortality_ss[:,:,:-1])*(cKvec_ss[:,:,1:]*\
+                    np.exp(self.g_A))**-self.sigma * (1+r_ss2[:,:,:-1]-self.delta)
+
             
             Modified_Budget_Constraint = cvec_ss -( we*self.lbar_ss \
                             +(1+r_ss2-self.delta)*avec_ss[:,:,:-1] + bq_ss2 \
@@ -1046,12 +1055,16 @@ class OLG(object):
                     = checkSSEulers(cvec_ss, cKvec_ss, avec_ss, w_ss, r_ss, bq_ss, Gamma_ss)
             print "Zero final period assets satisfied:", \
                     np.isclose(np.max(np.absolute(Household_Euler)), 0)
+            print "Assets Euler Max:",np.max(np.absolute(Household_Euler))
             print "Equation 5.20 satisfied:",\
                     np.isclose(np.max(np.absolute(Chained_C_Condition)), 0)
+            print "Equation 5.20 Max:", np.max(np.abs(Chained_C_Condition))
             print "Equation 5.17 satisfied:",\
                     np.isclose(np.max(np.absolute(Modified_Budget_Constraint)), 0)
+            print "Equation 5.17 Max:", np.max(np.absolute(Modified_Budget_Constraint))
             print "Equation 5.19 satisfied",\
                     np.isclose(np.max(np.absolute(Consumption_Ratio)), 0)
+            print "Equation 5.19 Max:", np.max(np.absolute(Consumption_Ratio))
             print "\n"
             #print "\n\n", Chained_C_Condition[0,:,:], "\n\n"
             #print "\n\n", Modified_Budget_Constraint[0,:,:], "\n\n"
@@ -1207,7 +1220,8 @@ class OLG(object):
                 
         return Euler_all
 
-    def SteadyState(self,k_ss_guess,kf_ss_guess,n_ss_guess,bq_ss_guess,ck_guess,PrintSSEulErrors=False):
+    def SteadyState(self,k_ss_guess,kf_ss_guess,n_ss_guess,bq_ss_guess,\
+            ck_guess,PrintSSEulErrors=False):
         """
             Description:
                 - Finds the steady state of the OLG Model by doing the following:
