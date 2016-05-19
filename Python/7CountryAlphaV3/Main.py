@@ -27,7 +27,7 @@ def Multi_Country(S,I,J,sigma):
     beta_ann=.95 #Annual discount rate
     delta_ann=.08 #Annual depreciation rate
     alpha = .30 #Capital Share of production
-    alphaj = np.array([.25,.45]) #Share of production for each labor class
+    alphaj = np.array([.45,.25]) #Share of production for each labor class
     chi = 1.5 #Preference for lesiure
     rho = .4 #Intratemporal elasticity of substitution
 
@@ -114,7 +114,7 @@ def Multi_Country(S,I,J,sigma):
     if DemogGraphs: Model.plotDemographics(T_touse="default", compare_across="T", data_year=0)
     #Model.immigrationplot()
 
-
+    
     #STEADY STATE OUTER FSOLVE GUESS
     k_ss_guess = np.ones((I))*.2555
     kf_ss_guess = np.ones((I-1))*.022
@@ -131,7 +131,7 @@ def Multi_Country(S,I,J,sigma):
 
     if PrintSS: Model.PrintSSResults()
     if ShowSSGraphs: Model.plotSSResults(ShowSSSkill)
-
+    
     #Timepath Iteration
     '''
     r_init = Model.r_ss*1.05
