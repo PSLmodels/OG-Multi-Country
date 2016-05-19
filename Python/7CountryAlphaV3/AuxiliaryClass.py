@@ -1028,8 +1028,11 @@ class OLG(object):
         #Initial guess for the first cohort's kids consumption
         cK1_guess = np.reshape(self.innerguess,(self.I*self.J))
         
-        opt_cK1 = opt.fsolve(householdEuler_SS, cK1_guess, args =\
-                (w_ss, r_ss, Gamma_ss, bq_ss))
+        opt_cK1,ie,message = opt.fsolve(householdEuler_SS, cK1_guess, args =\
+                (w_ss, r_ss, Gamma_ss, bq_ss),full_output=1)
+
+        print ie
+        print message
 
         #Gets the optimal paths for consumption, kids consumption and assets as a 
         #function of the first cohort's consumption
@@ -1053,7 +1056,7 @@ class OLG(object):
             print "Equation 5.19 satisfied",\
                     np.isclose(np.max(np.absolute(Consumption_Ratio)), 0)
             print "\n"
-            #print "\n\n", Chained_C_Condition[0,:,:], "\n\n"
+            print "\n\n", Chained_C_Condition[0,:,:], "\n\n"
             #print "\n\n", Modified_Budget_Constraint[0,:,:], "\n\n"
 
 
