@@ -831,6 +831,7 @@ class OLG(object):
                     cvec_ss[:,:,s+1]*(1+self.Kids_ss[:,:,s+1]*\
                     Gamma_ss[:,:,s+1] + chiwe[:,:,s+1]))
 
+
             self.TEST = cKvec_ss[:,:,1:] - np.exp(-self.g_A) * cKvec_ss[:,:,:-1]*\
                     (self.beta*(1+r_ss3[:,:,:-1]-self.delta)*\
                     (1-self.Mortality_ss[:,:,:-1]))**(1/self.sigma)
@@ -839,8 +840,8 @@ class OLG(object):
                     self.beta*(1-self.Mortality_ss[:,:,:-1])*(cKvec_ss[:,:,1:]*\
                     np.exp(self.g_A))**(-self.sigma) * (1+r_ss3[:,:,:-1]-self.delta)
 
-            print "Calculated Way 1",self.TEST
-            print "Calcualted Way 2",Chained_C_Condition2
+            #print "Calculated Way 1",self.TEST
+            #print "Calcualted Way 2",Chained_C_Condition2
             #print np.argwhere(abs(Chained_C_Condition2)>1)
 
             
@@ -1226,14 +1227,14 @@ class OLG(object):
         #Equation 3.29
         Euler_bq = bqindiv_ss - alldeadagent_assets/total_bq
 
-        Euler_k = k_guess-np.sum(np.sum(avec_ss*self.Nhat_ss,axis=1),axis=1)-kf_full
+        Euler_kd = k_guess-kf_full-np.sum(np.sum(avec_ss*self.Nhat_ss,axis=1),axis=1)
 
         Euler_n = np.reshape(n_guess - np.sum(self.e_ss*(self.lbar_ss-lhat_ss)*\
                 self.Nhat_ss,axis=2),(self.I*self.J))
 
         Euler_kf = r_ss[1:] - r_ss[0]*np.ones(self.I-1)
 
-        Euler_all = np.concatenate((Euler_k,Euler_kf,Euler_n,Euler_bq))
+        Euler_all = np.concatenate((Euler_kd,Euler_kf,Euler_n,Euler_bq))
 
         self.ss_iter+=1
         if PrintSSEulErrors: print "Euler Errors:", Euler_all, "\nIter:", self.ss_iter
@@ -1376,7 +1377,7 @@ class OLG(object):
             Euler_bq = np.abs(self.bqindiv_ss - alldeadagent_assets/totalbq)
 
 
-            Euler_k = np.abs(self.k_ss - \
+            Euler_kd = np.abs(self.k_ss - \
                     np.sum(np.sum(self.avec_ss*self.Nhat_ss,axis=1),axis=1) - self.kf_ss)
 
 
@@ -1389,14 +1390,14 @@ class OLG(object):
 
 
             print "-Euler for bq satisfied:", np.isclose(np.max(np.absolute(Euler_bq)), 0)
-            print "-Euler for k satisfied:", np.isclose(np.max(np.absolute(Euler_k)), 0)
+            print "-Euler for kd satisfied:", np.isclose(np.max(np.absolute(Euler_kd)), 0)
             print "-Euler for n satisfied:", np.isclose(np.max(np.absolute(Euler_n)), 0)
             print "-Euler for kf satisfied:", np.isclose(np.max(np.absolute(Euler_kf)), 0),\
                     "\n\n"
 
             
             print "Max Euler bq", np.max(np.absolute(Euler_bq))
-            print "Max Euler k", np.max(np.absolute(Euler_k))
+            print "Max Euler kd", np.max(np.absolute(Euler_kd))
             print "Max Euler_n", np.max(np.absolute(Euler_n))
             print "Max Euler_r", np.max(np.absolute(Euler_kf))
             
