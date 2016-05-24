@@ -27,7 +27,7 @@ def Multi_Country(S,I,J,sigma):
     beta_ann=.95 #Annual discount rate
     delta_ann=.08 #Annual depreciation rate
     alpha = .30 #Capital Share of production
-    alphaj = np.array([.25,.45]) #Share of production for each labor class
+    alphaj = np.array([.45,.25]) #Share of production for each labor class
     chi = 1.5 #Preference for lesiure
     rho = .4 #Intratemporal elasticity of substitution
 
@@ -57,7 +57,7 @@ def Multi_Country(S,I,J,sigma):
     #For plots to display or save
     DemogGraphs = False #Activates graphing graphs with demographic data 
                         #and population shares
-    ShowSSGraphs = True #Activates graphs for steady-state solutions for 
+    ShowSSGraphs = False #Activates graphs for steady-state solutions for 
                         #consumption, assets, and bequests
     ShowSSSkill = True
     iterations_to_plot = set([]) #Which iterations of the timepath fsolve you want to plot
@@ -114,7 +114,7 @@ def Multi_Country(S,I,J,sigma):
     if DemogGraphs: Model.plotDemographics(T_touse="default", compare_across="T", data_year=0)
     #Model.immigrationplot()
 
-
+    
     #STEADY STATE OUTER FSOLVE GUESS
     k_ss_guess = np.ones((I))*.2555
     kf_ss_guess = np.ones((I-1))*.022
@@ -126,11 +126,12 @@ def Multi_Country(S,I,J,sigma):
 
 
     #Steady State
-    Model.SteadyState(k_ss_guess,kf_ss_guess,n_ss_guess, bq_ss_guess,ck_innerfsolve_guess,PrintSSEulErrors)
+    Model.SteadyState(k_ss_guess,kf_ss_guess,n_ss_guess, bq_ss_guess,ck_innerfsolve_guess\
+            ,PrintSSEulErrors)
 
     if PrintSS: Model.PrintSSResults()
     if ShowSSGraphs: Model.plotSSResults(ShowSSSkill)
-
+    
     #Timepath Iteration
     '''
     r_init = Model.r_ss*1.05
@@ -160,8 +161,10 @@ tottime=time.time()-start
 if TimeModel==True:
     minutes=int(tottime/60)
     hours=int(minutes/60)
+    days=int(hours/24)
     seconds=tottime-minutes*60
     minutes=minutes-hours*60
-    print "The code took:", hours, "hours,", minutes, "minutes and", seconds,\
+    hours=hours-days*24
+    print "The code took:",days,"days,", hours, "hours,", minutes, "minutes and", seconds,\
             "seconds to complete"
 

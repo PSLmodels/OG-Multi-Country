@@ -311,7 +311,6 @@ class OLG(object):
         #Gets initial population share
         self.Nhat[:,:,:,0] = self.N[:,:,:,0]/np.sum(self.N[:,:,:,0])
 
-
         #Increases fertility rates to account for different number of periods lived
         self.all_FertilityRates = self.all_FertilityRates*80/self.S
         self.MortalityRates = self.MortalityRates*80/self.S
@@ -807,28 +806,47 @@ class OLG(object):
             we = np.einsum("ij,ijs->ijs",w_ss,self.e_ss)
             chiwe = (self.chi/we)**self.rho
 
+            r_ss3 = np.einsum( "i,js->ijs",r_ss,np.ones((self.J,self.S)) )
+
             cK_1=np.reshape(cK_1,(self.I,self.J))
             cKvec_ss[:,:,0] = cK_1
             cvec_ss[:,:,0] = cK_1/Gamma_ss[:,:,0]
 
             for s in xrange(self.S-1):
-                
-                cKvec_ss[:,:,s+1] = np.exp(-self.g_A) * cKvec_ss[:,:,s] * \
+               
+                #5.20
+                cKvec_ss[:,:,s+1] = (np.exp(-self.g_A) * cKvec_ss[:,:,s]) * \
                         (self.beta*(1+r_ss2-self.delta)*\
                         (1-self.Mortality_ss[:,:,s]))**(1/self.sigma)
-
-
+                #5.19
                 cvec_ss[:,:,s+1] = cKvec_ss[:,:,s+1]/Gamma_ss[:,:,s+1]
- 
+
+                #5.17
                 avec_ss[:,:,s+1] = np.exp(-self.g_A)*(bq_ss2[:,:,s]+\
                         (1+r_ss2-self.delta)*avec_ss[:,:,s]+self.lbar_ss*we[:,:,s]-\
                         cvec_ss[:,:,s]*(1+self.Kids_ss[:,:,s]*Gamma_ss[:,:,s] + chiwe[:,:,s]))
-
 
             avec_ss[:,:,s+2] = np.exp(-self.g_A)*(bq_ss2[:,:,s+1]+\
                     (1+r_ss2-self.delta)*avec_ss[:,:,s+1]+self.lbar_ss*we[:,:,s+1]-\
                     cvec_ss[:,:,s+1]*(1+self.Kids_ss[:,:,s+1]*\
                     Gamma_ss[:,:,s+1] + chiwe[:,:,s+1]))
+
+            self.TEST = cKvec_ss[:,:,1:] - np.exp(-self.g_A) * cKvec_ss[:,:,:-1]*\
+                    (self.beta*(1+r_ss3[:,:,:-1]-self.delta)*\
+                    (1-self.Mortality_ss[:,:,:-1]))**(1/self.sigma)
+
+            Chained_C_Condition2 = cKvec_ss[:,:,:-1]**(-self.sigma) - \
+                    self.beta*(1-self.Mortality_ss[:,:,:-1])*(cKvec_ss[:,:,1:]*\
+                    np.exp(self.g_A))**(-self.sigma) * (1+r_ss3[:,:,:-1]-self.delta)
+
+            #print "Calculated Way 1",self.TEST
+            #print "Calcualted Way 2",Chained_C_Condition2
+            #print np.argwhere(abs(Chained_C_Condition2)>1)
+            #print "HERE", np.array_equal(Chained_C_Condition2,self.TEST)
+            if np.isclose(np.max(np.absolute(Chained_C_Condition2-self.TEST)),0): print "CLEAR", self.alphaj
+            else: 
+                print "BLAHBLAH", np.max(np.absolute(Chained_C_Condition2-self.TEST))
+                print 
 
             
             #SPARE BIT IN BETWEEN GAMMA+ AND (SELF.CHI...): w_ss[:,j]*self.e_ss[:,j,s+1]*
@@ -935,11 +953,17 @@ class OLG(object):
             """
             cpath, cK_path, assets_path = self.get_lifetime_decisionsSS\
                     (cK_1, w_ss, r_ss, Gamma_ss, bq_ss)
-
+            
+            #Punishers
             Euler = assets_path[:,:,-1]
             if np.any(cpath<0):
                 print "WARNING! The fsolve for optimal consumption guessed a negative number"
                 Euler = np.ones((self.I,self.J))*9999.
+
+            #if np.any(cK_path[:,:,:-1]**(-self.sigma) - np.einsum("ijs,i->ijs",self.beta*(1-self.Mortality_ss[:,:,:-1])*(cK_path[:,:,1:]*np.exp(self.g_A))**-self.sigma ,(1+r_ss-self.delta) )!=0):
+                #print "WARNING! Chained C Condition violated, punishing fsolve"
+                #Euler = np.ones((self.I,self.J))*9999.
+
 
             
             return np.reshape(Euler,(self.I*self.J))
@@ -971,7 +995,7 @@ class OLG(object):
                     - self.e_ss              = Array: [I,S], Labor produtivities for 
                                                       the Steady State
                     - self.Gamma_ss          = Array: [I,S], Steady state value of 
-                                                      shorthand calculation variable
+                                                     shorthand calculation variable
                     - self.Mortality_ss      = Array: [I,S], Mortality rates of each 
                                                       country for each age cohort in 
                                                       the steady state
@@ -1004,6 +1028,11 @@ class OLG(object):
                                  (1-self.Mortality_ss[:,:,:-1])*\
                                  (cKvec_ss[:,:,1:]*np.exp(self.g_A))**-self.sigma ,\
                                  (1+r_ss-self.delta) )
+            """
+            self.TEST = cKvec_ss[:,:,1:] - np.exp(-self.g_A) * cKvec_ss[:,:,:-1]*\
+                    (self.beta*(1+r_ss3[:,:,:-1]-self.delta)*\
+                    (1-self.Mortality_ss[:,:,:-1]))**(1/self.sigma)
+            """
             
             Modified_Budget_Constraint = cvec_ss -( we*self.lbar_ss \
                             +(1+r_ss2-self.delta)*avec_ss[:,:,:-1] + bq_ss2 \
@@ -1011,6 +1040,11 @@ class OLG(object):
                             /(1+self.Kids_ss*Gamma_ss+(self.chi/we)**self.rho)
 
             Consumption_Ratio = cKvec_ss - cvec_ss*Gamma_ss
+
+            #print "HERE2",np.array_equal(Chained_C_Condition,self.TEST)
+
+            #print "Chained Condition",Chained_C_Condition2 
+            #print "Fresh off the press",self.TEST
 
             return Household_Euler, Chained_C_Condition, Modified_Budget_Constraint,\
                     Consumption_Ratio
@@ -1028,11 +1062,15 @@ class OLG(object):
         #Initial guess for the first cohort's kids consumption
         cK1_guess = np.reshape(self.innerguess,(self.I*self.J))
         
-        opt_cK1,ie,message = opt.fsolve(householdEuler_SS, cK1_guess, args =\
-                (w_ss, r_ss, Gamma_ss, bq_ss),full_output=1)
+        opt_cK1, infodict, ier, mesg = opt.fsolve(householdEuler_SS, cK1_guess, args =\
+                (w_ss, r_ss, Gamma_ss, bq_ss),full_output=True)
+        
+        if PrintSSEulErrors:
+            if ier:
+                print "INNER FSOLVE WORKS: True"
+            else:
+                print "ERROR MESSAGE:",mesg
 
-        print ie
-        print message
 
         #Gets the optimal paths for consumption, kids consumption and assets as a 
         #function of the first cohort's consumption
@@ -1049,14 +1087,19 @@ class OLG(object):
                     = checkSSEulers(cvec_ss, cKvec_ss, avec_ss, w_ss, r_ss, bq_ss, Gamma_ss)
             print "Zero final period assets satisfied:", \
                     np.isclose(np.max(np.absolute(Household_Euler)), 0)
+            print "Assets Euler Max:",np.max(np.absolute(Household_Euler))
             print "Equation 5.20 satisfied:",\
                     np.isclose(np.max(np.absolute(Chained_C_Condition)), 0)
+            print "Equation 5.20 Max:", np.max(np.abs(Chained_C_Condition))
             print "Equation 5.17 satisfied:",\
                     np.isclose(np.max(np.absolute(Modified_Budget_Constraint)), 0)
+            print "Equation 5.17 Max:", np.max(np.absolute(Modified_Budget_Constraint))
             print "Equation 5.19 satisfied",\
                     np.isclose(np.max(np.absolute(Consumption_Ratio)), 0)
+            print "Equation 5.19 Max:", np.max(np.absolute(Consumption_Ratio))
             print "\n"
-            print "\n\n", Chained_C_Condition[0,:,:], "\n\n"
+            #print "\n\n", Chained_C_Condition[0,:,:], "\n\n"
+            #print self.TEST[0,:,:]
             #print "\n\n", Modified_Budget_Constraint[0,:,:], "\n\n"
 
 
@@ -1161,10 +1204,10 @@ class OLG(object):
 
         #Forces the Foreign Owned Capital of all countries to sum to 0
         kf_full = kf_guess
-        kf_full=np.zeros((self.I))
+        kf_full = np.zeros((self.I))
 
-        kf_full[0]=-np.sum(kf_guess)
-        kf_full[1:]=kf_guess
+        kf_full[0] = -np.sum(kf_guess)
+        kf_full[1:] = kf_guess
 
 
         #k_guess[k_guess <= 0] = .0001
@@ -1543,7 +1586,6 @@ class OLG(object):
         plt.title("Leisure")
         """
 
-    
     def plotSSUtility(self, cK_1):
         """
             Description: 
