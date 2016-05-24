@@ -27,7 +27,7 @@ def Multi_Country(S,I,J,sigma):
     beta_ann=.95 #Annual discount rate
     delta_ann=.08 #Annual depreciation rate
     alpha = .30 #Capital Share of production
-    alphaj = np.array([.45,.25]) #Share of production for each labor class
+    alphaj = np.array([.66,.04]) #Share of production for each labor class
     chi = 1.5 #Preference for lesiure
     rho = .4 #Intratemporal elasticity of substitution
 
