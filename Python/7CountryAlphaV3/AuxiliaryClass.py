@@ -337,7 +337,9 @@ class OLG(object):
                 self.all_FertilityRates[:,:,self.FirstFertilityAge:self.LastFertilityAge+1,\
                 self.frange:]
 
-    def Demographics(self, demog_ss_tol, UseSSDemog=False):
+
+
+    def Demographics(self, demog_ss_tol, UseSSDemog=False,VerifyDemog=False):
         """
             Description:
                 - This function calculates the population dynamics and steady state 
@@ -520,7 +522,13 @@ class OLG(object):
             self.MortalityRates = np.einsum("ijs,t->ijst",self.Mortality_ss,\
                     np.ones(self.T+self.S))
             self.Kids = np.einsum("ijs,t->ijst",self.Kids_ss,np.ones(self.T+self.S))
-
+        if VerifyDemog == True:
+            print np.sum(np.sum(np.sum(self.Nhat,axis=0),axis=1),axis=0)
+            print np.array_equal(self.all_FertilityRates[:,0,:,:],\
+                    self.all_FertilityRates[:,1,:,:])
+            print np.array_equal(self.MortalityRates[:,0,:,:],self.MortalityRates[:,1,:,:])
+            print np.array_equal(self.Migrants[:,0,:,:],self.Migrants[:,1,:,:])
+        
     def plotDemographics(self, T_touse="default", compare_across="T", data_year=0):
         """
         Description: This calls the plotDemographics function from the 
@@ -557,9 +565,9 @@ class OLG(object):
             ax.set_ylabel('T')
 
         plt.show()
-
+ 
     #STEADY STATE
-
+    
     def get_w(self, y, n):
         """
             Description:
@@ -840,11 +848,7 @@ class OLG(object):
                     self.beta*(1-self.Mortality_ss[:,:,:-1])*(cKvec_ss[:,:,1:]*\
                     np.exp(self.g_A))**(-self.sigma) * (1+r_ss3[:,:,:-1]-self.delta)
 
-            #print "Calculated Way 1",self.TEST
-            #print "Calcualted Way 2",Chained_C_Condition2
-            #print np.argwhere(abs(Chained_C_Condition2)>1)
 
-            
             #SPARE BIT IN BETWEEN GAMMA+ AND (SELF.CHI...): w_ss[:,j]*self.e_ss[:,j,s+1]*
 
             return cvec_ss, cKvec_ss, avec_ss
@@ -959,8 +963,6 @@ class OLG(object):
             #if np.any(cK_path[:,:,:-1]**(-self.sigma) - np.einsum("ijs,i->ijs",self.beta*(1-self.Mortality_ss[:,:,:-1])*(cK_path[:,:,1:]*np.exp(self.g_A))**-self.sigma ,(1+r_ss-self.delta) )!=0):
                 #print "WARNING! Chained C Condition violated, punishing fsolve"
                 #Euler = np.ones((self.I,self.J))*9999.
-
-
             
             return np.reshape(Euler,(self.I*self.J))
         
@@ -1010,7 +1012,7 @@ class OLG(object):
                 Outputs:
                     - None
             """
-
+            
             we = np.einsum("ij,ijs->ijs",w_ss,self.e_ss)
 
             bq_ss2 = np.einsum("is,j->ijs",bq_ss,np.ones(self.J))
@@ -1057,7 +1059,7 @@ class OLG(object):
                 (w_ss, r_ss, Gamma_ss, bq_ss),full_output=True)
         if PrintSSEulErrors:
             if ier==1:
-                print "INNER FSOLVE WORKS:", ier
+                print "INNER FSOLVE WORKS: YES"
             else:
                 print "ERROR MESSAGE:",mesg
 
@@ -1076,16 +1078,16 @@ class OLG(object):
                     = checkSSEulers(cvec_ss, cKvec_ss, avec_ss, w_ss, r_ss, bq_ss, Gamma_ss)
             print "Zero final period assets satisfied:", \
                     np.isclose(np.max(np.absolute(Household_Euler)), 0)
-            print "Assets Euler Max:",np.max(np.absolute(Household_Euler))
+            print "Assets Euler Max:",np.max(np.abs(Household_Euler))
             print "Equation 5.20 satisfied:",\
                     np.isclose(np.max(np.absolute(Chained_C_Condition)), 0)
             print "Equation 5.20 Max:", np.max(np.abs(Chained_C_Condition))
             print "Equation 5.17 satisfied:",\
                     np.isclose(np.max(np.absolute(Modified_Budget_Constraint)), 0)
-            print "Equation 5.17 Max:", np.max(np.absolute(Modified_Budget_Constraint))
+            print "Equation 5.17 Max:", np.max(np.abs(Modified_Budget_Constraint))
             print "Equation 5.19 satisfied",\
                     np.isclose(np.max(np.absolute(Consumption_Ratio)), 0)
-            print "Equation 5.19 Max:", np.max(np.absolute(Consumption_Ratio))
+            print "Equation 5.19 Max:", np.max(np.abs(Consumption_Ratio))
             print "\n"
             #print "\n\n", Chained_C_Condition[0,:,:], "\n\n"
             #print "\n\n", Modified_Budget_Constraint[0,:,:], "\n\n"
@@ -1189,7 +1191,6 @@ class OLG(object):
         kf_guess = guess[self.I:self.B]
         n_guess = np.reshape(guess[self.B:self.C],(self.I,self.J))
         bqindiv_ss = guess[self.C:]
-
         #Forces the Foreign Owned Capital of all countries to sum to 0
         kf_full = kf_guess
         kf_full = np.zeros((self.I))
@@ -1201,45 +1202,47 @@ class OLG(object):
         #k_guess[k_guess <= 0] = .0001
         #n_guess[n_guess <=0] = .0001
 
-
+        if np.min(n_guess)<.0001:
+            return np.ones(3*self.I-1+self.I*self.J)*9999.
         #Initializes a vector of bequests received for each individial. 
         #Will be = 0 for a block of young and a block of old cohorts
-        bq_ss = np.zeros((self.I,self.S))
-        bq_ss[:,self.FirstFertilityAge:self.FirstDyingAge] = \
-                np.einsum("i,s->is", bqindiv_ss, \
-                np.ones(self.FirstDyingAge-self.FirstFertilityAge))
+        else:
+            bq_ss = np.zeros((self.I,self.S))
+            bq_ss[:,self.FirstFertilityAge:self.FirstDyingAge] = \
+                    np.einsum("i,s->is", bqindiv_ss, \
+                    np.ones(self.FirstDyingAge-self.FirstFertilityAge))
 
-        #Calls self.GetSSComponents, which solves for all the other ss variables in 
-        #terms of bequests and intrest rate
-        w_ss, cvec_ss, cKvec_ss, avec_ss, r_ss, y_ss, lhat_ss = \
-                self.GetSSComponents(k_guess,kf_full,n_guess,bq_ss, PrintSSEulErrors)
+            #Calls self.GetSSComponents, which solves for all the other ss variables in 
+            #terms of bequests and intrest rate
+            w_ss, cvec_ss, cKvec_ss, avec_ss, r_ss, y_ss, lhat_ss = \
+                    self.GetSSComponents(k_guess,kf_full,n_guess,bq_ss, PrintSSEulErrors)
 
-        #Sum of all assets holdings of dead agents to be distributed evenly among 
-        #all eligible agents
-        alldeadagent_assets = np.sum(np.sum(avec_ss[:,:,self.FirstDyingAge:]*\
-                self.Mortality_ss[:,:,self.FirstDyingAge:]*\
-                self.Nhat_ss[:,:,self.FirstDyingAge:], axis=1),axis=1)
+            #Sum of all assets holdings of dead agents to be distributed evenly among 
+            #all eligible agents
+            alldeadagent_assets = np.sum(np.sum(avec_ss[:,:,self.FirstDyingAge:]*\
+                    self.Mortality_ss[:,:,self.FirstDyingAge:]*\
+                    self.Nhat_ss[:,:,self.FirstDyingAge:], axis=1),axis=1)
 
-        total_bq = np.sum(np.sum(\
-                self.Nhat_ss[:,:,self.FirstFertilityAge:self.FirstDyingAge],axis=1),axis=1)
+            total_bq = np.sum(np.sum(\
+                    self.Nhat_ss[:,:,self.FirstFertilityAge:self.FirstDyingAge],axis=1),axis=1)
 
 
-        #Equation 3.29
-        Euler_bq = bqindiv_ss - alldeadagent_assets/total_bq
+            #Equation 3.29
+            Euler_bq = bqindiv_ss - alldeadagent_assets/total_bq
 
-        Euler_kd = k_guess-kf_full-np.sum(np.sum(avec_ss*self.Nhat_ss,axis=1),axis=1)
+            Euler_kd = k_guess-kf_full-np.sum(np.sum(avec_ss*self.Nhat_ss,axis=1),axis=1)
 
-        Euler_n = np.reshape(n_guess - np.sum(self.e_ss*(self.lbar_ss-lhat_ss)*\
-                self.Nhat_ss,axis=2),(self.I*self.J))
+            Euler_n = np.reshape(n_guess - np.sum(self.e_ss*(self.lbar_ss-lhat_ss)*\
+                    self.Nhat_ss,axis=2),(self.I*self.J))
 
-        Euler_kf = r_ss[1:] - r_ss[0]*np.ones(self.I-1)
+            Euler_kf = r_ss[1:] - r_ss[0]*np.ones(self.I-1)
 
-        Euler_all = np.concatenate((Euler_kd,Euler_kf,Euler_n,Euler_bq))
+            Euler_all = np.concatenate((Euler_kd,Euler_kf,Euler_n,Euler_bq))
 
-        self.ss_iter+=1
-        if PrintSSEulErrors: print "Euler Errors:", Euler_all, "\nIter:", self.ss_iter
+            self.ss_iter+=1
+            if PrintSSEulErrors: print "Euler Errors:", Euler_all, "\nIter:", self.ss_iter
                 
-        return Euler_all
+            return Euler_all
 
     def SteadyState(self,k_ss_guess,kf_ss_guess,n_ss_guess,bq_ss_guess,\
             ck_guess,PrintSSEulErrors=False):
@@ -1377,8 +1380,8 @@ class OLG(object):
             Euler_bq = np.abs(self.bqindiv_ss - alldeadagent_assets/totalbq)
 
 
-            Euler_kd = np.abs(self.k_ss - \
-                    np.sum(np.sum(self.avec_ss*self.Nhat_ss,axis=1),axis=1) - self.kf_ss)
+            Euler_kd = np.abs(self.k_ss - self.kf_ss - \
+                    np.sum(np.sum(self.avec_ss*self.Nhat_ss,axis=1),axis=1) )
 
 
             Euler_n = np.abs(self.n_ss - \
@@ -1678,7 +1681,7 @@ class OLG(object):
         ax.set_zlabel('Utility')
 
         #plt.show()
-
+    
     #TIMEPATH-ITERATION
 
     def set_initial_values(self, r_init, bq_init, a_init):
@@ -2485,6 +2488,7 @@ class OLG(object):
                 **(self.alpha/(1-self.alpha)),(1-self.alpha)*self.A)
 
         #Equation 4.22
+        
         Gamma = self.get_Gamma(w_path,self.e)
 
         #Equations 4.25, 4.23
@@ -2496,10 +2500,8 @@ class OLG(object):
 
         #Equation 4.17
         n_path = self.get_n(lhat_path)
-
         #Equation 4.16
         kd_path = np.sum(a_matrix*self.Nhat[:,:,:self.T],axis=1)
-
         #Equation 4.18
         y_path = self.get_Y(kd_path,n_path)
 

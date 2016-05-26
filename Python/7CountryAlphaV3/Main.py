@@ -26,9 +26,9 @@ def Multi_Country(S,I,J,sigma):
     g_A = 0.015 #Technical growth rate
     beta_ann=.95 #Annual discount rate
     delta_ann=.08 #Annual depreciation rate
-    alpha = .30 #Capital Share of production
-    alphaj = np.array([.66,.04]) #Share of production for each labor class
-    chi = 1.5 #Preference for lesiure
+    alpha = .35 #Capital Share of production
+    alphaj = np.array([.25,.4]) #Share of production for each labor class
+    chi = 1.5#Preference for lesiure
     rho = .4 #Intratemporal elasticity of substitution
 
 
@@ -39,7 +39,7 @@ def Multi_Country(S,I,J,sigma):
     #For terminal output
     PrintAges = False #Displays the current locations of the program inside key TPI functions
 
-    PrintSSEulErrors = True #Prints the euler errors in each attempt of calculating the 
+    PrintSSEulErrors = True #Prints the euler errors in each attempt of calculating the
                             #steady state
     PrintSS = False #Prints the result of the Steady State functions
     Print_caTimepaths = False #Prints the consumption, assets, and bequests 
@@ -50,12 +50,14 @@ def Multi_Country(S,I,J,sigma):
                                       #fill the upper and lower diagonal matricies
     CheckerMode = False #Activates not printing much of anything, used in conjunction 
                         #with RobustChecker.py
+    VerifyDemog = True #Verifies that all of the popluations sum to 1 and that the
+                       #Fertility,Mortality and migrant rates copied correctly
 
     Iterate = True #Shows the current iteration number and the associated Eulers
     ShaveTime = False #Shaves off a little more time for TPI.
 
     #For plots to display or save
-    DemogGraphs = False #Activates graphing graphs with demographic data 
+    DemogGraphs = True #Activates graphing graphs with demographic data 
                         #and population shares
     ShowSSGraphs = True #Activates graphs for steady-state solutions for 
                         #consumption, assets, and bequests
@@ -103,6 +105,7 @@ def Multi_Country(S,I,J,sigma):
 
     Firm_Params = (alpha, delta_ann, chi, rho, g_A,alphaj)
 
+
     Levers = (PrintAges,CheckerMode,Iterate,UseDiffDemog,UseDiffProductivities,\
             Print_Fill_Matricies_Time,ShaveTime)
 
@@ -110,27 +113,26 @@ def Multi_Country(S,I,J,sigma):
     Model = AUX.OLG(Country_Roster,HH_params,Firm_Params,Levers)
 
     #Demographics
-    Model.Demographics(demog_ss_tol, UseSSDemog)
+    Model.Demographics(demog_ss_tol, UseSSDemog,VerifyDemog)
     if DemogGraphs: Model.plotDemographics(T_touse="default", compare_across="T", data_year=0)
     #Model.immigrationplot()
 
     
     #STEADY STATE OUTER FSOLVE GUESS
-    k_ss_guess = np.ones((I))*.2555
-    kf_ss_guess = np.ones((I-1))*.022
-    n_ss_guess = np.ones((I,J))*.2555
-    bq_ss_guess = np.ones((I))*.2555
+    k_ss_guess = np.ones((I))*.25
+    kf_ss_guess = np.ones((I-1))*.1
+    n_ss_guess = np.ones((I,J))*.25
+    bq_ss_guess = np.ones((I))*.25
 
     #STEADY STATE INNER FSOLVE GUESS
-    ck_innerfsolve_guess = np.ones((I,J))*.2
-
+    ck_innerfsolve_guess = np.ones((I,J))*.5
 
     #Steady State
-    Model.SteadyState(k_ss_guess,kf_ss_guess,n_ss_guess, bq_ss_guess,ck_innerfsolve_guess\
-            ,PrintSSEulErrors)
+    #Model.SteadyState(k_ss_guess,kf_ss_guess,n_ss_guess, bq_ss_guess,ck_innerfsolve_guess\
+            #,PrintSSEulErrors)
 
-    if PrintSS: Model.PrintSSResults()
-    if ShowSSGraphs: Model.plotSSResults(ShowSSSkill)
+    #if PrintSS: Model.PrintSSResults()
+    #if ShowSSGraphs: Model.plotSSResults(ShowSSSkill)
     
     #Timepath Iteration
     '''
@@ -165,4 +167,3 @@ if TimeModel==True:
     hours=hours-days*24
     print "The code took:",days,"days,", hours, "hours,", minutes, "minutes and", seconds,\
             "seconds to complete"
-
