@@ -1,0 +1,48 @@
+This is BibTeX, Version 0.99d (TeX Live 2014)
+Capacity: max_strings=35307, hash_size=35307, hash_prime=30011
+The top-level auxiliary file: Elliptical Section 4.aux
+The style file: aer.bst
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Database file #1: Bibliography.bib
+You've used 1 entry,
+            2984 wiz_defined-function locations,
+            658 strings with 4507 characters,
+and the built_in function-call counts, 786 in all, are:
+= -- 118
+> -- 47
+< -- 13
++ -- 14
+- -- 8
+* -- 45
+:= -- 195
+add.period$ -- 1
+call.type$ -- 1
+change.case$ -- 7
+chr.to.int$ -- 1
+cite$ -- 1
+duplicate$ -- 11
+empty$ -- 19
+format.name$ -- 26
+if$ -- 185
+int.to.chr$ -- 1
+int.to.str$ -- 0
+missing$ -- 0
+newline$ -- 9
+num.names$ -- 12
+pop$ -- 14
+preamble$ -- 1
+purify$ -- 8
+quote$ -- 0
+skip$ -- 0
+stack$ -- 0
+substring$ -- 11
+swap$ -- 3
+text.length$ -- 1
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 4
+warning$ -- 0
+while$ -- 10
+width$ -- 0
+write$ -- 20

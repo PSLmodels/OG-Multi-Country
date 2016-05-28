@@ -1,0 +1,599 @@
+\documentclass[letterpaper,12pt]{article}
+
+	\usepackage{threeparttable}
+	\usepackage[format=hang,font=normalsize,labelfont=bf]{caption}
+	\usepackage{amsmath}
+	\usepackage{array}
+	\usepackage{delarray}
+	\usepackage{amssymb}
+	\usepackage{amsthm}
+	\usepackage{natbib}
+	\usepackage{setspace}
+	\usepackage{float,color}
+	\usepackage[pdftex]{graphicx}
+	\usepackage{hyperref}
+	\usepackage{multirow}
+	\usepackage{enumerate}
+	\hypersetup{colorlinks,linkcolor=red,urlcolor=blue,citecolor=red}
+	\theoremstyle{definition}
+	\newtheorem{theorem}{Theorem}
+	\newtheorem{acknowledgement}[theorem]{Acknowledgement}
+	\newtheorem{algorithm}[theorem]{Algorithm}
+	\newtheorem{axiom}[theorem]{Axiom}
+	\newtheorem{case}[theorem]{Case}
+	\newtheorem{claim}[theorem]{Claim}
+	\newtheorem{conclusion}[theorem]{Conclusion}
+	\newtheorem{condition}[theorem]{Condition}
+	\newtheorem{conjecture}[theorem]{Conjecture}
+	\newtheorem{corollary}[theorem]{Corollary}
+	\newtheorem{criterion}[theorem]{Criterion}
+	\newtheorem{definition}{Definition} % Number definitions on their own
+	\newtheorem{derivation}{Derivation} % Number derivations on their own
+	\newtheorem{example}[theorem]{Example}
+	\newtheorem{exercise}[theorem]{Exercise}
+	\newtheorem{lemma}[theorem]{Lemma}
+	\newtheorem{notation}[theorem]{Notation}
+	\newtheorem{problem}[theorem]{Problem}
+	\newtheorem{proposition}{Proposition} % Number propositions on their own
+	\newtheorem{remark}[theorem]{Remark}
+	\newtheorem{solution}[theorem]{Solution}
+	\newtheorem{summary}[theorem]{Summary}
+	\numberwithin{equation}{section}
+	\newcommand\ve{\varepsilon}
+	\graphicspath{{./figures/}}
+	\renewcommand\theenumi{\roman{enumi}}
+	\DeclareMathOperator*{\Max}{Max}
+	\bibliographystyle{aer}
+
+\begin{document}
+
+
+
+\begin{spacing}{1.5}
+
+%section 1
+
+\LARGE{Step-by-Step Model Buildup} \normalsize
+
+\section{Simple S-period I-Country OLG Model}
+	Consider a model with no complicated demographics.  Every period a unit measure of labor is born in each of $I$ countries and these workers live for exactly $S$ period.
+
+	Each country produces the same single good which is mobile across country borders.
+
+	Households of age $s$ in country $i$ in period $t$ solve the following maximization problem.
+	\begin{equation}
+		\max_{\{c_{i,s+j,t+j}\}_{j=0}^{S-s}} U_{ist} = \sum_{j=0}^{S-s} \beta^j R_{i,s+j,t+j} \frac{1}{1-\sigma} c_{i,s+j,t+j}^{1-\sigma} \nonumber
+	\end{equation}
+	\begin{equation}
+		R_{i,s+j,t+j} \equiv \prod_{x=1}^j (1-\rho_{i,s+x,t+x}) \nonumber
+	\end{equation}
+	subject to the following budget constraint each period.
+	\begin{equation} \label{Eq_HHbc}
+		c_{ist} = w_{it} e_{st} + (1+r_{it}-\delta)a_{ist} - a_{i,s+1,t+1}
+	\end{equation}
+	with $a_{i1t} = a_{i,S+1,t} = 0$
+
+	The solution to this problem yields the following intertemporal Euler equation.
+	\begin{equation} \label{Eq_HHEuler1}
+		c_{ist}^{-\sigma} = \beta (1-\rho_{i,s+1,t+1}) c_{i,s+1,t+1}^{-\sigma}(1+r_{i,t+1}-\delta)
+	\end{equation}
+
+	The representative firm in each country maximizes profits subject to a Cobb-Douglas production function.
+	\begin{equation}
+		\max_{n_{it},k_{it}} \Pi_{it} = k_{it}^\alpha \left( A_{i} n_{it} \right)^{1-\alpha} - w_{it}n_{it} - r_{it}k_{it} \nonumber
+	\end{equation}
+
+	This yields the following factor price equations.
+	\begin{align}
+		y_{it} & = k_{it}^\alpha \left( A_{i} n_{it} \right)^{1-\alpha} \\
+		r_{it} & = \alpha \frac{y_{it}}{k_{it}} \\
+		w_{it} & = (1-\alpha) \frac{y_{it}}{n_{it}}
+	\end{align}
+
+	Labor and capital market clearing conditions in each country give the following.
+	\begin{align}
+		k_{it} & = \sum_{s=1}^S a_{ist} + k_{it}^f\\
+		n_{it} & = \sum_{s=1}^S e_{is}
+	\end{align}
+	where $k_{it}^f$ denotes domestically-owned capital located in foreign countries.
+
+	Capital is allocated across countries so that the rate of return is equalized.
+	\begin{equation} \label{Eq_requal}
+		r_{it} = r_t
+	\end{equation}
+
+	And the net sum of all foreign-located capital across countries must be zero.
+	\begin{equation}
+		\sum_{i=1}^I k^f_{it} = 0
+	\end{equation}
+
+	Given a set of state variables today $X_t = \{a_{ist},k^f{it}\} \forall i,s$ we can calculate the following.
+	\begin{align}
+		k_{it} & = \sum_{s=1}^S a_{ist} + k_{it}^f; \forall i \label{Eq_kdef}\\
+		n_{it} & = \sum_{s=1}^S e_{is}; \forall i \\
+		y_{it} & = k_{it}^\alpha \left( A_{i} n_{it} \right)^{1-\alpha} ; \forall i \\
+		r_{it} & = \alpha \frac{y_{it}}{k_{it}}; \forall i \label{Eq_rdef}\\
+		w_{it} & = (1-\alpha) \frac{y_{it}}{n_{it}}; \forall i \label{Eq_wdef}\\		
+    	c_{ist} & = w_{it} e_{st} + (1+r_{1t}-\delta)a_{ist} - a_{i,s+1,t+1} ; \forall i,s \label{Eq_cdef}
+	\end{align}
+
+	The $IS$ values of $X_t$ in every period must satisfy the following equations $IS$.
+	\begin{align}
+		& c_{ist}^{-\sigma} - \beta (1-\rho_{i,s+1,t+1}) c_{i,s+1,t+1}^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,s \label{Eq_Euler2}\\ 
+		& r_{it} - r_{1t} = 0; \forall i>1 \\
+		& \sum_{i=1}^I k^f_{it} = 0 \label{Eq_Itnl}
+	\end{align}
+
+	To find the steady state we impose $a_{ist} = \bar a_{is}$ and $k^f_{it}=\bar k^f_i$ for all $t$ and using equations \eqref{Eq_kdef} - \eqref{Eq_cdef} search over these values to find the ones that set the values of equations \eqref{Eq_Euler2} - \eqref{Eq_Itnl} to zero.  This involves using fsolve.
+
+	To find the transition path we make an initial guess of a history of $\{r^0_t\}$ and $\{w^0_{it}\}$ values for $t=1$ to $T$ with the values of $\bar r$ and $\bar w_i$ for $t>T$.  We also have  known initial value for $a_{is1}$ and $k^f_{i1}$. With this information we search over the value of $c_{is1}$ for each household to find the value that sets $a_{iS,S-s}$ (their final savings) to zero when we chain equations \eqref{Eq_Euler2} and \eqref{Eq_cdef}.  That is, we solve for each households optimal time path of consumption and savings given the assumed history of factor prices.  We can then use equations \eqref{Eq_kdef} through \eqref{Eq_wdef} to find histories $\{r^{new}_t\}$ and $\{w^{new}_{it}\}$.  If these are not sufficiently different from the previous guess, we are done and have the transition path.  If they are different we use a new guess at the histories give by the equations below which are a convex combination of the old guess and the implied new histories.
+
+	\begin{align}
+		r^{j+1}_t & = \chi r^{j}_t + (1-\chi) r^{new}_t; \forall t \le T\\
+		w^{j+1}_t & = \chi w^{j}_t + (1-\chi) w^{new}_t; \forall t \le T 
+	\end{align}
+
+
+\newpage
+\section{Add Demographics and Growth}
+	Denote the population of age $s$ people in country $i$ in period $t$ as $N_{ist}$.  Denote the fraction of children born to people of age $s$ in country $i$ in period $t$ as $f_{ist}$ and the immigration rate as $m_{ist}$.  The mortality hazard is denoted $\rho_{ist}$.  We assume that $\rho_{ist}=0$ if $s<68$ and $\rho_{iSt}=1$.  We also assume that $f_{ist} = 0$ for $s<23$ and $s>45$.
+
+	The population dynamics are given by:
+	\begin{align}
+		N_{i,1,t+1} & = \sum_{s=1}^S N_{ist} f_{ist} \label{eq_2pop1}\\
+		N_{i,s+1,t+1} & = N_{ist} (1+m_{ist}-\rho_{ist}); 1<s\le S \label{eq_2pop2}
+	\end{align}
+
+	We define the total world population as:
+	\begin{equation}
+		N_t = \sum_{i=1}^I \sum_{s=1}^S N_{ist}
+	\end{equation}
+
+	The populations are, strictly speaking, state variables, but their steady state can be found independent of the other variables.  For the model to be stationarizable, it must be that in the long run, by period $T_1$, that the fertility, immigration, and mortality rates are the same for all countries.
+	\begin{align}
+		f_{ist} & = \bar f_s; t \ge T_1 \\
+		m_{ist} & = \bar m_s; t \ge T_1 \\
+		\rho_{ist} & = \bar \rho_s; t \ge T_1
+	\end{align}
+
+	Inheritances are partially intended bequests and are the assets of agents that die at the end of period $t$ to the survivors in that period.  Let $BQ_{it}$ denote total bequests in period $t$ for country $i$ and $bq_{ist}$ denote the bequest received by a person $s$ years old in that same country and time period.
+	\begin{align}
+		BQ_{it} & = \sum_s a_{ist} \rho_{ist} N_{ist} \\
+		& = \sum_s bq_{ist} (1-\rho_{ist}) N_{ist}
+	\end{align}
+
+	We specify a bequest distribution rule that tells what proportion of available bequest funds goes to each household within a country.  One possible simple rule would be to divide the funds up equally over all survivors between the ages of 23 and 67.  This rule would be:
+	\begin{align}
+		bq_{it} = \frac{BQ_{it}}{\sum_{s=23}^{67} (1-\rho_{ist}) N_{ist}} \nonumber
+	\end{align}
+	Note that for ages 23 through 67 we have $\rho_{ist} = 0$ and this reduces to:
+	\begin{align}
+		bq_{it} = \frac{BQ_{it}}{\sum_{s=23}^{67} N_{ist}} \nonumber
+	\end{align}
+
+	More generally we could specify a share of total bequests going to each age within country as $\phi_{is}$ giving:
+	\begin{align}
+		bq_{ist} = \frac{\phi_{is} BQ_{it}}{(1-\rho_{ist})N_{ist}} \nonumber
+	\end{align}
+
+	While relative populations stabilize in the steady state, the overall population may be growing or shrinking.  Hence, all aggregate variables will need to be stationarized by dividing by the total population of a country.  To help with this, we define the growth rate of the world population as $g^N_t = \tfrac{N_{it}}{N_{t-1}}-1$.
+
+	We also allow for technical progress by having the endowment of labor per household rise by a constant amount each period.  We denote this endowment as $\bar \ell_t$ and denote its growth rate as $g^A$.
+
+	The aggregate labor for a country is now given by $n_{it} = \sum_{s=1}^S N_{ist} e_{is} \bar \ell_t$.  Output, $y_t$, is defined as before. 
+
+	Aggregate variables will grow at the rate $g^A+g^N_t$ and per capita variables will grow at rate $g^A$.  The stationarized versions of our behavioral equations are given below, where a carat denotes the stationarized variable.  Note that $\hat N_{ist}$ is interpretable as the fraction of the world population in country $i$ of age $s$ at time $t$ so that $\sum_{i=1}^I \sum_{s=1}^S \hat N_{ist} = 1$.  Note that both $k_{it}$ and $n_{it}$ are growing at rate $g^A+g^N_t$, so $r_{it}$ and $w_{it}$ are stationary.
+
+	\begin{align}
+		g^N_t & = \sum_{i=1}^I \sum_{s=1}^S \hat N_{ist} (f_{ist}+m_{ist}-\rho_{ist}) ; \forall i\\
+		\hat N_{i,1,t+1} & = e^{-g^N_t}\sum_{s=23}^{45} \hat N_{ist} f_{ist} ; \forall i\\
+		\hat N_{i,s+1,t+1} & = e^{-g^N_t}\hat N_{ist} (1+m_{ist}-\rho_{ist}); \forall i, 1<s\le S \\
+		\hat k_{it} & = \sum_{s=1}^S \hat a_{ist} \hat N_{ist} + \hat k_{it}^f; \forall i \\
+		\hat n_{it} & = \sum_{s=1}^S e_{is} \hat N_{ist}; \forall i \\
+		\hat y_{it} & = \hat k_{it}^\alpha \left( A_{i} \hat n_{it} \right)^{1-\alpha} ; \forall i
+	\end{align}
+	\begin{align}
+		r_{it} & = \alpha \frac{\hat y_{it}}{\hat k_{it}}; \forall i \\
+		w_{it} & = (1-\alpha) \frac{\hat y_{it}}{\hat n_{it}}; \forall i \\
+		\hat bq_{it} & = \frac{\sum_{s=67}^S \hat a_{ist} \rho_{ist} \hat N_{ist}}{\sum_{s=23}^{67} \hat N_{ist}} ; \forall i,s \\
+	    \hat c_{ist} & = w_{it} e_{st} + (1+r_{1t}-\delta)\hat a_{ist} + \hat{bq}_{ist} - \hat a_{i,s+1,t+1}e^{g^A} ; \forall i,s \\
+		& \hat c_{ist}^{-\sigma} - \beta (1-\rho_{i,s+1,t+1}) \left(\hat c_{i,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,s \\ 
+		& r_{it} - r_{1t} = 0; \forall i>1 \\
+		& \sum_{i=1}^I \hat k^f_{it} = 0
+	\end{align}
+
+	Note that the first three equations of the above system can be solved for steady state values independent of the rest of the system as long as the steady state values of the fertility, immigration, and mortality rates are known.
+
+	Once we have these we can find the steady state values for the rest of the system as we did above.
+
+	Also note that for the transition path we can find the time paths for the $\hat N$ variables independent of the time-path iteration used to find the other variables.
+
+
+\newpage
+\section{Add a Leisure Decision}
+	Assume the household chooses some fraction of its available time to consume as leisure and supplies the rest as labor.  Denote is leisure consumption as $\ell_{ist}$.  The household's problem is now given by:
+	\begin{equation}
+		\begin{split}
+		& \max_{\{c_{i,s+j,t+j},\ell_{i,s+j,t+j}\}_{j=0}^{S-s}} U_{ist} = \\
+		& \sum_{j=0}^{S-s} \beta^j R_{i,s+j,t+j} \frac{1}{1-\sigma} \left( {c_{i,s+j,t+j}}^{1-1/\rho} + \chi {\ell_{i,s+j,t+j}}^{1-1/\rho}\right)^{\tfrac{{1-\sigma}}{1-1/\rho}}  \nonumber
+		\end{split}
+	\end{equation}
+	subject to the following budget constraint each period.
+	\begin{equation} \label{eq_3bc}
+		c_{ist} = w_{it} e_{st} (\bar \ell_t -\ell_{ist}) + (1+r_{it}-\delta)a_{ist} + bq_{ist} - a_{i,s+1,t+1}
+	\end{equation}
+	with $a_{i1t} = a_{i,S+1,t} = 0$.
+
+	We model technical progress by assuming that the time endowment per household $\bar \ell_t$ is growing at rate $g^A$ each period.
+
+	The first-order conditions are:
+	\begin{align}
+		& \beta^j R_{i,s+j,t+j} \left( {c_{i,s+j,t+j}}^{1-1/\rho} + \chi {\ell_{i,s+j,t+j}}^{1-1/\rho}\right)^{\tfrac{{1-\sigma}}{1-1/\rho}-1} {c_{i,s+j,t+j}}^{-1/\rho}  \nonumber \\ = &  - \lambda_{i,s+j,t+j}  \label{eq_3foc1} \\
+		& \beta^j R_{i,s+j,t+j} \left( {c_{i,s+j,t+j}}^{1-1/\rho} + \chi {\ell_{i,s+j,t+j}}^{1-1/\rho}\right)^{\tfrac{{1-\sigma}}{1-1/\rho}-1} \chi {\ell_{i,s+j,t+j}}^{-1/\rho} \nonumber \\ = & - \lambda_{i,s+j,t+j} w_{i,t+j} e_{s+j,t+j} \label{eq_3foc2} \\
+        & (1+r_{i,t+j}-\delta) \lambda_{i,s+j,t+j} = \lambda_{i,s+j-1,t+j-1} \label{eq_3foc3}
+	\end{align}	
+	along with \eqref{eq_3bc}.
+
+	Take the ratio of \eqref{eq_3foc1} and \eqref{eq_3foc2} and rearrange.
+	\begin{align}
+		\frac{{c_{i,s+j,t+j}}^{-1/\rho}} {\chi {\ell_{i,s+j,t+j}}^{-1/\rho}} \nonumber & = \frac{1} {w_{i,t+j} e_{s+j,t+j}} \nonumber \\
+		{c_{i,s+j,t+j}}^{-1/\rho} w_{i,t+j} e_{s+j,t+j} & = \chi {\ell_{i,s+j,t+j}}^{-1/\rho} \nonumber \\
+		\ell_{i,s+j,t+j} & = \left(\frac{\chi} {w_{i,t+j} e_{s+j,t+j}}\right)^{\rho} c_{i,s+j,t+j} \label{eq_3elldef}
+	\end{align}	
+
+	Substituting \eqref{eq_3elldef} into \eqref{eq_3foc1} gives:
+	\begin{align}
+	    & \lambda_{i,s+j,t+j} = \nonumber \\
+		& - \beta^j R_{i,s+j,t+j} \left( {c_{i,s+j,t+j}}^{\frac{\rho-1}{\rho}} + \chi \left[\left(\frac{\chi} {w_{i,t+j} e_{s+j,t+j}}\right)^{\rho} c_{i,s+j,t+j}\right]^{\frac{\rho-1}{\rho}}\right)^{\frac{1-\rho \sigma}{\rho-1}} {c_{i,s+j,t+j}}^{-1/\rho} \nonumber \\
+		& - \beta^j R_{i,s+j,t+j} \left( {c_{i,s+j,t+j}}^{\frac{\rho-1}{\rho}} \left[1 + \chi \left(\frac{\chi} {w_{i,t+j} e_{s+j,t+j}}\right)^{\rho-1} \right]\right)^{\frac{1-\rho \sigma}{\rho-1}} {c_{i,s+j,t+j}}^{-1/\rho} \nonumber \\
+		& - \beta^j R_{i,s+j,t+j} \left[1 + \chi \left(\frac{\chi} {w_{i,t+j} e_{s+j,t+j}}\right)^{\rho-1} \right]^{\frac{1-\rho \sigma}{\rho-1}} {c_{i,s+j,t+j}}^{-\sigma} \label{eq_3temp1}
+	\end{align}
+
+	Define $\Psi_{i,s+j,t+j}$.
+	\begin{align}
+        \Psi_{i,s+j,t+j} & \equiv \left[1 + \chi \left(\frac{\chi} {w_{i,t+j} e_{s+j,t+j}}\right)^{\rho-1} \right]^{\frac{1-\rho \sigma}{\rho-1}} \label{eq_3Psidef}
+	\end{align}	
+
+	Now substitute \eqref{eq_3temp1} and \eqref{eq_3Psidef} into \eqref{eq_3foc3}.
+	\begin{align}
+        & (1+r_{i,t+j}-\delta) \beta^j R_{i,s+j,t+j} \Psi_{i,s+j,t+j} {c_{i,s+j,t+j}}^{-\sigma} = \beta^{j-1} R_{i,s+j-1,t+j-1} \Psi_{i,s+j-1,t+j-1} {c_{i,s+j-1,t+j-1}}^{-\sigma} \nonumber \\
+        & \Psi_{i,s+j-1,t+j-1} {c_{i,s+j-1,t+j-1}}^{-\sigma} = \beta (1-\rho_{i,s+j,t+j}) \Psi_{i,s+j,t+j} {c_{i,s+j,t+j}}^{-\sigma} (1+r_{i,t+j}-\delta) \label{eq_3Euler}
+	\end{align}	
+
+	Substituting \eqref{eq_3elldef} into \eqref{eq_3bc}:
+	\begin{align}
+		& c_{ist} = w_{it} e_{st} \bar \ell_t - w_{it} e_{st} \left(\frac{\chi} {w_{it} e_{st}}\right)^{\rho} c_{ist} + (1+r_{it}-\delta)a_{ist} + bq_{ist} - a_{i,s+1,t+1} \nonumber \\
+		& c_{ist} \left[ 1 + w_{it} e_{st} \left(\frac{\chi} {w_{it} e_{st}}\right)^{\rho} \right] = w_{it} e_{st} \bar \ell_t + (1+r_{it}-\delta)a_{ist} + bq_{ist} - a_{i,s+1,t+1} \nonumber \\
+		& c_{ist} = \frac{w_{it} e_{st} \bar \ell_t + (1+r_{it}-\delta)a_{ist} + bq_{ist} - a_{i,s+1,t+1}} {1 + w_{it} e_{st} \left(\frac{\chi} {w_{it} e_{st}}\right)^{\rho}} \label{eq_3cdef}
+	\end{align}
+
+	If we stationarize \eqref{eq_3elldef}, \eqref{eq_3Psidef} and \eqref{eq_3cdef}, we can add them to the list of other behavioral equations from previous sections above to get the following.
+
+	\begin{align}
+		g^N_t & = \sum_{i=1}^I \sum_{s=1}^S \hat N_{ist} (f_{ist}+m_{ist}-\rho_{ist}) ; \forall i \label{eq_3gNdef}\\
+		\hat N_{i,1,t+1} & = e^{-g^N_t}\sum_{s=23}^{45} \hat N_{ist} f_{ist} ; \forall i\\
+		\hat N_{i,s+1,t+1} & = e^{-g^N_t}\hat N_{ist} (1+m_{ist}-\rho_{ist}); \forall i, 1<s\le S \label{eq_3pop2} \\
+		\hat k_{it} & = \sum_{s=1}^S \hat a_{ist} \hat N_{ist} + \hat k_{it}^f; \forall i \label{eq_3kdef}\\
+		\hat n_{it} & = \sum_{s=1}^S e_{is} (\bar \ell - \hat \ell_{ist}) \hat N_{ist}; \forall i \label{eq_3cond2} \\
+		\hat y_{it} & = \hat k_{it}^\alpha \left( A_{i} \hat n_{it} \right)^{1-\alpha} ; \forall i \label{eq_3ydef} \\
+		r_{it} & = \alpha \frac{\hat y_{it}}{\hat k_{it}}; \forall i \label{eq_3rdef} \\
+		w_{it} & = (1-\alpha) \frac{\hat y_{it}}{\hat n_{it}}; \forall i \label{eq_3wdef}
+	\end{align}
+	\begin{align}
+		\hat bq_{it} & = \frac{\sum_{s=67}^S \hat a_{ist} \rho_{ist} \hat N_{ist}}{\sum_{s=23}^{67} \hat N_{ist}} ; \forall i,s \label{eq_3bqdef} \\
+    	\hat c_{ist} & = \frac{w_{it} e_{st} + (1+r_{it}-\delta)\hat a_{ist} + {\hat bq}_{ist} - \hat a_{i,s+1,t+1}e^{g^A}} {1 + w_{it} e_{st} \left(\frac{\chi} {w_{it} e_{st}}\right)^{\rho}}; \forall i,s \label{eq_3cdef2}\\
+		\hat \ell_{ist} & = \hat c_{ist} \left(\frac{\chi}{w_{it}e_{st}}\right)^{\frac{1-\rho}{\rho}} ; \forall i,s \label{eq3_elldef}\\
+		\Psi_{ist} & = \left[1 + \chi \left(\frac{\chi} {w_{it} e_{st}}\right)^{\rho-1} \right]^{\frac{1-\rho \sigma}{\rho-1}}; \forall i,s \label{eq_3Psidef2} \\
+		\Psi_{ist} \hat c_{ist}^{-\sigma} & = \beta (1-\rho_{i,s+1,t+1}) \Psi_{i,s+1,t+1} \left(\hat c_{ist}e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta); \forall i,s \label{eq_3Euler2} \\
+		& r_{it} - r_{1t} = 0; \forall i>1 \label{eq_3requal}\\
+		& \sum_{i=1}^I \hat k^f_{it} = 0 \label{eq_3cond3}
+	\end{align}
+
+	To find the transition path we use the following algorithm.
+
+	First, use equations \eqref{eq_3gNdef} through \eqref{eq_3pop2} to get the time path for $\{N_{ist}\}$ for $t=1$ to $T$.
+
+	Then declare the values of the initial state $\{a_{ist}$ for $t=1$ to $T$.
+
+	Next, make an initial guess of a history of $\{r^0_t\}$ and $\{bq^0_{it}\}$ values for $t=1$ to $T$ with the values of $\bar r$ and $\bar {bq}_i$ for $t>T$.
+
+	We can rewrite equations \eqref{eq_3ydef} - \eqref{eq_3rdef} as follows.
+	\begin{align}
+		w_{it} & = (1-\alpha) A_i k_{it}^\alpha n_{it}^{-\alpha} \nonumber \\
+		r_{t} & = \alpha A_i k_{it}^{\alpha-1} n_{it}^{1-\alpha} \nonumber
+	\end{align}
+
+	Solving for $k_{it}$ gives:
+	\begin{align}
+		k_{it} & = \left(\frac{w_{it}}{(1-\alpha)A_i} \right)^{\frac{1}{\alpha}} n_{it} \nonumber \\
+		k_{it} & = \left(\frac{\alpha A_i}{r_t} \right)^{\frac{1}{1-\alpha}} n_{it} \nonumber
+	\end{align}
+
+	This can be solved for $w_{it}$.
+	\begin{equation}
+		w_{it} = \left(\frac{\alpha A_i}{r_t} \right)^{\frac{\alpha}{1-\alpha}} (1-\alpha) A_i \label{eq_3wfunc}
+	\end{equation}
+
+	With this information search over the value of $c_{is1}$ for each household to find the value that sets $a_{iS,S-s}$ (their final savings) to zero when we chain equations \eqref{eq_3Psidef2}, \eqref{eq_3Euler2} and \eqref{eq_3cdef2}.  That is, we solve for each households optimal time path of consumption and savings given the assumed history of factor prices.  This step requires the use of \texttt{fsolve}.  Note that it may be more convenient to write \eqref{eq_3cdef} as follows.
+	\begin{equation}
+		\hat a_{i,s+1,t+1} = \frac{\hat c_{ist} \left[ 1 + w_{it} e_{st} \left(\frac{\chi} {w_{it} e_{st}}\right)^{\rho}B \right] - w_{it} e_{st} - (1+r_{it}-\delta)\hat a_{ist} - {\hat bq}_{ist}}{e^{g^A}}
+	\end{equation}
+
+	We can then use equations \eqref{eq3_elldef} and \eqref{eq_3cond2} to get individual labor supply and total labor input.
+
+	We then define the total domestically-owned capital stock.
+	\begin{equation}
+		\hat k^d_{it} = \sum_i \hat a_{ist} \hat N_{ist} \label{eq_3kddef}
+	\end{equation}
+
+	Using \eqref{eq_3kdef} and \eqref{eq_3rdef} gives $r_{it} = \alpha A_i(\hat k^d_{it} + \hat k^f_{it})^{\alpha-1} \hat n_{it}^{1-\alpha}$.  Solving this for $\hat k^f_{it}$ noting \eqref{eq_3requal} gives:
+
+	\begin{equation}
+        \hat k^f_{it} = \left(\frac{\alpha A_t}{r_t}\right)^{\frac{1}{1-\alpha}} \hat n_{it} - \hat k^d_{it}
+	\end{equation}
+
+	We then use \eqref{eq_3cond3} and solve for $k^f_{1t}$ as the negative of the sum of the $k^f$'s from all the other countries.
+
+	\begin{equation}
+		\hat k^f_{1t} = -\sum_{i=2}^I \hat k^f_{it}
+	\end{equation}
+
+	Finally, we use equations \eqref{eq_3rdef} for country 1 and \eqref{eq_3wdef} for all countries to generate updated values of $\{r_t\}$ and $\{w_{it}\}$.  We then use the a convex combination of the original guesses and these new values as guesses for the next round of the iteration.
+
+	As an alternative, we can use \texttt{fsolve} to find the whole histories of $\{r_t\}$ and $\{bq_{it}\}$. that satisfy equations \eqref{eq_3cond2} and \eqref{eq_3bq2} for all time periods.
+
+	\begin{equation}
+		bq_{it} - \frac{\sum_{s=67}^S \hat a_{ist} \rho_{ist} \hat N_{ist}} {\sum_{s=23}^{67} \hat N_{ist}} = 0 \label{eq_3bq2}
+	\end{equation}
+
+	With this approach we can define a function that chains equations \eqref{eq_3Psidef2}, \eqref{eq_3Euler2} and \eqref{eq_3cdef2} to generate final assets as a function of initial consumption.  We can write this as \texttt{afinal = g(cinitial,S,Omega)}, where \texttt{S} denotes the household's age, and \texttt{Omega} denotes the history of wages, interest rates and bequests over the household's lifetime.
+
+	For households alive in period one we can stack the initial consumptions into an $S\times 1$ vector denoted \texttt{Calive} and define the vector function \texttt{falive} as the following.
+	\begin{equation}
+		\texttt{falive(Calive,Omega)} = 
+		\begin{bmatrix}
+		\texttt{g(c1initial,1,Omega)} \\
+		\texttt{g(c2initial,2,Omega)} \\
+		\vdots \\
+		\texttt{g(cSinitial,S,Omega)} \\
+		\end{bmatrix} \nonumber
+	\end{equation}
+
+	For households that will be born in the future we can stack all their age 1 consumptions into a $(T-1)\times 1$ vector denoted \texttt{Cfuture} and define the vector function \texttt{ffuture} as the following.
+	\begin{equation}
+		\texttt{ffuture(Cfuture,BigOmega)} = 
+		\begin{bmatrix}
+		\texttt{g(c1per2,S,BigOmega(2:S+1))} \\
+		\texttt{g(c2per3,S,BigOmega(3:S+2))} \\
+		\vdots \\
+		\texttt{g(cSperT,S,BigOmega(T-S+1,T))} \\
+		\end{bmatrix} \nonumber
+	\end{equation}
+	where \texttt{BigOmega} is the history of ages, interest rates and bequests from period 2 to $T$.
+
+	We can use \texttt{fsolve} on these two functions separately to find the consumption times paths and asset holdings within the larger \texttt{fsolve}
+
+	Solving for the steady state is accomplished in a similar fashion only using steady state values.
+
+	Note that in the code we use the following methodology to implement equations \eqref{eq_3gNdef} - \eqref{eq_3pop2}.
+
+	First, use the current distribution the population, $\{\hat N_{ist}\} \forall i, s$ and calculate tomorrow's population using the non-stationary equations \eqref{eq_2pop1} and \eqref{eq_2pop2} to generate next period's population, $\{N_{i,s,t+1}\} \forall i, s$.  Note that the current values will sum to one, but next period's will not.
+
+	Calculate the growth of the population using $g^N_t = \sum_s \sum_i N_{i,s,t+1} - 1$.
+
+	Then let $\hat N_{i,s,t+1} = N_{i,s,t+1} e^{-g^N_t}$.
+
+
+\newpage
+\section{Add Children}
+	Denote the number of children of age $r$ in household of age $s$ in country $i$ in period $t$ as $KID_{irst}$.  We assume that mortality hazard rates are zero up until age 68 and that fertility rates are non zero only for ages 23 through 45.  This means that we avoid the situation where a child lives, but the parents die, and vice versa.
+
+	The evolution of theses numbers is given by:
+	\begin{align}
+		KID_{i,r+1,s+1,t+1} = \left\{ \begin{matrix} f_{ist} & r=1 \\
+		KID_{irst} & 1<r<21\end{matrix} \right. \nonumber
+	\end{align}
+
+	Iterative substitution gives $KID_{i,r+1,s+1,t+1} = f_{i,s-r,t-r}$.  If we then define the number of children of all ages to a household of age $s$ as $KID_{ist}$ we have the following formula.
+
+	\begin{align}
+		KID_{i,s+1,t+1} = \sum_{r=1}^{20} f_{i,s-r,t-r}
+	\end{align}
+
+	Since this is a per household number of children it is already stationary and does not need to be turned into a ``hat'' variable.
+
+	The household's problem is now given below.  Note that beginning with this section we change the utility function to make it additively separable in own consumption, children's consumption and own leisure.  We assume a constant-elasticity-of-substitution formulation for both consumptions, but use an elliptical approximation to a constant-Frisch-elasticity formulation for leisure.  The logic behind an elliptical function is discussed at length in \citet{EvansPhillips:2015}.
+	\begin{equation}
+		\begin{split}
+		& \max_{\{c_{i,s+j,t+j},\ell_{i,s+j,t+j},c^K{i,s+j,t+j},a_{i,s+j,t+j}\}_{j=0}^{S-s}} U_{ist} = \\
+		& \sum_{j=0}^{S-s} \beta^j R_{i,s+j,t+j} \begin{bmatrix} \frac{1}{1-\sigma} {c_{i,s+j,t+j}}^{1-\sigma} + \chi_K \frac{1}{1-\sigma} KID_{i,s+j,t+j}{c^K_{i,s+j,t+j}}^{1-\sigma} \\ + \chi_\ell \left\{ \bar \ell - (\bar \ell-\ell_{i,s+j,t+j})^\mu \right\}^{\frac{1}{\mu}} \end{bmatrix} \nonumber
+		\end{split}
+	\end{equation}
+	subject to the following budget constraint each period.
+	\begin{equation} \label{eq_4bc}
+		c_{ist} + KID_{ist}c^K_{ist} = w_{it} e_{st} (\bar \ell_t -\ell_{ist}) + (1+r_{it}-\delta)a_{ist} + bq_{ist} - a_{i,s+1,t+1}
+	\end{equation}
+	with $a_{i1t} = a_{i,S+1,t} = 0$.  $\ell$ denotes leisure consumption and $c^K$ denotes consumption by children.
+
+	The first-order conditions are:
+	\begin{align}
+		& \beta^j R_{i,s+j,t+j} {c_{i,s+j,t+j}}^{-\sigma} =  - \lambda_{i,s+j,t+j}  \label{eq_4foc1} \\
+		& - \beta^j R_{i,s+j,t+j} \chi_\ell \left\{ \bar \ell - (\bar \ell-\ell_{i,s+j,t+j})^\mu) \right\}^{\frac{1-\mu}{\mu}}(\bar \ell-\ell_{i,s+j,t+j})^{\mu-1}  = - \lambda_{i,s+j,t+j} w_{i,t+j} e_{s+j,t+j} \label{eq_4foc2} \\
+		& \beta^j R_{i,s+j,t+j} \chi_K KID_{i,s+j,t+j}{c^K_{i,s+j,t+j}}^{-\sigma} = - \lambda_{i,s+j,t+j} KID_{i,s+j,t+j} \label{eq_4foc3} \\
+        & (1+r_{i,t+j}-\delta) \lambda_{i,s+j,t+j} = \lambda_{i,s+j-1,t+j-1} \label{eq_4foc4}
+	\end{align}	
+	along with \eqref{eq_4bc}.
+
+	Solve \eqref{eq_4foc1} for the LaGrange multiplier.
+	\begin{equation}\label{eq_4lamdef}
+	       \lambda_{i,s+j,t+j} = -\beta^j R_{i,s+j,t+j} {c_{i,s+j,t+j}}^{-\sigma}
+	\end{equation}
+
+	Then substitute this into \eqref{eq_4foc4} to get an intertemporal Euler equation.
+	\begin{equation}
+	       {c_{i,s+j-1,t+j-1}}^{-\sigma} = \beta (1-\rho_{i,s+j,t+j}) (1+r_{i,t+j}-\delta) {c_{i,s+j,t+j}}^{-\sigma}
+	\end{equation}
+
+	Next, take the ratio of \eqref{eq_4foc1} and \eqref{eq_4foc3} and solve for children's consumption.
+
+	\begin{equation}
+		c^K_{i,s+j-1,t+j-1} = c_{i,s+j-1,t+j-1} {\chi_K}^{-\frac{1}{\sigma}} \label{eq_4cKdefnon}
+ 	\end{equation}
+
+	Solve \eqref{eq_4foc1} and \eqref{eq_4foc2} for $\lambda_{i,s+j,t+j}$ set equal and simplify.
+	\begin{align}
+		 {c_{i,s+j,t+j}}^{-\sigma} w_{i,t+j} e_{s+j,t+j}  & =  -\chi_\ell \left[ \bar \ell - (\bar \ell-\ell_{i,s+j,t+j})^\mu \right]^{\frac{1-\mu}{\mu}}(\bar \ell-\ell_{i,s+j,t+j})^{\mu-1}  \nonumber \\
+		 \frac{{c_{i,s+j,t+j}}^{-\sigma} w_{i,t+j} e_{s+j,t+j}}{\chi_\ell} & = -\left[ \bar \ell - (\bar \ell-\ell_{i,s+j,t+j})^\mu \right]^{\frac{1-\mu}{\mu}}(\bar \ell-\ell_{i,s+j,t+j})^{\mu-1} \nonumber \\
+		 \left(\frac{{c_{i,s+j,t+j}}^{-\sigma} w_{i,t+j} e_{s+j,t+j}}{\chi_\ell} \right)^{\frac{\mu}{1-\mu}} & = -\left[ \bar \ell - (\bar \ell-\ell_{i,s+j,t+j})^\mu \right](\bar \ell-\ell_{i,s+j,t+j})^{-\mu} \nonumber \\
+		 \left(\frac{{c_{i,s+j,t+j}}^{-\sigma} w_{i,t+j} e_{s+j,t+j}}{\chi_\ell} \right)^{\frac{\mu}{1-\mu}} & = 1-\bar \ell(\bar \ell-\ell_{i,s+j,t+j})^{-\mu} \nonumber \\
+		 \left[ 1-\left(\frac{{c_{i,s+j,t+j}}^{-\sigma} w_{i,t+j} e_{s+j,t+j}}{\chi_\ell} \right)^{\frac{\mu}{1-\mu}} \right]^{-\frac{1}{\mu}} \frac{1}{\bar \ell} & = \bar \ell-\ell_{i,s+j,t+j} \nonumber \\
+		 \ell_{i,s+j,t+j} & = \bar \ell - \frac{1}{\bar \ell} \left[ 1-\left(\frac{{c_{i,s+j,t+j}}^{-\sigma} w_{i,t+j} e_{s+j,t+j}}{\chi_\ell} \right)^{\frac{\mu}{1-\mu}} \right]^{-\frac{1}{\mu}} \label{eq_4elldefnon}
+	\end{align}
+
+	If we stationarize \eqref{eq_4elldefnon} and \eqref{eq_4cKdefnon}, we can add them to the list of other behavioral equations from previous sections above to get the following.
+
+	\begin{align}
+		g^N_t & = \sum_{i=1}^I \sum_{s=1}^S \hat N_{ist} (f_{ist}+m_{ist}-\rho_{ist}) ; \forall i \label{eq_4gNdef}\\
+		\hat N_{i,1,t+1} & = e^{-g^N_t}\sum_{s=23}^{45} \hat N_{ist} f_{ist} ; \forall i\\
+		\hat N_{i,s+1,t+1} & = e^{-g^N_t}\hat N_{ist} (1+m_{ist}-\rho_{ist}); \forall i, 1<s\le S \label{eq_4pop2} \\
+		{KID}_{i,s+1,t+1} & = \sum_{r=1}^{20} f_{i,s-r,t-r}; \forall i, 1<s\le S \label{eq_4kids}\\
+		\hat k_{it} & = \sum_{s=1}^S \hat a_{ist} \hat N_{ist} + \hat k_{it}^f; \forall i \label{eq_4ksum} \\
+		\hat n_{it} & = \sum_{s=1}^S e_{is} (\bar \ell - \hat \ell_{ist}) \hat N_{ist}; \forall i \label{eq_4nsum} \\
+		\hat y_{it} & = \hat k_{it}^\alpha \left( A_{i} \hat n_{it} \right)^{1-\alpha} ; \forall i \label{eq_4yfunc} \\
+		r_{it} & = \alpha \frac{\hat y_{it}}{\hat k_{it}}; \forall i \label{eq_4rfunc} \\
+		w_{it} & = (1-\alpha) \frac{\hat y_{it}}{\hat n_{it}}; \forall i \label{eq_4wfunc} \\
+		\hat bq_{it} & = \frac{\sum_{s=67}^S \hat a_{ist} \rho_{ist} \hat N_{ist}}{\sum_{s=23}^{67} \hat N_{ist}} ; \forall i,s \label{eq_4bqfunc} \\
+		\hat \ell_{ist} & = \bar \ell - \frac{1}{\bar \ell} \left[ 1-\left(\frac{{c_{ist}}^{-\sigma} w_{it} e_{st}}{\chi_\ell} \right)^{\frac{\mu}{1-\mu}} \right]^{-\frac{1}{\mu}}; \forall i,s \label{eq_4elldef} \\
+		\hat c^K_{ist} & = \hat c_{ist} {\chi_K}^{-\frac{1}{\sigma}}; \forall i,s \label{eq_4cKdef} \\
+		\hat c_{ist} & = \begin{matrix} w_{it} e_{st} (\bar \ell - \hat \ell_{ist}) + (1+r_{it}-\delta)\hat a_{ist} \\ +\hat bq_{ist} - \hat a_{i,s+1,t+1} e^{g^A} - {KID}_{ist} \hat c^K_{ist} \end{matrix}; \forall i,s \label{eq_4BC}
+	\end{align}
+	\begin{align}
+		& \left({\hat c_{ist}}\right)^{-\sigma} - \beta (1-\rho_{i,s+1,t+1}) \left(\hat c_{i,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,s \label{eq_4Euler} \\
+		& r_{it} - r_{1t} = 0; \forall i>1 \label{eq_4requal} \\
+		& \sum_{i=1}^I \hat k^f_{it} = 0 \label{eq_4kfsum}
+	\end{align}
+
+	A solution technique is as follows:
+
+	First note that given an initial state described by $\left\{ \hat N_{is0}, a_{is0} \right\}\; \forall i,s$, equations \eqref{eq_4gNdef} - \eqref{eq_4kids} give the entire history of the demographics, $\left\{ g^N_t, \hat N_{ijst}, {KID}_{ijst} \right\}\; \forall i,s,t$, separately from the rest of the economy.
+
+	Next, make a guess for the history of capital stocks, labor inputs, and bequests $\left\{ \hat k_{it}, \hat k^f_{it}, \hat n_{it}, \hat{bq}_{it} \right\}\; \forall i,t$.
+
+	Equations \eqref{eq_4yfunc} - \eqref{eq_4wfunc}, then give us $\left\{ \hat y_{it}, r_{it}, \hat w_{ijt} \right\}\; \forall i,t$
+
+	Next, given the initial asset holdings (the $a$'s), we can use an ``inner'' fsolve to find $\left\{ \hat c_{ist}, \hat c^K_{ist}, \hat \ell_{ist}, \hat a_{ist} \right\}\; \forall i,s,t$.  We do this by choosing the initial consumption value that sets final assets to zero for each household.  Given initial consumption, $\hat c_{i0t}$, we can get an entire history of lifetime consumptions by using \eqref{eq_4Euler}.  Histories for $\hat \ell_{ist}$ and $\hat c^K_{ist}$ are found using equations \eqref{eq_4elldef} and \eqref{eq_4cKdef}.  The history for $a_{i,s+1,t+1}$ is found using \eqref{eq_4BC}.  The transformed versions of \eqref{eq_4Euler} and \eqref{eq_4BC} we will use are given below.
+	\begin{align}
+		\hat c_{i,s+1,t+1} & = \hat c_{ist} \frac{\beta (1-\rho_{i,s+1,t+1})(1+r_{1,t+1}-\delta)} {e^{g^A}} \nonumber \\
+		\hat a_{i,s+1,t+1} & = \frac{1}{e^{g^A}}\begin{pmatrix} w_{it} e_{st} (\bar \ell - \hat \ell_{ist}) + (1+r_{it}-\delta)\hat a_{ist} \\ +\hat bq_{ist} - \hat c_{ist} - {KID}_{ist} \hat c^K_{ist} \end{pmatrix} \nonumber
+	\end{align}
+
+	Then we use an``outer'' fsolve to find the values of $\left\{ \hat k_{it}, \hat k^f_{it}, \hat n_{it}, \hat{bq}_{it} \right\}\; \forall i,t$, that make equations \eqref{eq_4ksum}, \eqref{eq_4nsum}, \eqref{eq_4bqfunc} and \eqref{eq_4requal} true, subject to the constraint from \eqref{eq_4kfsum}.  Each period from 1 to $T$ we need to find: $I$ values for $\hat k_{it}$, $I-1$ values for $\hat k^f_{it}$, $I$ values for $\hat n_{it}$, and $I$ values for $\hat{bq}_{it}$.  This is a total of $T(4I-1)$ values that the fsolve needs to find.
+
+
+
+\newpage
+\section{Adding Different Types of Labor}
+	Let us allow for workers to be divided into $J$ types in each country.  We mostly use $J=2$, but we will keep the notation more general than this.  We will index these types by $j$ so that $c_{ijst}$ denotes consumption by a type $j$ household in country $i$ that is $s$ periods old in period $t$.
+
+	We will need to specify fertility, immigration and mortality rates over the $J$ types in each country.  However, one simplifying assumption we can use is that these are the same across all types, so that, for example, $f_{ijst} = f_{ist} \forall j$.
+
+	We also need to specify an ability matrix that varies by type as well as age and country now; i.e. use $e_{ijs}$.
+
+	Bequests can be distributed by type as well, so we need to specify a distribution rule that allows this.  In the Kotlikoff papers the rule used specifies that all funds are distributed within types, but may vary by age.
+	\begin{align}
+		BQ_{ijt} & = \sum_{s=67}^S a_{ijst} \rho_{ijst} N_{ijst} \\
+		& = \sum_{s=23}^{67} bq_{ijst} (1-\rho_{ijst}) N_{ijst}
+	\end{align}
+
+	Child types do not matter for household consumption.  Since types index earnings abilities, children's consumption is determined by their parent's type, not their own.  This also simplifies the model.
+
+	In effect, all we need to do to add labor types is add an extra dimension to household heterogeneity, allows for $J$ different wages in each country, and respecify the production function and first-order conditions as below.
+	\begin{align}
+		y_{it} & = k_{it}^\alpha \prod_{j=1}^J \left( A_{i} n_{ijt} \right)^{\alpha_j}; \alpha + \sum_{j=1}^J \alpha_j = 1 \\
+		r_{it} & = \alpha \frac{y_{it}}{k_{it}} \\
+		w_{ijt} & = \alpha_j \frac{y_{it}}{n_{ijt}}
+	\end{align}
+
+	Our behavioral equations become:
+	\begin{align}
+		g^N_t & = \sum_{i=1}^I \sum_{j=1}^J \sum_{s=1}^S \hat N_{ijst} (f_{ijst}+m_{ijst}-\rho_{ijst}) ; \forall i \label{eq_5demo1}\\
+		\hat N_{i,j,1,t+1} & = e^{-g^N_t}\sum_{s=23}^{45} \hat N_{ijst} f_{ijst} ; \forall i,j \\
+		\hat N_{i,j,s+1,t+1} & = e^{-g^N_t}\hat N_{ijst} (1+m_{ijst}-\rho_{ijst}); \forall i, 1<s\le S \\
+		\hat{KID}_{i,j,s+1,t+1} & = \sum_{r=1}^{20} f_{i,j,s-r,t-r}; \forall i, 1<s\le S \label{eq_5demo4}\\
+		\hat k_{it} & = \sum_{j=1}^J \sum_{s=1}^S \hat a_{ijst} \hat N_{ijst} + \hat k_{it}^f; \forall i \label{eq_5ksum}\\
+		\hat n_{ijt} & = \sum_{s=1}^S e_{ijs} (\bar \ell - \hat \ell_{ijst} ) \hat N_{ijst}; \forall i,j \label{eq_5nsum}\\
+		\hat y_{it} & = \hat k_{it}^\alpha \prod_{j=1}^J \left( A_{i} \hat n_{ijt} \right)^{\alpha_j}; \alpha + \sum_{j=1}^J \alpha_j = 1 ; \forall i \label{eq_5yfunc} \\
+		r_{it} & = \alpha \frac{\hat y_{it}}{\hat k_{it}}; \forall i \label{eq_5rfunc}\\
+		w_{ijt} & = \alpha_j \frac{\hat y_{it}}{\hat n_{ijt}}; \forall i,j \label{eq_5wfunc}
+	\end{align}
+	\begin{align}
+		\hat {bq}_{it} & = \frac{\sum_{s=67}^S \sum_j \hat a_{ijst} \rho_{ijst} \hat N_{ijst}}{\sum_{s=23}^{67} \hat N_{ijst}} ; \forall i,s \label{eq_5bqfunc}\\
+    	\hat \ell_{ijst} & = \bar \ell - \frac{1}{\bar \ell} \left[ 1-\left(\frac{{c_{ijst}}^{-\sigma} w_{ijt} e_{sjt}}{\chi_\ell} \right)^{\frac{\mu}{1-\mu}} \right]^{-\frac{1}{\mu}}; \forall i,j,s \label{eq_5elldef} \\
+		\hat c^K_{ijst} & = \hat c_{ijst} {\chi_K}^{-\frac{1}{\sigma}}; \forall i,j,s \label{eq_5cKdef} \\
+		\hat c_{ijst} & = \begin{matrix} w_{ijt} e_{sjt} (\bar \ell - \hat \ell_{ijst}) + (1+r_{it}-\delta)\hat a_{ijst} \\ +\hat bq_{ijst} - \hat a_{i,j,s+1,t+1} e^{g^A} - {KID}_{ijst} \hat c^K_{ijst}\end{matrix}; \forall i,j,s \label{eq_5BC} \\
+		& \left({\hat c_{ijst}}\right)^{-\sigma} - \beta (1-\rho_{i,j,s+1,+1}) \left(\hat c_{i,j,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,j,s \label{eq_5HH5func}\\
+		& r_{it} - r_{1t} = 0; \forall i>1 \label{eq_5requal}\\
+		& \sum_{i=1}^I \hat k^f_{it} = 0 \label{eq_5kfsum}
+	\end{align}
+
+
+\newpage
+\section{Adding Corporate Taxes}
+	Corporate taxes $T^K_{it}$ equal the corporate tax rate $\tau^K_{it}$ times output net of labor costs and depreciation.
+	\begin{equation}
+		T^K_{it} = \tau^K_{it} \left[ k_{it}^\alpha \left( A_{i} n_{it} \right)^{1-\alpha} - w_{it}n_{it} - \delta k_{it} \right]
+	\end{equation}
+
+	Hence, the firm's problem each period becomes:
+	\begin{align}
+		\max_{n_{it},k_{it}} \Pi_{it} & = k_{it}^\alpha \left( A_{i} n_{it} \right)^{1-\alpha} - w_{it}n_{it} - r_{it}k_{it} - T^K_{it} \nonumber \\
+		& = (1-\tau^K_{it})\left[k_{it}^\alpha \left( A_{i} n_{it} \right)^{1-\alpha} - w_{it}n_{it}\right] + (\tau^K_{it} \delta - r_{it})k_{it} \nonumber
+	\end{align}	
+
+	And the first-order conditions now yield:
+	\begin{align}
+		y_{it} & = k_{it}^\alpha \left( A_{i} n_{it} \right)^{1-\alpha} \nonumber \\
+		r_{it} & = (1-\tau^K_{it})\alpha \frac{y_{it}}{k_{it}} + \delta \tau^K_{it} \label{eq_6rdef} \\
+		w_{it} & = (1-\alpha) \frac{y_{it}}{n_{it}} \nonumber
+	\end{align}
+	Only \eqref{eq_6rdef} is different than what we have in previous sections.
+
+	We assume the government spends all of its tax revenues on lump-sum transfers to households, which we will denote $T^L_{it}$.  Since these are non-distortionary, they do note affect the household's Euler equations, but they do alter the budget constraint.
+	\begin{equation} \nonumber
+		c_{ijst} + KID_{ist}c^K_{ijst} = w_{ijt} e_{jst} (\bar \ell_t -\ell_{ijst}) + (1+r_{it}-\delta)a_{ijst} - a_{i,j,s+1,t+1} + T^L_{it}
+	\end{equation}
+
+	Finally we get a balanced budget constraint for the government of:
+	budget constraint.
+	\begin{equation} \nonumber
+		T^L_{it} = \tau^K_{it} (y_{it} - w_{it}n_{it} - \delta k_{it})
+	\end{equation}
+
+	The new set of behavioral equations is given below.
+	\begin{align}
+		g^N_t & = \sum_{i=1}^I \sum_{j=1}^J \sum_{s=1}^S \hat N_{ijst} (f_{ijst}+m_{ijst}-\rho_{ijst}) ; \forall i\\
+		\hat N_{i,j,1,t+1} & = e^{-g^N_t}\sum_{s=23}^{45} \hat N_{ijst} f_{ijst} ; \forall i,j\\
+		\hat N_{i,j,s+1,t+1} & = e^{-g^N_t}\hat N_{ijst} (1+m_{ijst}-\rho_{ijst}); \forall i, 1<s\le S \\
+		KID_{i,j,s+1,t+1} & = \sum_{r=1}^{20} f_{i,j,s-r,t-r}; \forall i, 1<s\le S \\
+	    \hat k_{it} & = \sum_{j=1}^J \sum_{s=1}^S \hat a_{ijst} \hat N_{ijst} + \hat k_{it}^f; \forall i \\
+		\hat n_{ijt} & = \sum_{s=1}^S e_{ijs} (\bar \ell - \hat \ell_{ijst}) \hat N_{ijst}; \forall i,j \\
+		\hat y_{it} & = \hat k_{it}^\alpha \prod_{j=1}^J \left( A_{i} \hat n_{ijt} \right)^{\alpha_j}; \alpha + \sum_{j=1}^J \alpha_j = 1 ; \forall i \\
+		r_{it} & = (1-\tau^K_{it})\alpha \frac{\hat y_{it}}{\hat k_{it}} + \delta \tau^K_{it}; \forall i \\
+		w_{ijt} & = (1-\alpha_j) \frac{\hat y_{it}}{\hat n_{ijt}}; \forall i.j \\
+		\hat bq_{it} & = \frac{\sum_{s=67}^S \sum_j \hat a_{ijst} \rho_{ijst} \hat N_{ijst}}{\sum_{s=23}^{67} \hat N_{ijst}} ; \forall i,s
+	\end{align}
+	\begin{align}
+		\hat T^L_{it} & = \tau^K_{it} (\hat y_{it} - w_{it}\hat n_{it} - \delta \hat k_{it}); \forall i \\
+    	\hat \ell_{ijst} & = \bar \ell - \frac{1}{\bar \ell} \left[ 1-\left(\frac{{c_{ijst}}^{-\sigma} w_{ijt} e_{sjt}}{\chi_\ell} \right)^{\frac{\mu}{1-\mu}} \right]^{-\frac{1}{\mu}}; \forall i,j,s \label{eq_6elldef} \\
+		\hat c^K_{ijst} & = \hat c_{ijst} {\chi_K}^{-\frac{1}{\sigma}}; \forall i,j,s \label{eq_6cKdef} \\
+		\hat c_{ijst} & = \begin{matrix} w_{ijt} e_{sjt} (\bar \ell - \hat \ell_{ijst}) + (1+r_{it}-\delta)\hat a_{ijst} \\ +\hat bq_{ijst} - \hat a_{i,j,s+1,t+1} e^{g^A} - {KID}_{ijst} \hat c^K_{ijst} + \hat T^L_{it} \end{matrix}; \forall i,j,s \label{eq_6BC} \\
+		& \left({\hat c_{ijst}}\right)^{-\sigma} - \beta (1-\rho_{i,j,s+1,+1}) \left(\hat c_{i,j,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,j,s \\
+		& r_{it} - r_{1t} = 0; \forall i>1 \\
+		& \sum_{i=1}^I \hat k^f_{it} = 0
+	\end{align}
+
+\end{spacing}
+
+\newpage
+\bibliography{Bibliography}
+\end{document}
