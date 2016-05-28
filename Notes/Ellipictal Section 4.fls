@@ -141,6 +141,9 @@ INPUT /usr/local/texlive/2014/texmf-var/fonts/map/pdftex/updmap/pdftex.map
 INPUT /usr/local/texlive/2014/texmf-dist/fonts/tfm/public/cm/cmtt12.tfm
 INPUT /usr/local/texlive/2014/texmf-dist/fonts/tfm/public/cm/cmtt8.tfm
 INPUT /usr/local/texlive/2014/texmf-dist/fonts/tfm/public/cm/cmtt8.tfm
+INPUT Ellipictal Section 4.bbl
+INPUT Ellipictal Section 4.bbl
+INPUT /usr/local/texlive/2014/texmf-dist/fonts/tfm/public/cm/cmbx12.tfm
 INPUT Ellipictal Section 4.aux
 INPUT ./Ellipictal Section 4.out
 INPUT ./Ellipictal Section 4.out

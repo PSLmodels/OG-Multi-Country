@@ -402,7 +402,7 @@
 
 	Since this is a per household number of children it is already stationary and does not need to be turned into a ``hat'' variable.
 
-	The household's problem is now given by:
+	The household's problem is now given below.  Note that beginning with this section we change the utility function to make it additively separable in own consumption, children's consumption and own leisure.  We assume a constant-elasticity-of-substitution formulation for both consumptions, but use an elliptical approximation to a constant-Frisch-elasticity formulation for leisure.  The logic behind an elliptical function is discussed at length in \citet{EvansPhillips:2015}.
 	\begin{equation}
 		\begin{split}
 		& \max_{\{c_{i,s+j,t+j},\ell_{i,s+j,t+j},c^K{i,s+j,t+j},a_{i,s+j,t+j}\}_{j=0}^{S-s}} U_{ist} = \\
@@ -437,7 +437,7 @@
 	Next, take the ratio of \eqref{eq_4foc1} and \eqref{eq_4foc3} and solve for children's consumption.
 
 	\begin{equation}
-		c^K_{i,s+j-1,t+j-1} = c_{i,s+j-1,t+j-1} {\chi_K}^{-\frac{1}{\sigma}} \label{eq_4cKdef}
+		c^K_{i,s+j-1,t+j-1} = c_{i,s+j-1,t+j-1} {\chi_K}^{-\frac{1}{\sigma}} \label{eq_4cKdefnon}
  	\end{equation}
 
 	Solve \eqref{eq_4foc1} and \eqref{eq_4foc2} for $\lambda_{i,s+j,t+j}$ set equal and simplify.
@@ -447,39 +447,48 @@
 		 \left(\frac{{c_{i,s+j,t+j}}^{-\sigma} w_{i,t+j} e_{s+j,t+j}}{\chi_\ell} \right)^{\frac{\mu}{1-\mu}} & = -\left[ \bar \ell - (\bar \ell-\ell_{i,s+j,t+j})^\mu \right](\bar \ell-\ell_{i,s+j,t+j})^{-\mu} \nonumber \\
 		 \left(\frac{{c_{i,s+j,t+j}}^{-\sigma} w_{i,t+j} e_{s+j,t+j}}{\chi_\ell} \right)^{\frac{\mu}{1-\mu}} & = 1-\bar \ell(\bar \ell-\ell_{i,s+j,t+j})^{-\mu} \nonumber \\
 		 \left[ 1-\left(\frac{{c_{i,s+j,t+j}}^{-\sigma} w_{i,t+j} e_{s+j,t+j}}{\chi_\ell} \right)^{\frac{\mu}{1-\mu}} \right]^{-\frac{1}{\mu}} \frac{1}{\bar \ell} & = \bar \ell-\ell_{i,s+j,t+j} \nonumber \\
-		 \ell_{i,s+j,t+j} & = \bar \ell - \frac{1}{\bar \ell} \left[ 1-\left(\frac{{c_{i,s+j,t+j}}^{-\sigma} w_{i,t+j} e_{s+j,t+j}}{\chi_\ell} \right)^{\frac{\mu}{1-\mu}} \right]^{-\frac{1}{\mu}} \label{eq_4elldef}
+		 \ell_{i,s+j,t+j} & = \bar \ell - \frac{1}{\bar \ell} \left[ 1-\left(\frac{{c_{i,s+j,t+j}}^{-\sigma} w_{i,t+j} e_{s+j,t+j}}{\chi_\ell} \right)^{\frac{\mu}{1-\mu}} \right]^{-\frac{1}{\mu}} \label{eq_4elldefnon}
 	\end{align}
 
-	Finally, take \eqref{eq_4elldef} and \eqref{eq_4cKdef} and substitute these into \eqref{eq_4bc} to give an equation that implicitly defines own consumption.
-	\begin{align}
-		& c_{ist} + KID_{ist}c_{i,s+j-1,t+j-1} {\chi_K}^{-\frac{1}{\sigma}} + w_{it} e_{st} \left\{ \bar \ell - \frac{1}{\bar \ell} \left[ 1-\left(\frac{{c_{i,s+j,t+j}}^{-\sigma} w_{i,t+j} e_{s+j,t+j}}{\chi_\ell} \right)^{\frac{\mu}{1-\mu}} \right]^{-\frac{1}{\mu}} \right\} \nonumber \\
-		& = w_{it} e_{st} \bar \ell_t + (1+r_{it}-\delta)a_{ist} + bq_{ist} - a_{i,s+1,t+1} \nonumber \\
-		& c_{ist} + KID_{ist}c_{i,s+j-1,t+j-1} {\chi_K}^{-\frac{1}{\sigma}} -  \frac{w_{it} e_{st}}{\bar \ell} \left[ 1-\left(\frac{{c_{i,s+j,t+j}}^{-\sigma} w_{i,t+j} e_{s+j,t+j}}{\chi_\ell} \right)^{\frac{\mu}{1-\mu}} \right]^{-\frac{1}{\mu}} \nonumber \\
-		& = (1+r_{it}-\delta)a_{ist} + bq_{ist} - a_{i,s+1,t+1} \label{eq_4cdef}
-	\end{align}
-
-	If we stationarize \eqref{eq_4elldef} and \eqref{eq_4cKdef}, we can add them to the list of other behavioral equations from previous sections above to get the following.
+	If we stationarize \eqref{eq_4elldefnon} and \eqref{eq_4cKdefnon}, we can add them to the list of other behavioral equations from previous sections above to get the following.
 
 	\begin{align}
 		g^N_t & = \sum_{i=1}^I \sum_{s=1}^S \hat N_{ist} (f_{ist}+m_{ist}-\rho_{ist}) ; \forall i \label{eq_4gNdef}\\
 		\hat N_{i,1,t+1} & = e^{-g^N_t}\sum_{s=23}^{45} \hat N_{ist} f_{ist} ; \forall i\\
 		\hat N_{i,s+1,t+1} & = e^{-g^N_t}\hat N_{ist} (1+m_{ist}-\rho_{ist}); \forall i, 1<s\le S \label{eq_4pop2} \\
-		\hat k_{it} & = \sum_{s=1}^S \hat a_{ist} \hat N_{ist} + \hat k_{it}^f; \forall i \\
-		\hat n_{it} & = \sum_{s=1}^S e_{is} (\bar \ell - \hat \ell_{ist}) \hat N_{ist}; \forall i \\
-		\hat y_{it} & = \hat k_{it}^\alpha \left( A_{i} \hat n_{it} \right)^{1-\alpha} ; \forall i \\
-		r_{it} & = \alpha \frac{\hat y_{it}}{\hat k_{it}}; \forall i \\
-		w_{it} & = (1-\alpha) \frac{\hat y_{it}}{\hat n_{it}}; \forall i \\
-		\hat bq_{it} & = \frac{\sum_{s=67}^S \hat a_{ist} \rho_{ist} \hat N_{ist}}{\sum_{s=23}^{67} \hat N_{ist}} ; \forall i,s \\
-		\Gamma_{it} & = \left\{ \left[1 + \chi \left(\frac{\chi}{w_{it} e_{st}}\right)^{\rho-1}\right]^{\tfrac{1-\rho \sigma}{\rho-1}}  \right\}^{-\tfrac{1}{\sigma}}; \forall i,s \\
-    	\hat c_{ist} & = \frac{w_{it} e_{st} \bar \ell + (1+r_{it}-\delta)\hat a_{ist} +\hat bq_{ist} - \hat a_{i,s+1,t+1} e^{g^A}} {1 + KID_{ist}\Gamma_{it} +w_{it}e_{st} \left(\tfrac{\chi}{w_{it}e_{st}}\right)^\rho}; \forall i,s \\
-		\hat \ell_{ist} & = \hat c_{ist} \left(\frac{\chi}{w_{it}e_{st}}\right)^\rho ; \forall i,s \\
-		\hat c^K_{ist} & = \hat c_{ist} \Gamma_{it}; \forall i,s
+		{KID}_{i,s+1,t+1} & = \sum_{r=1}^{20} f_{i,s-r,t-r}; \forall i, 1<s\le S \label{eq_4kids}\\
+		\hat k_{it} & = \sum_{s=1}^S \hat a_{ist} \hat N_{ist} + \hat k_{it}^f; \forall i \label{eq_4ksum} \\
+		\hat n_{it} & = \sum_{s=1}^S e_{is} (\bar \ell - \hat \ell_{ist}) \hat N_{ist}; \forall i \label{eq_4nsum} \\
+		\hat y_{it} & = \hat k_{it}^\alpha \left( A_{i} \hat n_{it} \right)^{1-\alpha} ; \forall i \label{eq_4yfunc} \\
+		r_{it} & = \alpha \frac{\hat y_{it}}{\hat k_{it}}; \forall i \label{eq_4rfunc} \\
+		w_{it} & = (1-\alpha) \frac{\hat y_{it}}{\hat n_{it}}; \forall i \label{eq_4wfunc} \\
+		\hat bq_{it} & = \frac{\sum_{s=67}^S \hat a_{ist} \rho_{ist} \hat N_{ist}}{\sum_{s=23}^{67} \hat N_{ist}} ; \forall i,s \label{eq_4bqfunc} \\
+		\hat \ell_{ist} & = \bar \ell - \frac{1}{\bar \ell} \left[ 1-\left(\frac{{c_{ist}}^{-\sigma} w_{it} e_{st}}{\chi_\ell} \right)^{\frac{\mu}{1-\mu}} \right]^{-\frac{1}{\mu}}; \forall i,s \label{eq_4elldef} \\
+		\hat c^K_{ist} & = \hat c_{ist} {\chi_K}^{-\frac{1}{\sigma}}; \forall i,s \label{eq_4cKdef} \\
+		\hat c_{ist} & = \begin{matrix} w_{it} e_{st} (\bar \ell - \hat \ell_{ist}) + (1+r_{it}-\delta)\hat a_{ist} \\ +\hat bq_{ist} - \hat a_{i,s+1,t+1} e^{g^A} - {KID}_{ist} \hat c^K_{ist} \end{matrix}; \forall i,s \label{eq_4BC}
 	\end{align}
 	\begin{align}
-		& \left({\hat c^K_{ist}}\right)^{-\sigma} - \beta (1-\rho_{i,s+1,t+1}) \left(\hat c^K_{i,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,s \\
-		& r_{it} - r_{1t} = 0; \forall i>1 \\
-		& \sum_{i=1}^I \hat k^f_{it} = 0
+		& \left({\hat c_{ist}}\right)^{-\sigma} - \beta (1-\rho_{i,s+1,t+1}) \left(\hat c_{i,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,s \label{eq_4Euler} \\
+		& r_{it} - r_{1t} = 0; \forall i>1 \label{eq_4requal} \\
+		& \sum_{i=1}^I \hat k^f_{it} = 0 \label{eq_4kfsum}
 	\end{align}
+
+	A solution technique is as follows:
+
+	First note that given an initial state described by $\left\{ \hat N_{is0}, a_{is0} \right\}\; \forall i,s$, equations \eqref{eq_4gNdef} - \eqref{eq_4kids} give the entire history of the demographics, $\left\{ g^N_t, \hat N_{ijst}, {KID}_{ijst} \right\}\; \forall i,s,t$, separately from the rest of the economy.
+
+	Next, make a guess for the history of capital stocks, labor inputs, and bequests $\left\{ \hat k_{it}, \hat k^f_{it}, \hat n_{it}, \hat{bq}_{it} \right\}\; \forall i,t$.
+
+	Equations \eqref{eq_4yfunc} - \eqref{eq_4wfunc}, then give us $\left\{ \hat y_{it}, r_{it}, \hat w_{ijt} \right\}\; \forall i,t$
+
+	Next, given the initial asset holdings (the $a$'s), we can use an ``inner'' fsolve to find $\left\{ \hat c_{ist}, \hat c^K_{ist}, \hat \ell_{ist}, \hat a_{ist} \right\}\; \forall i,s,t$.  We do this by choosing the initial consumption value that sets final assets to zero for each household.  Given initial consumption, $\hat c_{i0t}$, we can get an entire history of lifetime consumptions by using \eqref{eq_4Euler}.  Histories for $\hat \ell_{ist}$ and $\hat c^K_{ist}$ are found using equations \eqref{eq_4elldef} and \eqref{eq_4cKdef}.  The history for $a_{i,s+1,t+1}$ is found using \eqref{eq_4BC}.  The transformed versions of \eqref{eq_4Euler} and \eqref{eq_4BC} we will use are given below.
+	\begin{align}
+		\hat c_{i,s+1,t+1} & = \hat c_{ist} \frac{\beta (1-\rho_{i,s+1,t+1})(1+r_{1,t+1}-\delta)} {e^{g^A}} \nonumber \\
+		\hat a_{i,s+1,t+1} & = \frac{1}{e^{g^A}}\begin{pmatrix} w_{it} e_{st} (\bar \ell - \hat \ell_{ist}) + (1+r_{it}-\delta)\hat a_{ist} \\ +\hat bq_{ist} - \hat c_{ist} - {KID}_{ist} \hat c^K_{ist} \end{pmatrix} \nonumber
+	\end{align}
+
+	Then we use an``outer'' fsolve to find the values of $\left\{ \hat k_{it}, \hat k^f_{it}, \hat n_{it}, \hat{bq}_{it} \right\}\; \forall i,t$, that make equations \eqref{eq_4ksum}, \eqref{eq_4nsum}, \eqref{eq_4bqfunc} and \eqref{eq_4requal} true, subject to the constraint from \eqref{eq_4kfsum}.  Each period from 1 to $T$ we need to find: $I$ values for $\hat k_{it}$, $I-1$ values for $\hat k^f_{it}$, $I$ values for $\hat n_{it}$, and $I$ values for $\hat{bq}_{it}$.  This is a total of $T(4I-1)$ values that the fsolve needs to find.
+
 
 
 \newpage
@@ -519,47 +528,13 @@
 	\end{align}
 	\begin{align}
 		\hat {bq}_{it} & = \frac{\sum_{s=67}^S \sum_j \hat a_{ijst} \rho_{ijst} \hat N_{ijst}}{\sum_{s=23}^{67} \hat N_{ijst}} ; \forall i,s \label{eq_5bqfunc}\\
-		\Gamma_{ijt} & = \left\{ \left[1 + \chi \left(\frac{\chi}{w_{ijt} e_{jst}}\right)^{\rho-1}\right]^{\tfrac{1-\rho \sigma}{\rho-1}} \right\}^{-\tfrac{1}{\sigma}}; \forall i,j,s \label{eq_5HH1func}\\
-    	\hat c_{ijst} & = \frac{w_{ijt} e_{jst} + (1+r_{it}-\delta)\hat a_{ijst} + \hat{bq}_{jist} - \hat a_{i,j,s+1,t+1} e^{g^A}} {1 + KID_{ist}\Gamma_{ijt} + \left(\tfrac{\chi}{w_{ijt}e_{jst}}\right)^\rho}; \forall i,j,s \\
-		\hat \ell_{ijst} & = \hat c_{ijst} \left(\frac{\chi}{w_{ijt}e_{jst}}\right)^{\frac{1-\rho}{\rho}} ; \forall i,j,s \\
-		\hat c^K_{ijst} & = \hat c_{ijst} \Gamma_{ijt}; \forall i,j,s \\
-		& \left({\hat c^K_{ijst}}\right)^{-\sigma} - \beta (1-\rho_{i,j,s+1,+1}) \left(\hat c^K_{i,j,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,j,s \label{eq_5HH5func}\\
+    	\hat \ell_{ijst} & = \bar \ell - \frac{1}{\bar \ell} \left[ 1-\left(\frac{{c_{ijst}}^{-\sigma} w_{ijt} e_{sjt}}{\chi_\ell} \right)^{\frac{\mu}{1-\mu}} \right]^{-\frac{1}{\mu}}; \forall i,j,s \label{eq_5elldef} \\
+		\hat c^K_{ijst} & = \hat c_{ijst} {\chi_K}^{-\frac{1}{\sigma}}; \forall i,j,s \label{eq_5cKdef} \\
+		\hat c_{ijst} & = \begin{matrix} w_{ijt} e_{sjt} (\bar \ell - \hat \ell_{ijst}) + (1+r_{it}-\delta)\hat a_{ijst} \\ +\hat bq_{ijst} - \hat a_{i,j,s+1,t+1} e^{g^A} - {KID}_{ijst} \hat c^K_{ijst}\end{matrix}; \forall i,j,s \label{eq_5BC} \\
+		& \left({\hat c_{ijst}}\right)^{-\sigma} - \beta (1-\rho_{i,j,s+1,+1}) \left(\hat c_{i,j,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,j,s \label{eq_5HH5func}\\
 		& r_{it} - r_{1t} = 0; \forall i>1 \label{eq_5requal}\\
 		& \sum_{i=1}^I \hat k^f_{it} = 0 \label{eq_5kfsum}
 	\end{align}
-
-	A solution technique is as follows:
-
-	First note that given an initial state described by $\left\{ \hat N_{ijs0}, a_{ijs0} \right\}\; \forall i,j,s$, equations \eqref{eq_5demo1} - \eqref{eq_5demo4} give the entire history of the deomgraphics, $\left\{ g^N_t, \hat N_{ijst}, \hat{KID}_{ijst} \right\}\; \forall i,j,s,t$, separately from the rest of the economy.
-
-	Next, make a guess for the history of capital stocks and labor inputs, $\left\{ \hat k_{it}, \hat k^f_{it}, \hat n_{ijt}, \hat{bq}_{it} \right\}\; \forall i,j,t$.
-
-	Equations \eqref{eq_5yfunc} - \eqref{eq_5wfunc}, then give us $\left\{ \hat y_{it}, r_{it}, \hat n_{ijt} \right\}\; \forall i,j,t$
-
-	Next, given the initial asset holdings (the $a$'s), we can use an ``inner'' fsolve along with equations \eqref{eq_5HH1func} - \eqref{eq_5HH5func} to find $\left\{ \hat c_{ijst}, \hat c^K_{ijst}, \hat \ell_{ijst}, \hat a_{ijst} \right\}\; \forall i,j,s,t$.  We do this by choosing the inititial consumption value that sets final assets to zero for each household.
-
-	Then we use an``outer'' fsolve to find the values of $\left\{ \hat k_{it}, \hat k^f_{it}, \hat n_{ijt}, \hat{bq}_{it} \right\}\; \forall i,j,t$, that make equations \eqref{eq_5ksum}, \eqref{eq_5nsum}, \eqref{eq_5bqfunc} and \eqref{eq_5requal} true, subject to the constraint from \eqref{eq_5kfsum}.  Each period from 1 to $T$ we need to find: $I$ values for $\hat k_{it}$, $I-1$ values for $\hat k^f_{it}$, $IJ$ values for $\hat n_{ijt}$, and $I$ values for $\hat{bq}_{it}$.  This is a total of $T(2I+J-1)$ values that the fsolve needs to find.
-
-
-	% The analogue \eqref{eq_3wfunc} is found by solving equations \eqref{eq_5rfunc} and \eqref{eq_5wfunc} for $k_{it}$.
-
-	% \begin{align}
-	% 	k_{it} & = \left( \frac{\alpha A_i^{\sum_j \alpha_j} \prod_j n_{ijt}^{\alpha_j}} {r_t} \right)^{\frac{1}{1-\alpha}} \nonumber \\
-	% 	& = \left(\frac{w_{ijt}} {\alpha_j A_i^{\sum_j \alpha_j} \prod_{x \ne j} n_{ixt}^{\alpha_x}} \right)^{\frac{1}{\alpha}}; \quad \forall j \nonumber
-	% \end{align}
-	
-	% These can be rewritten as:
-	% \begin{align}
-	% 	1 & = \frac{ \alpha^\alpha A_i^{\sum_j \alpha_j} n_{ijt}^{2\alpha_j \alpha - \alpha_j - \alpha + 1}} {\alpha_j^{1-\alpha}r_t^\alpha w_{ijt}^{1-\alpha} \prod_{x \ne j} n_{ixt}^{\alpha_x}} \nonumber \\
-	% 	n_{ixt} & = \frac{\alpha_j w_{ixt}} {\alpha_x w_{ijt}} n_{ijt} ; \quad \forall j,k \nonumber
-	% \end{align}	
-
-	% Substituting the second into the first gives:
-	% \begin{align}
-	% 	1 & = \frac{ \alpha^\alpha A_i^{\sum_j \alpha_j} n_{ijt}^{2\alpha_j \alpha - \alpha_j - \alpha + 1}} {\alpha_j^{1-\alpha}r_t^\alpha w_{ijt}^{1-\alpha} \prod_{x \ne j} \left( \frac{\alpha_j w_{ixt}} {\alpha_x w_{ijt}} n_{ijt} \right)^{\alpha_x}} \nonumber \\
-	% 	1 & = \frac{ \alpha^\alpha A_i^{\sum_j \alpha_j} n_{ijt}^{2\alpha_j \alpha - \alpha_j - \alpha + 1}} {\alpha_j^{1-\alpha}r_t^\alpha w_{ijt}^{1-\alpha} \prod_{x \ne j} \left( \frac{\alpha_j w_{ixt}} {\alpha_x w_{ijt}} \right)^{\alpha_x} n_{ijt}^{\sum_{x\ne j} \alpha_x}} \nonumber \\
-	% 	1 & = \frac{ \alpha^\alpha A_i^{\sum_j \alpha_j} n_{ijt}^{2\alpha_j \alpha - \sum_j\alpha_j - \alpha + 1}} {\alpha_j^{1-\alpha}r_t^\alpha w_{ijt}^{1-\alpha} \prod_{x \ne j} \left( \frac{\alpha_j w_{ixt}} {\alpha_x w_{ijt}} \right)^{\alpha_x} } \nonumber
-	% \end{align}
 
 
 \newpage
@@ -608,17 +583,17 @@
 		\hat bq_{it} & = \frac{\sum_{s=67}^S \sum_j \hat a_{ijst} \rho_{ijst} \hat N_{ijst}}{\sum_{s=23}^{67} \hat N_{ijst}} ; \forall i,s
 	\end{align}
 	\begin{align}
-		\Gamma_{ijt} & = \left\{ \left[1 + \chi \left(\frac{\chi}{w_{ijt} e_{jst}}\right)^{\rho-1}\right]^{\tfrac{1-\rho \sigma}{\rho-1}} \frac{\rho}{\rho-1} \right\}^{-\tfrac{1}{\sigma}}; \forall i,j,s \\
 		\hat T^L_{it} & = \tau^K_{it} (\hat y_{it} - w_{it}\hat n_{it} - \delta \hat k_{it}); \forall i \\
-    	\hat c_{ijst} & = \frac{w_{ijt} e_{jst} + (1+r_{it}-\delta)\hat a_{ijst} + \hat{bq}_{ijst} - \hat a_{i,j,s+1,t+1} e^{g^A} + \hat T^L_{it}} {1 + KID_{ist}\Gamma_{ijt} + \left(\tfrac{\chi}{w_{ijt}e_{jst}}\right)^\rho}; \forall i,s \\
-		\hat \ell_{ijst} & = \hat c_{ijst} \left(\frac{\chi}{w_{ijt}e_{jst}}\right)^{\frac{1-\rho}{\rho}} ; \forall i,j,s \\
-		\hat c^K_{ijst} & = \hat c_{ijst} \Gamma_{ijt}; \forall i,j,s
-	\end{align}
-	\begin{align}
-		& \left({\hat c^K_{ijst}}\right)^{-\sigma} - \beta (1-\rho_{i,j,s+1,+1}) \left(\hat c^K_{i,j,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,j,s \\
+    	\hat \ell_{ijst} & = \bar \ell - \frac{1}{\bar \ell} \left[ 1-\left(\frac{{c_{ijst}}^{-\sigma} w_{ijt} e_{sjt}}{\chi_\ell} \right)^{\frac{\mu}{1-\mu}} \right]^{-\frac{1}{\mu}}; \forall i,j,s \label{eq_6elldef} \\
+		\hat c^K_{ijst} & = \hat c_{ijst} {\chi_K}^{-\frac{1}{\sigma}}; \forall i,j,s \label{eq_6cKdef} \\
+		\hat c_{ijst} & = \begin{matrix} w_{ijt} e_{sjt} (\bar \ell - \hat \ell_{ijst}) + (1+r_{it}-\delta)\hat a_{ijst} \\ +\hat bq_{ijst} - \hat a_{i,j,s+1,t+1} e^{g^A} - {KID}_{ijst} \hat c^K_{ijst} + \hat T^L_{it} \end{matrix}; \forall i,j,s \label{eq_6BC} \\
+		& \left({\hat c_{ijst}}\right)^{-\sigma} - \beta (1-\rho_{i,j,s+1,+1}) \left(\hat c_{i,j,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,j,s \\
 		& r_{it} - r_{1t} = 0; \forall i>1 \\
 		& \sum_{i=1}^I \hat k^f_{it} = 0
 	\end{align}
 
 \end{spacing}
+
+\newpage
+\bibliography{Bibliography}
 \end{document}
