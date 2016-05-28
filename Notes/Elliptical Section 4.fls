@@ -2,8 +2,8 @@ PWD /Users/klp4/Repositories/OG-Multi-Country/Notes
 INPUT /usr/local/texlive/2014/texmf.cnf
 INPUT /usr/local/texlive/2014/texmf-dist/web2c/texmf.cnf
 INPUT /usr/local/texlive/2014/texmf-var/web2c/pdftex/pdflatex.fmt
-INPUT Ellipictal Section 4.tex
-OUTPUT Ellipictal Section 4.log
+INPUT Elliptical Section 4.tex
+OUTPUT Elliptical Section 4.log
 INPUT /usr/local/texlive/2014/texmf-dist/tex/latex/base/article.cls
 INPUT /usr/local/texlive/2014/texmf-dist/tex/latex/base/article.cls
 INPUT /usr/local/texlive/2014/texmf-dist/tex/latex/base/size12.clo
@@ -90,9 +90,9 @@ INPUT /usr/local/texlive/2014/texmf-dist/tex/latex/multirow/multirow.sty
 INPUT /usr/local/texlive/2014/texmf-dist/tex/latex/multirow/multirow.sty
 INPUT /usr/local/texlive/2014/texmf-dist/tex/latex/tools/enumerate.sty
 INPUT /usr/local/texlive/2014/texmf-dist/tex/latex/tools/enumerate.sty
-INPUT Ellipictal Section 4.aux
-INPUT Ellipictal Section 4.aux
-OUTPUT Ellipictal Section 4.aux
+INPUT Elliptical Section 4.aux
+INPUT Elliptical Section 4.aux
+OUTPUT Elliptical Section 4.aux
 INPUT /usr/local/texlive/2014/texmf-dist/tex/context/base/supp-pdf.mkii
 INPUT /usr/local/texlive/2014/texmf-dist/tex/context/base/supp-pdf.mkii
 INPUT /usr/local/texlive/2014/texmf-dist/tex/latex/oberdiek/epstopdf-base.sty
@@ -105,14 +105,14 @@ INPUT /usr/local/texlive/2014/texmf-dist/tex/latex/hyperref/nameref.sty
 INPUT /usr/local/texlive/2014/texmf-dist/tex/latex/hyperref/nameref.sty
 INPUT /usr/local/texlive/2014/texmf-dist/tex/generic/oberdiek/gettitlestring.sty
 INPUT /usr/local/texlive/2014/texmf-dist/tex/generic/oberdiek/gettitlestring.sty
-INPUT Ellipictal Section 4.out
-INPUT Ellipictal Section 4.out
-INPUT Ellipictal Section 4.out
-INPUT Ellipictal Section 4.out
-OUTPUT Ellipictal Section 4.pdf
-INPUT ./Ellipictal Section 4.out
-INPUT ./Ellipictal Section 4.out
-OUTPUT Ellipictal Section 4.out
+INPUT Elliptical Section 4.out
+INPUT Elliptical Section 4.out
+INPUT Elliptical Section 4.out
+INPUT Elliptical Section 4.out
+OUTPUT Elliptical Section 4.pdf
+INPUT ./Elliptical Section 4.out
+INPUT ./Elliptical Section 4.out
+OUTPUT Elliptical Section 4.out
 INPUT /usr/local/texlive/2014/texmf-dist/fonts/tfm/public/cm/cmr17.tfm
 INPUT /usr/local/texlive/2014/texmf-dist/fonts/tfm/public/cm/cmr17.tfm
 INPUT /usr/local/texlive/2014/texmf-dist/fonts/tfm/public/cm/cmbx12.tfm
@@ -141,12 +141,12 @@ INPUT /usr/local/texlive/2014/texmf-var/fonts/map/pdftex/updmap/pdftex.map
 INPUT /usr/local/texlive/2014/texmf-dist/fonts/tfm/public/cm/cmtt12.tfm
 INPUT /usr/local/texlive/2014/texmf-dist/fonts/tfm/public/cm/cmtt8.tfm
 INPUT /usr/local/texlive/2014/texmf-dist/fonts/tfm/public/cm/cmtt8.tfm
-INPUT Ellipictal Section 4.bbl
-INPUT Ellipictal Section 4.bbl
+INPUT Elliptical Section 4.bbl
+INPUT Elliptical Section 4.bbl
 INPUT /usr/local/texlive/2014/texmf-dist/fonts/tfm/public/cm/cmbx12.tfm
-INPUT Ellipictal Section 4.aux
-INPUT ./Ellipictal Section 4.out
-INPUT ./Ellipictal Section 4.out
+INPUT Elliptical Section 4.aux
+INPUT ./Elliptical Section 4.out
+INPUT ./Elliptical Section 4.out
 INPUT /usr/local/texlive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb
 INPUT /usr/local/texlive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb
 INPUT /usr/local/texlive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb
