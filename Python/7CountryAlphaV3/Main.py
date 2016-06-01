@@ -28,8 +28,10 @@ def Multi_Country(S,I,J,sigma):
     delta_ann=.08 #Annual depreciation rate
     alpha = .35 #Capital Share of production
     alphaj = np.array([.25,.4]) #Share of production for each labor class
-    chi = 1.5#Preference for lesiure
+    chil = .3 #Preference for adult's lesiure 
+    chik = 1.0 #Preference for Kids' lesiure
     rho = .4 #Intratemporal elasticity of substitution
+    mu = 2.5 #Unknown Parameter
 
 
     #Convergence Tolerances
@@ -50,14 +52,14 @@ def Multi_Country(S,I,J,sigma):
                                       #fill the upper and lower diagonal matricies
     CheckerMode = False #Activates not printing much of anything, used in conjunction 
                         #with RobustChecker.py
-    VerifyDemog = True #Verifies that all of the popluations sum to 1 and that the
+    VerifyDemog = False #Verifies that all of the popluations sum to 1 and that the
                        #Fertility,Mortality and migrant rates copied correctly
 
     Iterate = True #Shows the current iteration number and the associated Eulers
     ShaveTime = False #Shaves off a little more time for TPI.
 
     #For plots to display or save
-    DemogGraphs = True #Activates graphing graphs with demographic data 
+    DemogGraphs = False #Activates graphing graphs with demographic data 
                         #and population shares
     ShowSSGraphs = True #Activates graphs for steady-state solutions for 
                         #consumption, assets, and bequests
@@ -103,7 +105,7 @@ def Multi_Country(S,I,J,sigma):
 
     HH_params = (S,I,J,beta_ann,sigma)
 
-    Firm_Params = (alpha, delta_ann, chi, rho, g_A,alphaj)
+    Firm_Params = (alpha, delta_ann, chil, chik, mu, rho, g_A,alphaj)
 
 
     Levers = (PrintAges,CheckerMode,Iterate,UseDiffDemog,UseDiffProductivities,\
@@ -119,20 +121,20 @@ def Multi_Country(S,I,J,sigma):
 
     
     #STEADY STATE OUTER FSOLVE GUESS
-    k_ss_guess = np.ones((I))*.25
-    kf_ss_guess = np.ones((I-1))*.1
-    n_ss_guess = np.ones((I,J))*.25
-    bq_ss_guess = np.ones((I))*.25
+    k_ss_guess = np.ones((I))*.95
+    kf_ss_guess = np.ones((I-1))*.15
+    n_ss_guess = np.ones((I,J))*.95
+    bq_ss_guess = np.ones((I))*.95
 
     #STEADY STATE INNER FSOLVE GUESS
-    ck_innerfsolve_guess = np.ones((I,J))*.5
+    ck_innerfsolve_guess = np.ones((I,J))*.95
 
     #Steady State
-    #Model.SteadyState(k_ss_guess,kf_ss_guess,n_ss_guess, bq_ss_guess,ck_innerfsolve_guess\
-            #,PrintSSEulErrors)
+    Model.SteadyState(k_ss_guess,kf_ss_guess,n_ss_guess, bq_ss_guess,ck_innerfsolve_guess\
+            ,PrintSSEulErrors)
 
-    #if PrintSS: Model.PrintSSResults()
-    #if ShowSSGraphs: Model.plotSSResults(ShowSSSkill)
+    if PrintSS: Model.PrintSSResults()
+    if ShowSSGraphs: Model.plotSSResults(ShowSSSkill)
     
     #Timepath Iteration
     '''
