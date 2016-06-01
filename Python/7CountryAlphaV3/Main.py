@@ -16,7 +16,7 @@ def Multi_Country(S,I,J,sigma):
 
     #Country Rosters
     I_dict = {"usa":0,"eu":1,"japan":2,"china":3,"india":4,"russia":5,"korea":6} #DONT CHANGE
-    I_HighSkill = np.array([.7,.7,.7,.75,.75,.7,.7]) #CAN CHANGE
+    I_HighSkill = np.array([.3,.3,.3,.25,.25,.3,.3]) #CAN CHANGE
     I_touse = ["eu","russia","usa","japan","korea","china","india"] #CAN CHANGE
 
     #NOTE: I_HighSkill sets the portion of each country's population that's deemed 
@@ -26,11 +26,12 @@ def Multi_Country(S,I,J,sigma):
     g_A = 0.015 #Technical growth rate
     beta_ann=.95 #Annual discount rate
     delta_ann=.08 #Annual depreciation rate
-    alpha = .30 #Capital Share of production
-    alphaj = np.array([.45,.25]) #Share of production for each labor class
-    chi = 1.5 #Preference for lesiure
-    rho = .4 #Intratemporal elasticity of substitution
-
+    alpha = .35 #Capital Share of production
+    alphaj = np.array([.25,.4]) #Share of production for each labor class
+    chil = .52 #Preference for adult's lesiure 
+    chik = 1.0 #Preference for Kids' lesiure
+    mu = 2.29 #Unknown Parameter
+    rho=1
 
     #Convergence Tolerances
     demog_ss_tol = 1e-8 #Used in getting ss for population share
@@ -39,7 +40,7 @@ def Multi_Country(S,I,J,sigma):
     #For terminal output
     PrintAges = False #Displays the current locations of the program inside key TPI functions
 
-    PrintSSEulErrors = True #Prints the euler errors in each attempt of calculating the 
+    PrintSSEulErrors = True #Prints the euler errors in each attempt of calculating the
                             #steady state
     PrintSS = False #Prints the result of the Steady State functions
     Print_caTimepaths = False #Prints the consumption, assets, and bequests 
@@ -50,6 +51,8 @@ def Multi_Country(S,I,J,sigma):
                                       #fill the upper and lower diagonal matricies
     CheckerMode = False #Activates not printing much of anything, used in conjunction 
                         #with RobustChecker.py
+    VerifyDemog = False #Verifies that all of the popluations sum to 1 and that the
+                       #Fertility,Mortality and migrant rates copied correctly
 
     Iterate = True #Shows the current iteration number and the associated Eulers
     ShaveTime = False #Shaves off a little more time for TPI.
@@ -101,7 +104,8 @@ def Multi_Country(S,I,J,sigma):
 
     HH_params = (S,I,J,beta_ann,sigma)
 
-    Firm_Params = (alpha, delta_ann, chi, rho, g_A,alphaj)
+    Firm_Params = (alpha, delta_ann, chil, chik, mu, rho, g_A,alphaj)
+
 
     Levers = (PrintAges,CheckerMode,Iterate,UseDiffDemog,UseDiffProductivities,\
             Print_Fill_Matricies_Time,ShaveTime)
@@ -110,20 +114,19 @@ def Multi_Country(S,I,J,sigma):
     Model = AUX.OLG(Country_Roster,HH_params,Firm_Params,Levers)
 
     #Demographics
-    Model.Demographics(demog_ss_tol, UseSSDemog)
+    Model.Demographics(demog_ss_tol, UseSSDemog,VerifyDemog)
     if DemogGraphs: Model.plotDemographics(T_touse="default", compare_across="T", data_year=0)
     #Model.immigrationplot()
 
     
     #STEADY STATE OUTER FSOLVE GUESS
-    k_ss_guess = np.ones((I))*.2555
-    kf_ss_guess = np.ones((I-1))*.022
-    n_ss_guess = np.ones((I,J))*.2555
-    bq_ss_guess = np.ones((I))*.2555
+    k_ss_guess = np.ones((I))*.1
+    kf_ss_guess = np.zeros((I-1))
+    n_ss_guess = np.ones((I,J))*.1
+    bq_ss_guess = np.ones((I))*.1
 
     #STEADY STATE INNER FSOLVE GUESS
-    ck_innerfsolve_guess = np.ones((I,J))*.2
-
+    c_innerfsolve_guess = np.ones((I,J))*.95
 
     #Steady State
     Model.SteadyState(k_ss_guess,kf_ss_guess,n_ss_guess, bq_ss_guess,ck_innerfsolve_guess\
@@ -154,7 +157,7 @@ start = time.time()
 # S-Number of Cohorts, I-Number of Countries, J-Number of Skill classes
 # S, I, J and sigma. S and I are integers. Sigma may not be.
 
-Multi_Country(80,7,2,4)
+Multi_Country(80,2,2,4)
 
 tottime=time.time()-start
 
@@ -167,4 +170,3 @@ if TimeModel==True:
     hours=hours-days*24
     print "The code took:",days,"days,", hours, "hours,", minutes, "minutes and", seconds,\
             "seconds to complete"
-

@@ -164,7 +164,8 @@ class OLG(object):
 
 
         #Firm Parameters
-        (self.alpha,delta_annual,self.chi,self.rho, self.g_A,self.alphaj)= Firm_Params
+        (self.alpha,delta_annual,self.chil, self.chik, self.mu,self.rho,\
+                self.g_A,self.alphaj)=Firm_Params
         self.delta=1-(1-delta_annual)**(70/self.S)
 
         #Lever Parameters
@@ -337,7 +338,7 @@ class OLG(object):
                 self.all_FertilityRates[:,:,self.FirstFertilityAge:self.LastFertilityAge+1,\
                 self.frange:]
 
-    def Demographics(self, demog_ss_tol, UseSSDemog=False):
+    def Demographics(self, demog_ss_tol, UseSSDemog=False,VerifyDemog=False):
         """
             Description:
                 - This function calculates the population dynamics and steady state 
@@ -520,7 +521,14 @@ class OLG(object):
             self.MortalityRates = np.einsum("ijs,t->ijst",self.Mortality_ss,\
                     np.ones(self.T+self.S))
             self.Kids = np.einsum("ijs,t->ijst",self.Kids_ss,np.ones(self.T+self.S))
-
+        
+        if VerifyDemog == True:
+            print np.sum(np.sum(np.sum(self.Nhat,axis=0),axis=1),axis=0)
+            print np.array_equal(self.all_FertilityRates[:,0,:,:],\
+                    self.all_FertilityRates[:,1,:,:])
+            print np.array_equal(self.MortalityRates[:,0,:,:],self.MortalityRates[:,1,:,:])
+            print np.array_equal(self.Migrants[:,0,:,:],self.Migrants[:,1,:,:])
+        
     def plotDemographics(self, T_touse="default", compare_across="T", data_year=0):
         """
         Description: This calls the plotDemographics function from the 
@@ -557,9 +565,9 @@ class OLG(object):
             ax.set_ylabel('T')
 
         plt.show()
-
+ 
     #STEADY STATE
-
+    
     def get_w(self, y, n):
         """
             Description:
@@ -577,7 +585,7 @@ class OLG(object):
                 - None
             Other Functions Called:
                 - None
-            Objects in Function:
+            Objects in Function: 
                 - None
             Outputs:
                 - w          = Array: [I,J,S,T+S] or [I,J,S], 
@@ -586,6 +594,7 @@ class OLG(object):
 
         """
 
+
         #Only if getting SS, For now.
         if n.ndim==2:
             w=np.zeros((self.I,self.J))
@@ -593,85 +602,6 @@ class OLG(object):
                 w[:,j] = self.alphaj[j]*(y[:]/n[:,j])
             
         return w
-
-    def get_Gamma(self, w, e):
-        """
-            Description:
-                - Gets the calculation of gamma
-
-            Inputs:
-                - w             = Array: [I,T+S] or [I], Wage rate for either 
-                                         the transition path or the steady steady-state
-                - e             = Array: [I,S,T+S] or [I,S], Labor productivities for 
-                                         either the transition path or the steady steady-state
-
-            Variables Called From Object:
-                - self.chi      = Scalar: Leisure preference parameter
-                - self.rho      = Scalar: The intratemporal elasticity of 
-                                          substitution between consumption and leisure
-                - self.sigma    = Scalar: Rate of Time Preference
-
-            Variables Stored in Object:
-                - None
-
-            Other Functions Called:
-                - None
-
-            Outputs:
-                - Gamma         = Array: [I,S,T+S] or [I,S], Gamma values for each country
-
-        """
-
-        #If getting the SS
-        if e.ndim == 3:
-            we =  np.einsum("ij,ijs->ijs", w, e)
-
-        #If getting transition path
-        elif e.ndim == 4:
-            we = np.einsum("ijt, ijst -> ijst", w, e)
-
-
-        Gamma = ( ( 1+self.chi*(self.chi/we)**(self.rho-1) )**((1-self.rho*self.sigma)\
-                /(self.rho-1)) ) ** (-1/self.sigma)
-
-        return Gamma
-
-    def get_lhat(self,c,w,e):
-        """
-            Description:
-                - Gets household leisure based on equation 3.20
-            Inputs:
-                - c             = Array: [I,S,T+S] or [I,S], Consumption for either 
-                                         the transition path or the steady steady-state
-                - w             = Array: [I,T+S] or [I], Wage rate for either the transition 
-                                         path or the steady steady-state
-                - e             = Array: [I,S,T+S] or [I,S], Labor productivities for 
-                                         either the transition path or the steady steady-state
-            Variables Called from Object:
-                - self.chi      = Scalar: Leisure preference parameter
-                - self.rho      = Scalar: The intratemporal elasticity of 
-                                          substitution between consumption and leisure
-            Variables Stored in Object:
-                - None
-            Other Functions Called:
-                - None
-            Objects in Function:
-                - None
-            Outputs:
-                - lhat          = Array: [I,S,T+S] or [I,S], Leisure for 
-                                         either the transition path or the 
-                                         steady steady-state
-        """
-
-        if e.ndim == 3:
-            we = np.einsum("ij,ijs->ijs",w,e)
-
-        elif e.ndim == 4:
-            we = np.einsum("ijt,ijst->ijst",w,e)
-        
-        lhat=c*(self.chi/we)**self.rho
-
-        return lhat
 
     def get_Y(self, kd, n):
         """
@@ -704,9 +634,6 @@ class OLG(object):
             PROD = np.zeros((self.I,self.J))
             for j in xrange(self.J):
                 PROD[:,j] = (self.A[:]*n[:,j])**(self.alphaj[j])
-
-            if self.ss_iter >= 11:
-                print n
 
             Y*=np.prod(PROD,axis=1)
 
@@ -749,8 +676,8 @@ class OLG(object):
         r = self.alpha*(y/k)
 
         return r
-    
-    def get_lifetime_decisionsSS(self, cK_1, w_ss, r_ss, Gamma_ss, bq_ss):
+
+    def get_lifetime_decisionsSS(self, c_1, w_ss, r_ss, bq_ss):
             """
                 Description:
                     - 1. Solves for future consumption decisions as 
@@ -799,64 +726,51 @@ class OLG(object):
                     - cvec_ss                    = Array: [I,S], Vector of steady 
                                                           state consumption
                 """
-
+            #print "NEW"
             cKvec_ss = np.zeros((self.I,self.J,self.S))
             cvec_ss = np.zeros((self.I,self.J,self.S))
+            lhat_ss = np.zeros((self.I,self.J,self.S))
             avec_ss = np.zeros((self.I,self.J,self.S+1))
 
             r_ss2 = np.einsum("i,j->ij", r_ss, np.ones(self.J))
             bq_ss2 = np.einsum("is,j->ijs", bq_ss, np.ones(self.J))
             we = np.einsum("ij,ijs->ijs",w_ss,self.e_ss)
-            chiwe = (self.chi/we)**self.rho
 
-            r_ss3 = np.einsum( "i,js->ijs",r_ss,np.ones((self.J,self.S)) )
+            c_1=np.reshape(c_1,(self.I,self.J))
+            cvec_ss[:,:,0] = c_1
+            cKvec_ss[:,:,0] = c_1*self.chik**(-1/self.sigma)
 
-            cK_1=np.reshape(cK_1,(self.I,self.J))
-            cKvec_ss[:,:,0] = cK_1
-            cvec_ss[:,:,0] = cK_1/Gamma_ss[:,:,0]
-
+            lhat_ss[:,:,0] =  self.lbar_ss-(1/self.lbar_ss)*( 1.0-((cvec_ss[:,:,0]**\
+                    (-self.sigma)*we[:,:,0])/self.chil)**(self.mu/(1-self.mu)) )**(-1/self.mu)
+            
             for s in xrange(self.S-1):
                
                 #5.20
-                cKvec_ss[:,:,s+1] = (np.exp(-self.g_A) * cKvec_ss[:,:,s]) * \
+                cvec_ss[:,:,s+1] = (np.exp(-self.g_A) * cvec_ss[:,:,s]) * \
                         (self.beta*(1+r_ss2-self.delta)*\
                         (1-self.Mortality_ss[:,:,s]))**(1/self.sigma)
                 #5.19
-                cvec_ss[:,:,s+1] = cKvec_ss[:,:,s+1]/Gamma_ss[:,:,s+1]
-
-                #5.17
-                avec_ss[:,:,s+1] = np.exp(-self.g_A)*(bq_ss2[:,:,s]+\
-                        (1+r_ss2-self.delta)*avec_ss[:,:,s]+self.lbar_ss*we[:,:,s]-\
-                        cvec_ss[:,:,s]*(1+self.Kids_ss[:,:,s]*Gamma_ss[:,:,s] + chiwe[:,:,s]))
-
-            avec_ss[:,:,s+2] = np.exp(-self.g_A)*(bq_ss2[:,:,s+1]+\
-                    (1+r_ss2-self.delta)*avec_ss[:,:,s+1]+self.lbar_ss*we[:,:,s+1]-\
-                    cvec_ss[:,:,s+1]*(1+self.Kids_ss[:,:,s+1]*\
-                    Gamma_ss[:,:,s+1] + chiwe[:,:,s+1]))
+                cKvec_ss[:,:,s+1] = cvec_ss[:,:,s+1]*self.chik**(-1/self.sigma)
 
 
-            self.TEST = cKvec_ss[:,:,1:] - np.exp(-self.g_A) * cKvec_ss[:,:,:-1]*\
-                    (self.beta*(1+r_ss3[:,:,:-1]-self.delta)*\
-                    (1-self.Mortality_ss[:,:,:-1]))**(1/self.sigma)
+                lhat_ss[:,:,s+1] =  self.lbar_ss-(1/self.lbar_ss)*((1.0-((cvec_ss[:,:,s]**\
+                        (-self.sigma)*we[:,:,s])/self.chil)**(self.mu/(1-self.mu))))**\
+                        (-1/self.mu)
 
-            Chained_C_Condition2 = cKvec_ss[:,:,:-1]**(-self.sigma) - \
-                    self.beta*(1-self.Mortality_ss[:,:,:-1])*(cKvec_ss[:,:,1:]*\
-                    np.exp(self.g_A))**(-self.sigma) * (1+r_ss3[:,:,:-1]-self.delta)
 
-            #print "Calculated Way 1",self.TEST
-            #print "Calcualted Way 2",Chained_C_Condition2
-            #print np.argwhere(abs(Chained_C_Condition2)>1)
-            #print "HERE", np.array_equal(Chained_C_Condition2,self.TEST)
-            """
-            if np.isclose(np.max(np.absolute(Chained_C_Condition2-self.TEST)),0): print "CLEAR"
-            else: 
-                print "BLAHBLAH", np.max(np.absolute(Chained_C_Condition2-self.TEST))
-                #time.sleep(2)
-            """
+                avec_ss[:,:,s+1] = np.exp(-self.g_A)*(bq_ss2[:,:,s]-cvec_ss[:,:,s]\
+                        -cKvec_ss[:,:,s]*self.Kids_ss[:,:,s]+we[:,:,s]*\
+                        (self.lbar_ss-lhat_ss[:,:,s])+avec_ss[:,:,s]*(1+r_ss2-self.delta))
+
+
+            avec_ss[:,:,s+2] = np.exp(-self.g_A)*(bq_ss2[:,:,s+1]-cvec_ss[:,:,s+1]-\
+                    cKvec_ss[:,:,s+1]*self.Kids_ss[:,:,s+1]+we[:,:,s+1]*\
+                    (self.lbar_ss-lhat_ss[:,:,s+1])+avec_ss[:,:,s+1]*(1+r_ss2-self.delta))
+
 
             #SPARE BIT IN BETWEEN GAMMA+ AND (SELF.CHI...): w_ss[:,j]*self.e_ss[:,j,s+1]*
 
-            return cvec_ss, cKvec_ss, avec_ss
+            return cvec_ss, cKvec_ss, lhat_ss, avec_ss
 
     def GetSSComponents(self,k_guess,kf_guess,n_guess, bq_ss, PrintSSEulErrors=False):
         """
@@ -915,7 +829,7 @@ class OLG(object):
                 - w_ss, cvec_ss, cKvec_ss, avec_ss, kd_ss, kf_ss, n_ss, y_ss, and lhat_ss
         """
 
-        def householdEuler_SS(cK_1, w_ss, r_ss, Gamma_ss, bq_ss):
+        def householdEuler_SS(c_1, w_ss, r_ss, bq_ss):
             """
                 Description:
                     - This is the function called by opt.fsolve.
@@ -956,24 +870,17 @@ class OLG(object):
                                                          for system to solve
 
             """
-            cpath, cK_path, assets_path = self.get_lifetime_decisionsSS\
-                    (cK_1, w_ss, r_ss, Gamma_ss, bq_ss)
+            cpath, cK_path, lhat_path, assets_path = self.get_lifetime_decisionsSS\
+                    (c_1, w_ss, r_ss, bq_ss)
             
-            #Punishers
+            #Punisher
             Euler = assets_path[:,:,-1]
             if np.any(cpath<0):
                 print "WARNING! The fsolve for optimal consumption guessed a negative number"
-                Euler = np.ones((self.I,self.J))*9999.
-
-            #if np.any(cK_path[:,:,:-1]**(-self.sigma) - np.einsum("ijs,i->ijs",self.beta*(1-self.Mortality_ss[:,:,:-1])*(cK_path[:,:,1:]*np.exp(self.g_A))**-self.sigma ,(1+r_ss-self.delta) )!=0):
-                #print "WARNING! Chained C Condition violated, punishing fsolve"
-                #Euler = np.ones((self.I,self.J))*9999.
-
-
-            
+                Euler = np.ones((self.I,self.J))*9999. 
             return np.reshape(Euler,(self.I*self.J))
         
-        def checkSSEulers(cvec_ss, cKvec_ss, avec_ss, w_ss, r_ss, bq_ss, Gamma_ss):
+        def checkSSEulers(cvec_ss, cKvec_ss, avec_ss, lhat_ss, w_ss, r_ss, bq_ss):
             """
                 Description:
                     -Verifies the Euler conditions are statisified for solving for the steady
@@ -1019,37 +926,28 @@ class OLG(object):
                 Outputs:
                     - None
             """
-
+            
             we = np.einsum("ij,ijs->ijs",w_ss,self.e_ss)
 
             bq_ss2 = np.einsum("is,j->ijs",bq_ss,np.ones(self.J))
 
-            r_ss2 = np.einsum( "i,js->ijs",r_ss,np.ones((self.J,self.S)) )
+            r_ss2 = np.einsum("i,js->ijs",r_ss,np.ones((self.J,self.S)) )
 
             Household_Euler = avec_ss[:,:,-1]
             
-            Chained_C_Condition = cKvec_ss[:,:,:-1]**(-self.sigma) - \
+            Chained_C_Condition = cvec_ss[:,:,:-1]**(-self.sigma) - \
                                  np.einsum("ijs,i->ijs",self.beta*\
                                  (1-self.Mortality_ss[:,:,:-1])*\
-                                 (cKvec_ss[:,:,1:]*np.exp(self.g_A))**-self.sigma ,\
+                                 (cvec_ss[:,:,1:]*np.exp(self.g_A))**-self.sigma ,\
                                  (1+r_ss-self.delta) )
-            """
-            self.TEST = cKvec_ss[:,:,1:] - np.exp(-self.g_A) * cKvec_ss[:,:,:-1]*\
-                    (self.beta*(1+r_ss3[:,:,:-1]-self.delta)*\
-                    (1-self.Mortality_ss[:,:,:-1]))**(1/self.sigma)
-            """
 
-            Modified_Budget_Constraint = cvec_ss -( we*self.lbar_ss \
-                            +(1+r_ss2-self.delta)*avec_ss[:,:,:-1] + bq_ss2 \
-                            -avec_ss[:,:,1:]*np.exp(self.g_A) )\
-                            /(1+self.Kids_ss*Gamma_ss+(self.chi/we)**self.rho)
+            Modified_Budget_Constraint = cvec_ss - ( we*(self.lbar_ss-\
+                    lhat_ss) +(1+r_ss2-self.delta)*avec_ss[:,:,:-1] + \
+                    bq_ss2 -avec_ss[:,:,1:]*np.exp(self.g_A)-cKvec_ss*\
+                    self.Kids_ss )
 
-            Consumption_Ratio = cKvec_ss - cvec_ss*Gamma_ss
-
-            #print "HERE2",np.array_equal(Chained_C_Condition,self.TEST)
-
-            #print "Chained Condition",Chained_C_Condition2 
-            #print "Fresh off the press",self.TEST
+            
+            Consumption_Ratio = cKvec_ss - cvec_ss*self.chik**(-1/self.sigma)
 
             return Household_Euler, Chained_C_Condition, Modified_Budget_Constraint,\
                     Consumption_Ratio
@@ -1061,51 +959,43 @@ class OLG(object):
 
         r_ss = self.get_r(y_ss,k_guess)
 
-        #Equation 4.22
-        Gamma_ss = self.get_Gamma(w_ss, self.e_ss)
-
         #Initial guess for the first cohort's kids consumption
-        cK1_guess = np.reshape(self.innerguess,(self.I*self.J))
+        c1_guess = np.reshape(self.innerguess,(self.I*self.J))
         
-        opt_cK1, infodict, ier, mesg = opt.fsolve(householdEuler_SS, cK1_guess, args =\
-                (w_ss, r_ss, Gamma_ss, bq_ss),full_output=True)
-        
+        opt_c1, infodict, ier, mesg = opt.fsolve(householdEuler_SS, cK1_guess, args =\
+                (w_ss, r_ss, bq_ss),full_output=True)
+
         if PrintSSEulErrors:
-            if ier:
-                print "INNER FSOLVE WORKS: True"
+            if ier==1:
+                print "INNER FSOLVE WORKS: YES"
             else:
                 print "ERROR MESSAGE:",mesg
 
 
         #Gets the optimal paths for consumption, kids consumption and assets as a 
         #function of the first cohort's consumption
-        cvec_ss, cKvec_ss, avec_ss = self.get_lifetime_decisionsSS\
-                (opt_cK1, w_ss, r_ss, Gamma_ss, bq_ss)
-
-        lhat_ss = self.get_lhat(cvec_ss, w_ss, self.e_ss)
-
+        cvec_ss, cKvec_ss, lhat_ss, avec_ss = self.get_lifetime_decisionsSS\
+                (opt_c1, w_ss, r_ss, bq_ss)
         
         if PrintSSEulErrors:
 
             print "Inner Fsolve"
             Household_Euler, Chained_C_Condition, Modified_Budget_Constraint,Consumption_Ratio\
-                    = checkSSEulers(cvec_ss, cKvec_ss, avec_ss, w_ss, r_ss, bq_ss, Gamma_ss)
+                    = checkSSEulers(cvec_ss, cKvec_ss, avec_ss, lhat_ss, w_ss, r_ss, bq_ss)
             print "Zero final period assets satisfied:", \
                     np.isclose(np.max(np.absolute(Household_Euler)), 0)
-            print "Assets Euler Max:",np.max(np.absolute(Household_Euler))
+            print "Assets Euler Max:",np.max(np.abs(Household_Euler))
             print "Equation 5.20 satisfied:",\
                     np.isclose(np.max(np.absolute(Chained_C_Condition)), 0)
             print "Equation 5.20 Max:", np.max(np.abs(Chained_C_Condition))
             print "Equation 5.17 satisfied:",\
                     np.isclose(np.max(np.absolute(Modified_Budget_Constraint)), 0)
-            print "Equation 5.17 Max:", np.max(np.absolute(Modified_Budget_Constraint))
+            print "Equation 5.17 Max:", np.max(np.abs(Modified_Budget_Constraint))
             print "Equation 5.19 satisfied",\
                     np.isclose(np.max(np.absolute(Consumption_Ratio)), 0)
-            print "Equation 5.19 Max:", np.max(np.absolute(Consumption_Ratio))
+            print "Equation 5.19 Max:", np.max(np.abs(Consumption_Ratio))
             print "\n"
-            #print "\n\n", Chained_C_Condition[0,:,:], "\n\n"
-            #print self.TEST[0,:,:]
-            #print "\n\n", Modified_Budget_Constraint[0,:,:], "\n\n"
+            print avec_ss[0,:]
 
 
         #Snips off the final entry of assets since it is just 0 
@@ -1214,18 +1104,13 @@ class OLG(object):
         kf_full[0] = -np.sum(kf_guess)
         kf_full[1:] = kf_guess
 
-        if np.min(k_guess) < 0:
-            print "NEG K"
 
-        if np.min(n_guess) <= .00001:
-            return np.ones(9)*9999
+        if np.min(n_guess)<.0001:
+            return np.ones(3*self.I-1+self.I*self.J)*9999.
+        #Initializes a vector of bequests received for each individial. 
+        #Will be = 0 for a block of young and a block of old cohorts
         else:
-            #k_guess[k_guess <= 0] = .01
-            #n_guess[n_guess <=0] = .01
 
-
-            #Initializes a vector of bequests received for each individial. 
-            #Will be = 0 for a block of young and a block of old cohorts
             bq_ss = np.zeros((self.I,self.S))
             bq_ss[:,self.FirstFertilityAge:self.FirstDyingAge] = \
                     np.einsum("i,s->is", bqindiv_ss, \
@@ -1260,7 +1145,7 @@ class OLG(object):
 
             self.ss_iter+=1
             if PrintSSEulErrors: print "Euler Errors:", Euler_all, "\nIter:", self.ss_iter
-                    
+
             return Euler_all
 
     def SteadyState(self,k_ss_guess,kf_ss_guess,n_ss_guess,bq_ss_guess,ck_guess,PrintSSEulErrors=False):
@@ -1378,9 +1263,6 @@ class OLG(object):
                 self.GetSSComponents(self.k_ss,self.kf_ss,self.n_ss,self.bqvec_ss)
 
 
-        #Calculates and stores the steady state gamma value
-        self.Gamma_ss = self.get_Gamma(self.w_ss,self.e_ss)
-
         print "\n\nSTEADY STATE FOUND!"
         #Checks to see if the Euler_bq and Euler_kf equations are sufficiently close to 0
         if self.CheckerMode==False:
@@ -1398,8 +1280,8 @@ class OLG(object):
             Euler_bq = np.abs(self.bqindiv_ss - alldeadagent_assets/totalbq)
 
 
-            Euler_kd = np.abs(self.k_ss - \
-                    np.sum(np.sum(self.avec_ss*self.Nhat_ss,axis=1),axis=1) - self.kf_ss)
+            Euler_kd = np.abs(self.k_ss - self.kf_ss - \
+                    np.sum(np.sum(self.avec_ss*self.Nhat_ss,axis=1),axis=1) )
 
 
             Euler_n = np.abs(self.n_ss - \
@@ -1487,9 +1369,9 @@ class OLG(object):
         print self.cvec_ss[0,:,:]
         if ShowSSSkill:
             skilllevel = {1:"Low",0:"High"}
-            #for j in range(self.J-1,-1,-1):
+
             for j in range(self.J):
-                print j
+
                 plt.subplot(self.J*100+45-4*j)
                 plt.ylim([min(np.min(self.cvec_ss)*1.1,0), np.max(self.cvec_ss)*1.1])
                 for i in range(self.I):
@@ -1699,7 +1581,7 @@ class OLG(object):
         ax.set_zlabel('Utility')
 
         #plt.show()
-
+    
     #TIMEPATH-ITERATION
 
     def set_initial_values(self, r_init, bq_init, a_init):
@@ -2506,6 +2388,7 @@ class OLG(object):
                 **(self.alpha/(1-self.alpha)),(1-self.alpha)*self.A)
 
         #Equation 4.22
+        
         Gamma = self.get_Gamma(w_path,self.e)
 
         #Equations 4.25, 4.23
@@ -2517,10 +2400,8 @@ class OLG(object):
 
         #Equation 4.17
         n_path = self.get_n(lhat_path)
-
         #Equation 4.16
         kd_path = np.sum(a_matrix*self.Nhat[:,:,:self.T],axis=1)
-
         #Equation 4.18
         y_path = self.get_Y(kd_path,n_path)
 
