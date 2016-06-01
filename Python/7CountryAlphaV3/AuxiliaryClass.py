@@ -705,6 +705,9 @@ class OLG(object):
             for j in xrange(self.J):
                 PROD[:,j] = (self.A[:]*n[:,j])**(self.alphaj[j])
 
+            if self.ss_iter >= 11:
+                print n
+
             Y*=np.prod(PROD,axis=1)
 
         #elif kd.ndim== 2:
@@ -844,12 +847,13 @@ class OLG(object):
             #print "Calcualted Way 2",Chained_C_Condition2
             #print np.argwhere(abs(Chained_C_Condition2)>1)
             #print "HERE", np.array_equal(Chained_C_Condition2,self.TEST)
-            if np.isclose(np.max(np.absolute(Chained_C_Condition2-self.TEST)),0): print "CLEAR", self.alphaj
+            """
+            if np.isclose(np.max(np.absolute(Chained_C_Condition2-self.TEST)),0): print "CLEAR"
             else: 
                 print "BLAHBLAH", np.max(np.absolute(Chained_C_Condition2-self.TEST))
-                print 
+                #time.sleep(2)
+            """
 
-            
             #SPARE BIT IN BETWEEN GAMMA+ AND (SELF.CHI...): w_ss[:,j]*self.e_ss[:,j,s+1]*
 
             return cvec_ss, cKvec_ss, avec_ss
@@ -1034,7 +1038,7 @@ class OLG(object):
                     (self.beta*(1+r_ss3[:,:,:-1]-self.delta)*\
                     (1-self.Mortality_ss[:,:,:-1]))**(1/self.sigma)
             """
-            
+
             Modified_Budget_Constraint = cvec_ss -( we*self.lbar_ss \
                             +(1+r_ss2-self.delta)*avec_ss[:,:,:-1] + bq_ss2 \
                             -avec_ss[:,:,1:]*np.exp(self.g_A) )\
@@ -1210,49 +1214,54 @@ class OLG(object):
         kf_full[0] = -np.sum(kf_guess)
         kf_full[1:] = kf_guess
 
+        if np.min(k_guess) < 0:
+            print "NEG K"
 
-        #k_guess[k_guess <= 0] = .0001
-        #n_guess[n_guess <=0] = .0001
-
-
-        #Initializes a vector of bequests received for each individial. 
-        #Will be = 0 for a block of young and a block of old cohorts
-        bq_ss = np.zeros((self.I,self.S))
-        bq_ss[:,self.FirstFertilityAge:self.FirstDyingAge] = \
-                np.einsum("i,s->is", bqindiv_ss, \
-                np.ones(self.FirstDyingAge-self.FirstFertilityAge))
-
-        #Calls self.GetSSComponents, which solves for all the other ss variables in 
-        #terms of bequests and intrest rate
-        w_ss, cvec_ss, cKvec_ss, avec_ss, r_ss, y_ss, lhat_ss = \
-                self.GetSSComponents(k_guess,kf_full,n_guess,bq_ss, PrintSSEulErrors)
-
-        #Sum of all assets holdings of dead agents to be distributed evenly among 
-        #all eligible agents
-        alldeadagent_assets = np.sum(np.sum(avec_ss[:,:,self.FirstDyingAge:]*\
-                self.Mortality_ss[:,:,self.FirstDyingAge:]*\
-                self.Nhat_ss[:,:,self.FirstDyingAge:], axis=1),axis=1)
-
-        total_bq = np.sum(np.sum(\
-                self.Nhat_ss[:,:,self.FirstFertilityAge:self.FirstDyingAge],axis=1),axis=1)
+        if np.min(n_guess) <= .00001:
+            return np.ones(9)*9999
+        else:
+            #k_guess[k_guess <= 0] = .01
+            #n_guess[n_guess <=0] = .01
 
 
-        #Equation 3.29
-        Euler_bq = bqindiv_ss - alldeadagent_assets/total_bq
+            #Initializes a vector of bequests received for each individial. 
+            #Will be = 0 for a block of young and a block of old cohorts
+            bq_ss = np.zeros((self.I,self.S))
+            bq_ss[:,self.FirstFertilityAge:self.FirstDyingAge] = \
+                    np.einsum("i,s->is", bqindiv_ss, \
+                    np.ones(self.FirstDyingAge-self.FirstFertilityAge))
 
-        Euler_kd = k_guess-kf_full-np.sum(np.sum(avec_ss*self.Nhat_ss,axis=1),axis=1)
+            #Calls self.GetSSComponents, which solves for all the other ss variables in 
+            #terms of bequests and intrest rate
+            w_ss, cvec_ss, cKvec_ss, avec_ss, r_ss, y_ss, lhat_ss = \
+                    self.GetSSComponents(k_guess,kf_full,n_guess,bq_ss, PrintSSEulErrors)
 
-        Euler_n = np.reshape(n_guess - np.sum(self.e_ss*(self.lbar_ss-lhat_ss)*\
-                self.Nhat_ss,axis=2),(self.I*self.J))
+            #Sum of all assets holdings of dead agents to be distributed evenly among 
+            #all eligible agents
+            alldeadagent_assets = np.sum(np.sum(avec_ss[:,:,self.FirstDyingAge:]*\
+                    self.Mortality_ss[:,:,self.FirstDyingAge:]*\
+                    self.Nhat_ss[:,:,self.FirstDyingAge:], axis=1),axis=1)
 
-        Euler_kf = r_ss[1:] - r_ss[0]*np.ones(self.I-1)
+            total_bq = np.sum(np.sum(\
+                    self.Nhat_ss[:,:,self.FirstFertilityAge:self.FirstDyingAge],axis=1),axis=1)
 
-        Euler_all = np.concatenate((Euler_kd,Euler_kf,Euler_n,Euler_bq))
 
-        self.ss_iter+=1
-        if PrintSSEulErrors: print "Euler Errors:", Euler_all, "\nIter:", self.ss_iter
-                
-        return Euler_all
+            #Equation 3.29
+            Euler_bq = bqindiv_ss - alldeadagent_assets/total_bq
+
+            Euler_kd = k_guess-kf_full-np.sum(np.sum(avec_ss*self.Nhat_ss,axis=1),axis=1)
+
+            Euler_n = np.reshape(n_guess - np.sum(self.e_ss*(self.lbar_ss-lhat_ss)*\
+                    self.Nhat_ss,axis=2),(self.I*self.J))
+
+            Euler_kf = r_ss[1:] - r_ss[0]*np.ones(self.I-1)
+
+            Euler_all = np.concatenate((Euler_kd,Euler_kf,Euler_n,Euler_bq))
+
+            self.ss_iter+=1
+            if PrintSSEulErrors: print "Euler Errors:", Euler_all, "\nIter:", self.ss_iter
+                    
+            return Euler_all
 
     def SteadyState(self,k_ss_guess,kf_ss_guess,n_ss_guess,bq_ss_guess,ck_guess,PrintSSEulErrors=False):
         """
@@ -1475,11 +1484,12 @@ class OLG(object):
             Outputs:
                 - None
         """
-
-        
+        print self.cvec_ss[0,:,:]
         if ShowSSSkill:
-            skilllevel = {0:"Low",1:"High"}
-            for j in range(self.J-1,-1,-1):
+            skilllevel = {1:"Low",0:"High"}
+            #for j in range(self.J-1,-1,-1):
+            for j in range(self.J):
+                print j
                 plt.subplot(self.J*100+45-4*j)
                 plt.ylim([min(np.min(self.cvec_ss)*1.1,0), np.max(self.cvec_ss)*1.1])
                 for i in range(self.I):

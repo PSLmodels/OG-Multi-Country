@@ -16,7 +16,7 @@ def Multi_Country(S,I,J,sigma):
 
     #Country Rosters
     I_dict = {"usa":0,"eu":1,"japan":2,"china":3,"india":4,"russia":5,"korea":6} #DONT CHANGE
-    I_HighSkill = np.array([.3,.3,.3,.25,.25,.3,.3]) #CAN CHANGE
+    I_HighSkill = np.array([.7,.7,.7,.75,.75,.7,.7]) #CAN CHANGE
     I_touse = ["eu","russia","usa","japan","korea","china","india"] #CAN CHANGE
 
     #NOTE: I_HighSkill sets the portion of each country's population that's deemed 
@@ -27,7 +27,7 @@ def Multi_Country(S,I,J,sigma):
     beta_ann=.95 #Annual discount rate
     delta_ann=.08 #Annual depreciation rate
     alpha = .30 #Capital Share of production
-    alphaj = np.array([.66,.04]) #Share of production for each labor class
+    alphaj = np.array([.45,.25]) #Share of production for each labor class
     chi = 1.5 #Preference for lesiure
     rho = .4 #Intratemporal elasticity of substitution
 
@@ -57,7 +57,7 @@ def Multi_Country(S,I,J,sigma):
     #For plots to display or save
     DemogGraphs = False #Activates graphing graphs with demographic data 
                         #and population shares
-    ShowSSGraphs = False #Activates graphs for steady-state solutions for 
+    ShowSSGraphs = True #Activates graphs for steady-state solutions for 
                         #consumption, assets, and bequests
     ShowSSSkill = True
     iterations_to_plot = set([]) #Which iterations of the timepath fsolve you want to plot
@@ -154,7 +154,7 @@ start = time.time()
 # S-Number of Cohorts, I-Number of Countries, J-Number of Skill classes
 # S, I, J and sigma. S and I are integers. Sigma may not be.
 
-Multi_Country(20,2,2,4)
+Multi_Country(80,7,2,4)
 
 tottime=time.time()-start
 
