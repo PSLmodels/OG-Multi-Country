@@ -338,8 +338,6 @@ class OLG(object):
                 self.all_FertilityRates[:,:,self.FirstFertilityAge:self.LastFertilityAge+1,\
                 self.frange:]
 
-
-
     def Demographics(self, demog_ss_tol, UseSSDemog=False,VerifyDemog=False):
         """
             Description:
@@ -523,6 +521,7 @@ class OLG(object):
             self.MortalityRates = np.einsum("ijs,t->ijst",self.Mortality_ss,\
                     np.ones(self.T+self.S))
             self.Kids = np.einsum("ijs,t->ijst",self.Kids_ss,np.ones(self.T+self.S))
+        
         if VerifyDemog == True:
             print np.sum(np.sum(np.sum(self.Nhat,axis=0),axis=1),axis=0)
             print np.array_equal(self.all_FertilityRates[:,0,:,:],\
@@ -677,8 +676,8 @@ class OLG(object):
         r = self.alpha*(y/k)
 
         return r
-    
-    def get_lifetime_decisionsSS(self, cK_1, w_ss, r_ss, bq_ss):
+
+    def get_lifetime_decisionsSS(self, c_1, w_ss, r_ss, bq_ss):
             """
                 Description:
                     - 1. Solves for future consumption decisions as 
@@ -727,7 +726,7 @@ class OLG(object):
                     - cvec_ss                    = Array: [I,S], Vector of steady 
                                                           state consumption
                 """
-
+            #print "NEW"
             cKvec_ss = np.zeros((self.I,self.J,self.S))
             cvec_ss = np.zeros((self.I,self.J,self.S))
             lhat_ss = np.zeros((self.I,self.J,self.S))
@@ -736,26 +735,22 @@ class OLG(object):
             r_ss2 = np.einsum("i,j->ij", r_ss, np.ones(self.J))
             bq_ss2 = np.einsum("is,j->ijs", bq_ss, np.ones(self.J))
             we = np.einsum("ij,ijs->ijs",w_ss,self.e_ss)
-            #chiwe = (self.chi/we)**self.rho
 
-            r_ss3 = np.einsum( "i,js->ijs",r_ss,np.ones((self.J,self.S)) )
+            c_1=np.reshape(c_1,(self.I,self.J))
+            cvec_ss[:,:,0] = c_1
+            cKvec_ss[:,:,0] = c_1*self.chik**(-1/self.sigma)
 
-            cK_1=np.reshape(cK_1,(self.I,self.J))
-            cKvec_ss[:,:,0] = cK_1
-            cvec_ss[:,:,0] = cK_1*self.chik**self.sigma
-
-            lhat_ss[:,:,0] =  self.lbar_ss-(1/self.lbar_ss)*((1.0-((cvec_ss[:,:,0]**\
-                    (-self.sigma)*we[:,:,0])/self.chil)**(self.mu/(1-self.mu))))**(-1/self.mu)
-
+            lhat_ss[:,:,0] =  self.lbar_ss-(1/self.lbar_ss)*( 1.0-((cvec_ss[:,:,0]**\
+                    (-self.sigma)*we[:,:,0])/self.chil)**(self.mu/(1-self.mu)) )**(-1/self.mu)
             
             for s in xrange(self.S-1):
                
                 #5.20
-                cKvec_ss[:,:,s+1] = (np.exp(-self.g_A) * cKvec_ss[:,:,s]) * \
+                cvec_ss[:,:,s+1] = (np.exp(-self.g_A) * cvec_ss[:,:,s]) * \
                         (self.beta*(1+r_ss2-self.delta)*\
                         (1-self.Mortality_ss[:,:,s]))**(1/self.sigma)
                 #5.19
-                cvec_ss[:,:,s+1] = cKvec_ss[:,:,s+1]*self.chik**self.sigma
+                cKvec_ss[:,:,s+1] = cvec_ss[:,:,s+1]*self.chik**(-1/self.sigma)
 
 
                 lhat_ss[:,:,s+1] =  self.lbar_ss-(1/self.lbar_ss)*((1.0-((cvec_ss[:,:,s]**\
@@ -767,9 +762,11 @@ class OLG(object):
                         -cKvec_ss[:,:,s]*self.Kids_ss[:,:,s]+we[:,:,s]*\
                         (self.lbar_ss-lhat_ss[:,:,s])+avec_ss[:,:,s]*(1+r_ss2-self.delta))
 
+
             avec_ss[:,:,s+2] = np.exp(-self.g_A)*(bq_ss2[:,:,s+1]-cvec_ss[:,:,s+1]-\
                     cKvec_ss[:,:,s+1]*self.Kids_ss[:,:,s+1]+we[:,:,s+1]*\
                     (self.lbar_ss-lhat_ss[:,:,s+1])+avec_ss[:,:,s+1]*(1+r_ss2-self.delta))
+
 
             #SPARE BIT IN BETWEEN GAMMA+ AND (SELF.CHI...): w_ss[:,j]*self.e_ss[:,j,s+1]*
 
@@ -832,7 +829,7 @@ class OLG(object):
                 - w_ss, cvec_ss, cKvec_ss, avec_ss, kd_ss, kf_ss, n_ss, y_ss, and lhat_ss
         """
 
-        def householdEuler_SS(cK_1, w_ss, r_ss, bq_ss):
+        def householdEuler_SS(c_1, w_ss, r_ss, bq_ss):
             """
                 Description:
                     - This is the function called by opt.fsolve.
@@ -874,7 +871,7 @@ class OLG(object):
 
             """
             cpath, cK_path, lhat_path, assets_path = self.get_lifetime_decisionsSS\
-                    (cK_1, w_ss, r_ss, bq_ss)
+                    (c_1, w_ss, r_ss, bq_ss)
             
             #Punisher
             Euler = assets_path[:,:,-1]
@@ -938,12 +935,12 @@ class OLG(object):
 
             Household_Euler = avec_ss[:,:,-1]
             
-            Chained_C_Condition = cKvec_ss[:,:,:-1]**(-self.sigma) - \
+            Chained_C_Condition = cvec_ss[:,:,:-1]**(-self.sigma) - \
                                  np.einsum("ijs,i->ijs",self.beta*\
                                  (1-self.Mortality_ss[:,:,:-1])*\
-                                 (cKvec_ss[:,:,1:]*np.exp(self.g_A))**-self.sigma ,\
+                                 (cvec_ss[:,:,1:]*np.exp(self.g_A))**-self.sigma ,\
                                  (1+r_ss-self.delta) )
- 
+
             Modified_Budget_Constraint = cvec_ss - ( we*(self.lbar_ss-\
                     lhat_ss) +(1+r_ss2-self.delta)*avec_ss[:,:,:-1] + \
                     bq_ss2 -avec_ss[:,:,1:]*np.exp(self.g_A)-cKvec_ss*\
@@ -963,20 +960,22 @@ class OLG(object):
         r_ss = self.get_r(y_ss,k_guess)
 
         #Initial guess for the first cohort's kids consumption
-        cK1_guess = np.reshape(self.innerguess,(self.I*self.J))
+        c1_guess = np.reshape(self.innerguess,(self.I*self.J))
         
-        opt_cK1, infodict, ier, mesg = opt.fsolve(householdEuler_SS, cK1_guess, args =\
+        opt_c1, infodict, ier, mesg = opt.fsolve(householdEuler_SS, cK1_guess, args =\
                 (w_ss, r_ss, bq_ss),full_output=True)
+
         if PrintSSEulErrors:
             if ier==1:
                 print "INNER FSOLVE WORKS: YES"
             else:
                 print "ERROR MESSAGE:",mesg
 
+
         #Gets the optimal paths for consumption, kids consumption and assets as a 
         #function of the first cohort's consumption
         cvec_ss, cKvec_ss, lhat_ss, avec_ss = self.get_lifetime_decisionsSS\
-                (opt_cK1, w_ss, r_ss, bq_ss)
+                (opt_c1, w_ss, r_ss, bq_ss)
         
         if PrintSSEulErrors:
 
@@ -996,8 +995,7 @@ class OLG(object):
                     np.isclose(np.max(np.absolute(Consumption_Ratio)), 0)
             print "Equation 5.19 Max:", np.max(np.abs(Consumption_Ratio))
             print "\n"
-            #print "\n\n", Chained_C_Condition[0,:,:], "\n\n"
-            #print "\n\n", Modified_Budget_Constraint[0,:,:], "\n\n"
+            print avec_ss[0,:]
 
 
         #Snips off the final entry of assets since it is just 0 
@@ -1106,11 +1104,13 @@ class OLG(object):
         kf_full[0] = -np.sum(kf_guess)
         kf_full[1:] = kf_guess
 
+
         if np.min(n_guess)<.0001:
             return np.ones(3*self.I-1+self.I*self.J)*9999.
         #Initializes a vector of bequests received for each individial. 
         #Will be = 0 for a block of young and a block of old cohorts
         else:
+
             bq_ss = np.zeros((self.I,self.S))
             bq_ss[:,self.FirstFertilityAge:self.FirstDyingAge] = \
                     np.einsum("i,s->is", bqindiv_ss, \
@@ -1145,11 +1145,10 @@ class OLG(object):
 
             self.ss_iter+=1
             if PrintSSEulErrors: print "Euler Errors:", Euler_all, "\nIter:", self.ss_iter
-                
+
             return Euler_all
 
-    def SteadyState(self,k_ss_guess,kf_ss_guess,n_ss_guess,bq_ss_guess,\
-            ck_guess,PrintSSEulErrors=False):
+    def SteadyState(self,k_ss_guess,kf_ss_guess,n_ss_guess,bq_ss_guess,ck_guess,PrintSSEulErrors=False):
         """
             Description:
                 - Finds the steady state of the OLG Model by doing the following:
@@ -1367,11 +1366,12 @@ class OLG(object):
             Outputs:
                 - None
         """
-
-        
+        print self.cvec_ss[0,:,:]
         if ShowSSSkill:
             skilllevel = {1:"Low",0:"High"}
-            for j in range(self.J-1,-1,-1):
+
+            for j in range(self.J):
+
                 plt.subplot(self.J*100+45-4*j)
                 plt.ylim([min(np.min(self.cvec_ss)*1.1,0), np.max(self.cvec_ss)*1.1])
                 for i in range(self.I):
@@ -1479,7 +1479,6 @@ class OLG(object):
         plt.title("Leisure")
         """
 
-    
     def plotSSUtility(self, cK_1):
         """
             Description: 
