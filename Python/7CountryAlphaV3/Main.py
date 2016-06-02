@@ -125,7 +125,7 @@ def Multi_Country(S,I,J,sigma):
     bq_ss_guess = np.ones((I))*.15
 
     #STEADY STATE INNER FSOLVE GUESS
-    c_innerfsolve_guess = np.ones((I,J))*.25
+    c_innerfsolve_guess = np.ones((I,J))*.15
 
     #Steady State
     Model.SteadyState(k_ss_guess,kf_ss_guess,n_ss_guess, bq_ss_guess,c_innerfsolve_guess\

@@ -191,8 +191,10 @@ class OLG(object):
         if self.UseDiffProductivities:
             
             Srange = range( int(-.25*self.S), self.S )
-            e_dist = np.array(stats.norm.pdf(Srange, loc=self.S//2.3, scale=self.S/4.5))[-self.S:]
-            self.e = np.einsum(  "ijt,s->ijst", np.ones((self.I,self.J,self.T+self.S)), e_dist  )
+            e_dist = np.array(stats.norm.pdf(Srange, loc=self.S//2.3, scale=self.S/4.5))\
+                    [-self.S:]
+            self.e = np.einsum(  "ijt,s->ijst", np.ones((self.I,self.J,self.T+self.S)),\
+                    e_dist  )
             plt.plot(Srange[-self.S:], e_dist)
             plt.show()
 
@@ -610,7 +612,7 @@ class OLG(object):
             
         return w
 
-    def get_Y(self, kd, n):
+    def get_Y(self, k, n):
         """
             Description:
                 -Calculates the aggregate output based on equation (3.15)
@@ -636,8 +638,8 @@ class OLG(object):
                                       or the steady steady-state
         """
 
-        if kd.ndim ==1:
-            Y = (kd**self.alpha)
+        if k.ndim ==1:
+            Y = (k**self.alpha)
             PROD = np.zeros((self.I,self.J))
             for j in xrange(self.J):
                 PROD[:,j] = (self.A[:]*n[:,j])**(self.alphaj[j])
@@ -746,9 +748,11 @@ class OLG(object):
             cvec_ss[:,:,0] = c_1
             cKvec_ss[:,:,0] = c_1*self.chik**(-1/self.sigma)
 
-            lhat_ss[:,:,0] =  self.lbar_ss-(1/self.lbar_ss)*( 1.0-((cvec_ss[:,:,0]**\
-                    (-self.sigma)*we[:,:,0])/self.chil)**(self.mu/(1-self.mu)) )**(-1/self.mu)
-            
+            lhat_ss[:,:,0] =  self.lbar_ss-((1.0/self.lbar_ss)*(1.0-((cvec_ss[:,:,0]**\
+                    (-self.sigma)*we[:,:,0])/self.chil)**(self.mu/(1-self.mu))))**\
+                    (-1.0/self.mu)
+
+ 
             for s in xrange(self.S-1):
                
                 #5.20
@@ -759,16 +763,18 @@ class OLG(object):
                 cKvec_ss[:,:,s+1] = cvec_ss[:,:,s+1]*self.chik**(-1/self.sigma)
 
 
-                lhat_ss[:,:,s] =  self.lbar_ss-(1.0/self.lbar_ss)*((1.0-((cvec_ss[:,:,s]**\
-                        (-self.sigma)*we[:,:,s])/self.chil)**(self.mu/(1-self.mu))))**\
-                        (-1.0/self.mu)
+                lhat_ss[:,:,s+1] =  self.lbar_ss-((1.0/self.lbar_ss)* \
+                        (1.0-((cvec_ss[:,:,s+1]**(-self.sigma)*we[:,:,s+1])/self.chil)\
+                        **(self.mu/(1-self.mu))))**(-1.0/self.mu)
 
-                print lhat_ss[0,:,s], (1.0-((cvec_ss[0,:,s]**\
-                        (-self.sigma)*we[0,:,s])/self.chil)**(self.mu/(1-self.mu)))
+                #print lhat_ss[0,:,s], (1.0-((cvec_ss[0,:,s]**\
+                        #(-self.sigma)*we[0,:,s])/self.chil)**(self.mu/(1-self.mu)))
 
                 avec_ss[:,:,s+1] = np.exp(-self.g_A)*(bq_ss2[:,:,s]-cvec_ss[:,:,s]\
                         -cKvec_ss[:,:,s]*self.Kids_ss[:,:,s]+we[:,:,s]*\
                         (self.lbar_ss-lhat_ss[:,:,s])+avec_ss[:,:,s]*(1+r_ss2-self.delta))
+            
+            #print lhat_ss[0,0,:]
 
 
             avec_ss[:,:,s+2] = np.exp(-self.g_A)*(bq_ss2[:,:,s+1]-cvec_ss[:,:,s+1]-\
@@ -886,6 +892,14 @@ class OLG(object):
             if np.any(cpath<0):
                 print "WARNING! The fsolve for optimal consumption guessed a negative number"
                 Euler = np.ones((self.I,self.J))*9999. 
+
+            #if np.any(lhat_path<0):
+                #print "Punishing for negative time endowment"
+                #Euler = np.ones((self.I,self.J))*9999.
+
+
+
+
             return np.reshape(Euler,(self.I*self.J))
         
         def checkSSEulers(cvec_ss, cKvec_ss, avec_ss, lhat_ss, w_ss, r_ss, bq_ss):
@@ -1003,7 +1017,7 @@ class OLG(object):
                     np.isclose(np.max(np.absolute(Consumption_Ratio)), 0)
             print "Equation 5.19 Max:", np.max(np.abs(Consumption_Ratio))
             print "\n"
-            print avec_ss[0,:]
+            #print avec_ss[0,:]
 
 
         #Snips off the final entry of assets since it is just 0 
@@ -1142,7 +1156,8 @@ class OLG(object):
             #Equation 3.29
             Euler_bq = bqindiv_ss - alldeadagent_assets/total_bq
 
-            Euler_kd = k_guess-kf_full-np.sum(np.sum(avec_ss*self.Nhat_ss,axis=1),axis=1)
+            Euler_kd = k_guess-kf_full-np.sum(np.sum(avec_ss*self.Nhat_ss,axis=1)\
+                    ,axis=1)
 
             Euler_n = np.reshape(n_guess - np.sum(self.e_ss*(self.lbar_ss-lhat_ss)*\
                     self.Nhat_ss,axis=2),(self.I*self.J))
