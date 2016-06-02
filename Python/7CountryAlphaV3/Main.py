@@ -24,14 +24,13 @@ def Multi_Country(S,I,J,sigma):
 
     #Parameters Zone
     g_A = 0.015 #Technical growth rate
-    beta_ann=.95 #Annual discount rate
-    delta_ann=.08 #Annual depreciation rate
+    beta_ann = .95 #Annual discount rate
+    delta_ann = .08 #Annual depreciation rate
     alpha = .35 #Capital Share of production
     alphaj = np.array([.25,.4]) #Share of production for each labor class
     chil = .52 #Preference for adult's lesiure 
     chik = 1.0 #Preference for Kids' lesiure
     mu = 2.29 #Unknown Parameter
-    rho=1
 
     #Convergence Tolerances
     demog_ss_tol = 1e-8 #Used in getting ss for population share
@@ -70,7 +69,7 @@ def Multi_Country(S,I,J,sigma):
     #For using differing ways to solve the model
     UseDiffDemog = True #Turns on different demographics for each country
     UseSSDemog = False #Activates using only steady state demographics for TPI calculation
-    UseDiffProductivities = False #Activates having e vary across cohorts
+    UseDiffProductivities = True #Activates having e vary across cohorts
 
     #Adjusts the country list if we are using less than 7 Countries
     if len(I_touse) < I:
@@ -104,7 +103,7 @@ def Multi_Country(S,I,J,sigma):
 
     HH_params = (S,I,J,beta_ann,sigma)
 
-    Firm_Params = (alpha, delta_ann, chil, chik, mu, rho, g_A,alphaj)
+    Firm_Params = (alpha, delta_ann, chil, chik, mu, g_A,alphaj)
 
 
     Levers = (PrintAges,CheckerMode,Iterate,UseDiffDemog,UseDiffProductivities,\
@@ -120,16 +119,16 @@ def Multi_Country(S,I,J,sigma):
 
     
     #STEADY STATE OUTER FSOLVE GUESS
-    k_ss_guess = np.ones((I))*.1
-    kf_ss_guess = np.zeros((I-1))
-    n_ss_guess = np.ones((I,J))*.1
-    bq_ss_guess = np.ones((I))*.1
+    k_ss_guess = np.ones((I))*.15
+    kf_ss_guess = np.ones((I-1))*0
+    n_ss_guess = np.ones((I,J))*.15
+    bq_ss_guess = np.ones((I))*.15
 
     #STEADY STATE INNER FSOLVE GUESS
-    c_innerfsolve_guess = np.ones((I,J))*.95
+    c_innerfsolve_guess = np.ones((I,J))*.25
 
     #Steady State
-    Model.SteadyState(k_ss_guess,kf_ss_guess,n_ss_guess, bq_ss_guess,ck_innerfsolve_guess\
+    Model.SteadyState(k_ss_guess,kf_ss_guess,n_ss_guess, bq_ss_guess,c_innerfsolve_guess\
             ,PrintSSEulErrors)
 
     if PrintSS: Model.PrintSSResults()
@@ -157,7 +156,7 @@ start = time.time()
 # S-Number of Cohorts, I-Number of Countries, J-Number of Skill classes
 # S, I, J and sigma. S and I are integers. Sigma may not be.
 
-Multi_Country(80,2,2,4)
+Multi_Country(20,2,2,4)
 
 tottime=time.time()-start
 
