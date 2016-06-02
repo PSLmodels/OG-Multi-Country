@@ -189,36 +189,14 @@ class OLG(object):
 
         #Initialize Labor Productivities
         if self.UseDiffProductivities:
-            '''
-            self.e = np.ones((self.I, self.J, self.S, self.T+self.S))
-            self.e[:,:,self.FirstDyingAge:,:] = 0.3
-            self.e[:,:,:self.LeaveHouseAge,:] = 0.3
-            '''
-            self.e = np.zeros((self.I,self.J,self.S,self.T+self.S))
-            '''
-            for j in xrange(self.J):
-                for i in xrange(self.I):
-                    for t in xrange(self.S+self.T):
-
-                        self.e[i,j,:self.Midlife,t] = np.linspace(.01,1.,self.Midlife)
-                        self.e[i,j,self.Midlife:,t] = np.linspace(.99,.01,self.Midlife)
-            '''
-
-            def Norm_Vec(sig,x,mu):
-                vector=1/(sig*(2*np.pi)**(1/2))*np.exp(-(x-mu)**2/(2*sig**2))
-                return vector
-
-            x = np.linspace(0,self.S,self.S)
-            normal_dist = Norm_Vec(.2,x,self.Midlife)
-
-            for i in xrange(self.I):
-                for j in xrange(self.J):
-                    for t in xrange(self.S+self.T):
-                        self.e[i,j,:,t] = normal_dist
-
-            print self.e[0,0,:,0]
-            #print self.e[0,0,:,0]
             
+            Srange = range( int(-.25*self.S), self.S )
+            e_dist = np.array(stats.norm.pdf(Srange, loc=self.S//2.3, scale=self.S/4.5))[-self.S:]
+            self.e = np.einsum(  "ijt,s->ijst", np.ones((self.I,self.J,self.T+self.S)), e_dist  )
+            plt.plot(Srange[-self.S:], e_dist)
+            plt.show()
+
+
         else:
             self.e = np.ones((self.I, self.J, self.S, self.T+self.S)) #Labor productivities
 
@@ -755,7 +733,6 @@ class OLG(object):
                     - cvec_ss                    = Array: [I,S], Vector of steady 
                                                           state consumption
                 """
-            #print "NEW"
             cKvec_ss = np.zeros((self.I,self.J,self.S))
             cvec_ss = np.zeros((self.I,self.J,self.S))
             lhat_ss = np.zeros((self.I,self.J,self.S))
@@ -782,10 +759,12 @@ class OLG(object):
                 cKvec_ss[:,:,s+1] = cvec_ss[:,:,s+1]*self.chik**(-1/self.sigma)
 
 
-                lhat_ss[:,:,s] =  self.lbar_ss-(1/self.lbar_ss)*((1.0-((cvec_ss[:,:,s]**\
+                lhat_ss[:,:,s] =  self.lbar_ss-(1.0/self.lbar_ss)*((1.0-((cvec_ss[:,:,s]**\
                         (-self.sigma)*we[:,:,s])/self.chil)**(self.mu/(1-self.mu))))**\
-                        (-1/self.mu)
+                        (-1.0/self.mu)
 
+                print lhat_ss[0,:,s], (1.0-((cvec_ss[0,:,s]**\
+                        (-self.sigma)*we[0,:,s])/self.chil)**(self.mu/(1-self.mu)))
 
                 avec_ss[:,:,s+1] = np.exp(-self.g_A)*(bq_ss2[:,:,s]-cvec_ss[:,:,s]\
                         -cKvec_ss[:,:,s]*self.Kids_ss[:,:,s]+we[:,:,s]*\
