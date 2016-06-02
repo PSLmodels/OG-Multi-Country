@@ -2,8 +2,8 @@ from __future__ import division
 import csv
 import time
 import numpy as np
-import scipy as sp
 import scipy.optimize as opt
+import scipy.stats as stats
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import AuxiliaryDemographics as demog
@@ -164,7 +164,7 @@ class OLG(object):
 
 
         #Firm Parameters
-        (self.alpha,delta_annual,self.chil, self.chik, self.mu,self.rho,\
+        (self.alpha,delta_annual,self.chil, self.chik, self.mu,\
                 self.g_A,self.alphaj)=Firm_Params
         self.delta=1-(1-delta_annual)**(70/self.S)
 
@@ -177,6 +177,8 @@ class OLG(object):
         self.MaxImmigrantAge, self.FirstDyingAge, self.agestopull \
         = demog.getkeyages(self.S,PrintAges)
 
+        self.Midlife = int(self.S/2)
+
         if self.UseDiffDemog:
             self.A = np.ones(self.I)+np.cumsum(np.ones(self.I)*.05)-.05 
             #Techonological Change, used for when countries are different
@@ -187,9 +189,36 @@ class OLG(object):
 
         #Initialize Labor Productivities
         if self.UseDiffProductivities:
+            '''
             self.e = np.ones((self.I, self.J, self.S, self.T+self.S))
             self.e[:,:,self.FirstDyingAge:,:] = 0.3
             self.e[:,:,:self.LeaveHouseAge,:] = 0.3
+            '''
+            self.e = np.zeros((self.I,self.J,self.S,self.T+self.S))
+            '''
+            for j in xrange(self.J):
+                for i in xrange(self.I):
+                    for t in xrange(self.S+self.T):
+
+                        self.e[i,j,:self.Midlife,t] = np.linspace(.01,1.,self.Midlife)
+                        self.e[i,j,self.Midlife:,t] = np.linspace(.99,.01,self.Midlife)
+            '''
+
+            def Norm_Vec(sig,x,mu):
+                vector=1/(sig*(2*np.pi)**(1/2))*np.exp(-(x-mu)**2/(2*sig**2))
+                return vector
+
+            x = np.linspace(0,self.S,self.S)
+            normal_dist = Norm_Vec(.2,x,self.Midlife)
+
+            for i in xrange(self.I):
+                for j in xrange(self.J):
+                    for t in xrange(self.S+self.T):
+                        self.e[i,j,:,t] = normal_dist
+
+            print self.e[0,0,:,0]
+            #print self.e[0,0,:,0]
+            
         else:
             self.e = np.ones((self.I, self.J, self.S, self.T+self.S)) #Labor productivities
 
@@ -753,7 +782,7 @@ class OLG(object):
                 cKvec_ss[:,:,s+1] = cvec_ss[:,:,s+1]*self.chik**(-1/self.sigma)
 
 
-                lhat_ss[:,:,s+1] =  self.lbar_ss-(1/self.lbar_ss)*((1.0-((cvec_ss[:,:,s]**\
+                lhat_ss[:,:,s] =  self.lbar_ss-(1/self.lbar_ss)*((1.0-((cvec_ss[:,:,s]**\
                         (-self.sigma)*we[:,:,s])/self.chil)**(self.mu/(1-self.mu))))**\
                         (-1/self.mu)
 
@@ -962,7 +991,7 @@ class OLG(object):
         #Initial guess for the first cohort's kids consumption
         c1_guess = np.reshape(self.innerguess,(self.I*self.J))
         
-        opt_c1, infodict, ier, mesg = opt.fsolve(householdEuler_SS, cK1_guess, args =\
+        opt_c1, infodict, ier, mesg = opt.fsolve(householdEuler_SS, c1_guess, args =\
                 (w_ss, r_ss, bq_ss),full_output=True)
 
         if PrintSSEulErrors:
