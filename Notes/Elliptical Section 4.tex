@@ -406,7 +406,7 @@
 	\begin{equation}
 		\begin{split}
 		& \max_{\{c_{i,s+j,t+j},\ell_{i,s+j,t+j},c^K{i,s+j,t+j},a_{i,s+j,t+j}\}_{j=0}^{S-s}} U_{ist} = \\
-		& \sum_{j=0}^{S-s} \beta^j R_{i,s+j,t+j} \begin{bmatrix} \frac{1}{1-\sigma} {c_{i,s+j,t+j}}^{1-\sigma} + \chi_K \frac{1}{1-\sigma} KID_{i,s+j,t+j}{c^K_{i,s+j,t+j}}^{1-\sigma} \\ + \chi_\ell \left\{ \bar \ell - (\bar \ell-\ell_{i,s+j,t+j})^\mu \right\}^{\frac{1}{\mu}} \end{bmatrix} \nonumber
+		& \sum_{j=0}^{S-s} \beta^j R_{i,s+j,t+j} \begin{bmatrix} \frac{1}{1-\sigma} {c_{i,s+j,t+j}}^{1-\sigma} + \chi_K \frac{1}{1-\sigma} KID_{i,s+j,t+j}{c^K_{i,s+j,t+j}}^{1-\sigma} \\ + \chi_\ell \left| \bar \ell^\mu - |\bar \ell-\ell_{i,s+j,t+j}|^\mu \right|^{\frac{1}{\mu}} \end{bmatrix} \nonumber
 		\end{split}
 	\end{equation}
 	subject to the following budget constraint each period.
@@ -418,7 +418,7 @@
 	The first-order conditions are:
 	\begin{align}
 		& \beta^j R_{i,s+j,t+j} {c_{i,s+j,t+j}}^{-\sigma} =  - \lambda_{i,s+j,t+j}  \label{eq_4foc1} \\
-		& - \beta^j R_{i,s+j,t+j} \chi_\ell \left\{ \bar \ell - (\bar \ell-\ell_{i,s+j,t+j})^\mu) \right\}^{\frac{1-\mu}{\mu}}(\bar \ell-\ell_{i,s+j,t+j})^{\mu-1}  = - \lambda_{i,s+j,t+j} w_{i,t+j} e_{s+j,t+j} \label{eq_4foc2} \\
+		& - \beta^j R_{i,s+j,t+j} \chi_\ell \left| \bar \ell^\mu - |\bar \ell-\ell_{i,s+j,t+j})^\mu| \right|^{\frac{1-\mu}{\mu}}|\bar \ell^\mu-\ell_{i,s+j,t+j}|^{\mu-1}  = - \lambda_{i,s+j,t+j} w_{i,t+j} e_{s+j,t+j} \label{eq_4foc2} \\
 		& \beta^j R_{i,s+j,t+j} \chi_K KID_{i,s+j,t+j}{c^K_{i,s+j,t+j}}^{-\sigma} = - \lambda_{i,s+j,t+j} KID_{i,s+j,t+j} \label{eq_4foc3} \\
         & (1+r_{i,t+j}-\delta) \lambda_{i,s+j,t+j} = \lambda_{i,s+j-1,t+j-1} \label{eq_4foc4}
 	\end{align}	
@@ -442,12 +442,15 @@
 
 	Solve \eqref{eq_4foc1} and \eqref{eq_4foc2} for $\lambda_{i,s+j,t+j}$ set equal and simplify.
 	\begin{align}
-		 {c_{i,s+j,t+j}}^{-\sigma} w_{i,t+j} e_{s+j,t+j}  & =  -\chi_\ell \left[ \bar \ell - (\bar \ell-\ell_{i,s+j,t+j})^\mu \right]^{\frac{1-\mu}{\mu}}(\bar \ell-\ell_{i,s+j,t+j})^{\mu-1}  \nonumber \\
-		 \frac{{c_{i,s+j,t+j}}^{-\sigma} w_{i,t+j} e_{s+j,t+j}}{\chi_\ell} & = -\left[ \bar \ell - (\bar \ell-\ell_{i,s+j,t+j})^\mu \right]^{\frac{1-\mu}{\mu}}(\bar \ell-\ell_{i,s+j,t+j})^{\mu-1} \nonumber \\
-		 \left(\frac{{c_{i,s+j,t+j}}^{-\sigma} w_{i,t+j} e_{s+j,t+j}}{\chi_\ell} \right)^{\frac{\mu}{1-\mu}} & = -\left[ \bar \ell - (\bar \ell-\ell_{i,s+j,t+j})^\mu \right](\bar \ell-\ell_{i,s+j,t+j})^{-\mu} \nonumber \\
-		 \left(\frac{{c_{i,s+j,t+j}}^{-\sigma} w_{i,t+j} e_{s+j,t+j}}{\chi_\ell} \right)^{\frac{\mu}{1-\mu}} & = 1-\bar \ell(\bar \ell-\ell_{i,s+j,t+j})^{-\mu} \nonumber \\
-		 \left[ \frac{1}{\bar \ell} \left( 1-\left(\frac{{c_{i,s+j,t+j}}^{-\sigma} w_{i,t+j} e_{s+j,t+j}}{\chi_\ell} \right)^{\frac{\mu}{1-\mu}} \right) \right]^{-\frac{1}{\mu}}  & = \bar \ell-\ell_{i,s+j,t+j} \nonumber \\
-		 \ell_{i,s+j,t+j} & = \bar \ell -  \left[\frac{1}{\bar \ell} \left( 1-\left(\frac{{c_{i,s+j,t+j}}^{-\sigma} w_{i,t+j} e_{s+j,t+j}}{\chi_\ell} \right)^{\frac{\mu}{1-\mu}} \right) \right]^{-\frac{1}{\mu}} \label{eq_4elldefnon}
+		 & {c_{i,s+j,t+j}}^{-\sigma} w_{i,t+j} e_{s+j,t+j} =  -\chi_\ell \left| \bar \ell^\mu - |\bar \ell-\ell_{i,s+j,t+j}|^\mu \right|^{\frac{1-\mu}{\mu}}|\bar \ell-\ell_{i,s+j,t+j}|^{\mu-1}  \nonumber \\
+		 & - \frac{{c_{i,s+j,t+j}}^{-\sigma} w_{i,t+j} e_{s+j,t+j}}{\chi_\ell} = \left| \bar \ell^\mu - |\bar \ell-\ell_{i,s+j,t+j}|^\mu \right|^{\frac{1-\mu}{\mu}}|\bar \ell-\ell_{i,s+j,t+j}|^{\mu-1} \nonumber \\
+		 & \left|-\frac{{c_{i,s+j,t+j}}^{-\sigma} w_{i,t+j} e_{s+j,t+j}}{\chi_\ell} \right|^{\frac{\mu}{1-\mu}} = \left| \bar \ell^\mu - |\bar \ell-\ell_{i,s+j,t+j}|^\mu \right| |\bar \ell-\ell_{i,s+j,t+j}|^{-\mu} \nonumber \\
+		 & \left( \frac{{c_{i,s+j,t+j}}^{-\sigma} w_{i,t+j} e_{s+j,t+j}}{\chi_\ell} \right)^{\frac{\mu}{1-\mu}} = \bar \ell^\mu|\bar \ell-\ell_{i,s+j,t+j}|^{-\mu} - 1 \nonumber \\
+		 & 1 + \left( \frac{{c_{i,s+j,t+j}}^{-\sigma} w_{i,t+j} e_{s+j,t+j}}{\chi_\ell} \right)^{\frac{\mu}{1-\mu}} = \bar \ell^\mu|\bar \ell-\ell_{i,s+j,t+j}|^{-\mu} \nonumber \\
+		 & \left[ 1 + \left( \frac{{c_{i,s+j,t+j}}^{-\sigma} w_{i,t+j} e_{s+j,t+j}}{\chi_\ell} \right)^{\frac{\mu}{1-\mu}} \right] \bar \ell^{-\mu} = |\bar \ell-\ell_{i,s+j,t+j}|^{-\mu} \nonumber \\
+		 & \left| 1 + \left( \frac{{c_{i,s+j,t+j}}^{-\sigma} w_{i,t+j} e_{s+j,t+j}}{\chi_\ell} \right)^{\frac{\mu}{1-\mu}} \right|^{-\frac{1}{\mu}} \bar \ell = \bar \ell-\ell_{i,s+j,t+j} \nonumber \\
+		 & \ell_{i,s+j,t+j} = \bar \ell - \left| 1 + \left( \frac{{c_{i,s+j,t+j}}^{-\sigma} w_{i,t+j} e_{s+j,t+j}}{\chi_\ell} \right)^{\frac{\mu}{1-\mu}} \right|^{-\frac{1}{\mu}} \bar \ell \nonumber \\
+		  & \ell_{i,s+j,t+j} = \left[ 1 - \left| 1 + \left( \frac{{c_{i,s+j,t+j}}^{-\sigma} w_{i,t+j} e_{s+j,t+j}}{\chi_\ell} \right)^{\frac{\mu}{1-\mu}} \right|^{-\frac{1}{\mu}} \right] \bar \ell  \label{eq_4elldefnon}
 	\end{align}
 
 	If we stationarize \eqref{eq_4elldefnon} and \eqref{eq_4cKdefnon}, we can add them to the list of other behavioral equations from previous sections above to get the following.
@@ -463,7 +466,7 @@
 		r_{it} & = \alpha \frac{\hat y_{it}}{\hat k_{it}}; \forall i \label{eq_4rfunc} \\
 		w_{it} & = (1-\alpha) \frac{\hat y_{it}}{\hat n_{it}}; \forall i \label{eq_4wfunc} \\
 		\hat bq_{it} & = \frac{\sum_{s=67}^S \hat a_{ist} \rho_{ist} \hat N_{ist}}{\sum_{s=23}^{67} \hat N_{ist}} ; \forall i,s \label{eq_4bqfunc} \\
-		\hat \ell_{ist} & = \bar \ell - \left[\frac{1}{\bar \ell} \left( 1-\left(\frac{{c_{ist}}^{-\sigma} w_{it} e_{st}}{\chi_\ell} \right)^{\frac{\mu}{1-\mu}} \right) \right]^{-\frac{1}{\mu}}; \forall i,s \label{eq_4elldef} \\
+		\hat \ell_{ist} & = \left[ 1 - \left| 1 + \left( \frac{{c_{ist}}^{-\sigma} w_{i,t} e_{st}}{\chi_\ell} \right)^{\frac{\mu}{1-\mu}} \right|^{-\frac{1}{\mu}} \right] \bar \ell; \forall i,s \label{eq_4elldef} \\
 		\hat c^K_{ist} & = \hat c_{ist} {\chi_K}^{\frac{1}{\sigma}}; \forall i,s \label{eq_4cKdef} \\
 		\hat c_{ist} & = \begin{matrix} w_{it} e_{st} (\bar \ell - \hat \ell_{ist}) + (1+r_{it}-\delta)\hat a_{ist} \\ +\hat bq_{ist} - \hat a_{i,s+1,t+1} e^{g^A} - {KID}_{ist} \hat c^K_{ist} \end{matrix}; \forall i,s \label{eq_4BC}
 	\end{align}
