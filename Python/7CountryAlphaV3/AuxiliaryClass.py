@@ -177,8 +177,6 @@ class OLG(object):
         self.MaxImmigrantAge, self.FirstDyingAge, self.agestopull \
         = demog.getkeyages(self.S,PrintAges)
 
-        self.Midlife = int(self.S/2)
-
         if self.UseDiffDemog:
             self.A = np.ones(self.I)+np.cumsum(np.ones(self.I)*.05)-.05 
             #Techonological Change, used for when countries are different
@@ -195,8 +193,8 @@ class OLG(object):
                     [-self.S:]
             self.e = np.einsum(  "ijt,s->ijst", np.ones((self.I,self.J,self.T+self.S)),\
                     e_dist  )
-            plt.plot(Srange[-self.S:], e_dist)
-            plt.show()
+            #plt.plot(Srange[-self.S:], e_dist)
+            #plt.show()
 
 
         else:
@@ -746,11 +744,11 @@ class OLG(object):
 
             c_1=np.reshape(c_1,(self.I,self.J))
             cvec_ss[:,:,0] = c_1
-            cKvec_ss[:,:,0] = c_1*self.chik**(-1/self.sigma)
+            cKvec_ss[:,:,0] = c_1*self.chik**(1/self.sigma)
 
-            lhat_ss[:,:,0] =  self.lbar_ss-((1.0/self.lbar_ss)*(1.0-((cvec_ss[:,:,0]**\
-                    (-self.sigma)*we[:,:,0])/self.chil)**(self.mu/(1-self.mu))))**\
-                    (-1.0/self.mu)
+            lhat_ss[:,:,0] =  (1.0-np.abs(1.0+((cvec_ss[:,:,0]**(-self.sigma)*\
+                    we[:,:,0])/self.chil)**(self.mu/(1-self.mu)))**(-1/self.mu))*\
+                    self.lbar_ss
 
  
             for s in xrange(self.S-1):
@@ -760,13 +758,12 @@ class OLG(object):
                         (self.beta*(1+r_ss2-self.delta)*\
                         (1-self.Mortality_ss[:,:,s]))**(1/self.sigma)
                 #5.19
-                cKvec_ss[:,:,s+1] = cvec_ss[:,:,s+1]*self.chik**(-1/self.sigma)
+                cKvec_ss[:,:,s+1] = cvec_ss[:,:,s+1]*self.chik**(1/self.sigma)
 
-
-                lhat_ss[:,:,s+1] =  self.lbar_ss-((1.0/self.lbar_ss)* \
-                        (1.0-((cvec_ss[:,:,s+1]**(-self.sigma)*we[:,:,s+1])/self.chil)\
-                        **(self.mu/(1-self.mu))))**(-1.0/self.mu)
-
+                
+                lhat_ss[:,:,s+1] =  (1.0-np.abs(1.0+((cvec_ss[:,:,s+1]**(-self.sigma)*\
+                        we[:,:,s+1])/self.chil)**(self.mu/(1-self.mu)))**(-1/self.mu))*\
+                        self.lbar_ss
                 #print lhat_ss[0,:,s], (1.0-((cvec_ss[0,:,s]**\
                         #(-self.sigma)*we[0,:,s])/self.chil)**(self.mu/(1-self.mu)))
 
@@ -780,9 +777,6 @@ class OLG(object):
             avec_ss[:,:,s+2] = np.exp(-self.g_A)*(bq_ss2[:,:,s+1]-cvec_ss[:,:,s+1]-\
                     cKvec_ss[:,:,s+1]*self.Kids_ss[:,:,s+1]+we[:,:,s+1]*\
                     (self.lbar_ss-lhat_ss[:,:,s+1])+avec_ss[:,:,s+1]*(1+r_ss2-self.delta))
-
-
-            #SPARE BIT IN BETWEEN GAMMA+ AND (SELF.CHI...): w_ss[:,j]*self.e_ss[:,j,s+1]*
 
             return cvec_ss, cKvec_ss, lhat_ss, avec_ss
 
@@ -889,6 +883,7 @@ class OLG(object):
             
             #Punisher
             Euler = assets_path[:,:,-1]
+            
             if np.any(cpath<0):
                 print "WARNING! The fsolve for optimal consumption guessed a negative number"
                 Euler = np.ones((self.I,self.J))*9999. 
@@ -896,9 +891,6 @@ class OLG(object):
             #if np.any(lhat_path<0):
                 #print "Punishing for negative time endowment"
                 #Euler = np.ones((self.I,self.J))*9999.
-
-
-
 
             return np.reshape(Euler,(self.I*self.J))
         
@@ -969,7 +961,7 @@ class OLG(object):
                     self.Kids_ss )
 
             
-            Consumption_Ratio = cKvec_ss - cvec_ss*self.chik**(-1/self.sigma)
+            Consumption_Ratio = cKvec_ss - cvec_ss*self.chik**(1/self.sigma)
 
             return Household_Euler, Chained_C_Condition, Modified_Budget_Constraint,\
                     Consumption_Ratio
@@ -1007,15 +999,15 @@ class OLG(object):
             print "Zero final period assets satisfied:", \
                     np.isclose(np.max(np.absolute(Household_Euler)), 0)
             print "Assets Euler Max:",np.max(np.abs(Household_Euler))
-            print "Equation 5.20 satisfied:",\
+            print "Equation 5.19 satisfied:",\
                     np.isclose(np.max(np.absolute(Chained_C_Condition)), 0)
-            print "Equation 5.20 Max:", np.max(np.abs(Chained_C_Condition))
-            print "Equation 5.17 satisfied:",\
+            print "Equation 5.19 Max:", np.max(np.abs(Chained_C_Condition))
+            print "Equation 5.18 satisfied:",\
                     np.isclose(np.max(np.absolute(Modified_Budget_Constraint)), 0)
-            print "Equation 5.17 Max:", np.max(np.abs(Modified_Budget_Constraint))
-            print "Equation 5.19 satisfied",\
+            print "Equation 5.18 Max:", np.max(np.abs(Modified_Budget_Constraint))
+            print "Equation 5.17 satisfied",\
                     np.isclose(np.max(np.absolute(Consumption_Ratio)), 0)
-            print "Equation 5.19 Max:", np.max(np.abs(Consumption_Ratio))
+            print "Equation 5.17 Max:", np.max(np.abs(Consumption_Ratio))
             print "\n"
             #print avec_ss[0,:]
 
@@ -1300,17 +1292,17 @@ class OLG(object):
             totalbq = np.sum(np.sum(\
                     self.Nhat_ss[:,:,self.FirstFertilityAge:self.FirstDyingAge],axis=1),axis=1)
 
-            Euler_bq = np.abs(self.bqindiv_ss - alldeadagent_assets/totalbq)
+            Euler_bq = self.bqindiv_ss - alldeadagent_assets/totalbq
 
 
-            Euler_kd = np.abs(self.k_ss - self.kf_ss - \
-                    np.sum(np.sum(self.avec_ss*self.Nhat_ss,axis=1),axis=1) )
+            Euler_kd = self.k_ss - self.kf_ss - \
+                    np.sum(np.sum(self.avec_ss*self.Nhat_ss,axis=1),axis=1) 
 
 
-            Euler_n = np.abs(self.n_ss - \
-                    np.sum(self.e_ss*(self.lbar_ss-self.lhat_ss)*self.Nhat_ss,axis=2))
+            Euler_n = self.n_ss - \
+                    np.sum(self.e_ss*(self.lbar_ss-self.lhat_ss)*self.Nhat_ss,axis=2)
 
-            Euler_kf = np.abs(self.r_ss[1:] - self.r_ss[0]*np.ones(self.I-1))
+            Euler_kf = self.r_ss[1:] - self.r_ss[0]*np.ones(self.I-1)
             #Euler_kf = self.kf_ss - (self.k_ss - 
             #np.sum(np.sum(self.avec_ss*self.Nhat_ss,axis=1),axis=1))
 
@@ -1355,9 +1347,10 @@ class OLG(object):
             Outputs:
                 - None
         """
-        print "kf steady state", self.kf_full
+        print "kf steady state", self.kf_ss
         print "k steady state", self.k_ss
         print "bq steady state", self.bqindiv_ss
+        print "lhat steady state", self.lhat_ss
         print "n steady state", self.n_ss
         print "y steady state", self.y_ss
         print "r steady state", self.r_ss
@@ -1603,7 +1596,6 @@ class OLG(object):
         ax.set_ylabel('Kids Consumption')
         ax.set_zlabel('Utility')
 
-        #plt.show()
     
     #TIMEPATH-ITERATION
 

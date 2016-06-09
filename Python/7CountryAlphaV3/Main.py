@@ -39,9 +39,9 @@ def Multi_Country(S,I,J,sigma):
     #For terminal output
     PrintAges = False #Displays the current locations of the program inside key TPI functions
 
-    PrintSSEulErrors = True #Prints the euler errors in each attempt of calculating the
+    PrintSSEulErrors = True#Prints the euler errors in each attempt of calculating the
                             #steady state
-    PrintSS = False #Prints the result of the Steady State functions
+    PrintSS = True  #Prints the result of the Steady State functions
     Print_caTimepaths = False #Prints the consumption, assets, and bequests 
                               #timepath as it gets filled in for each iteration of TPI
     Print_HH_Eulers = True #Prints whether the equations for the household decisions 
@@ -57,7 +57,7 @@ def Multi_Country(S,I,J,sigma):
     ShaveTime = False #Shaves off a little more time for TPI.
 
     #For plots to display or save
-    DemogGraphs = False #Activates graphing graphs with demographic data 
+    DemogGraphs = True  #Activates graphing graphs with demographic data 
                         #and population shares
     ShowSSGraphs = True #Activates graphs for steady-state solutions for 
                         #consumption, assets, and bequests
@@ -69,7 +69,7 @@ def Multi_Country(S,I,J,sigma):
     #For using differing ways to solve the model
     UseDiffDemog = True #Turns on different demographics for each country
     UseSSDemog = False #Activates using only steady state demographics for TPI calculation
-    UseDiffProductivities = False #Activates having e vary across cohorts
+    UseDiffProductivities = True  #Activates having e vary across cohorts
 
     #Adjusts the country list if we are using less than 7 Countries
     if len(I_touse) < I:
@@ -119,13 +119,13 @@ def Multi_Country(S,I,J,sigma):
 
     
     #STEADY STATE OUTER FSOLVE GUESS
-    k_ss_guess = np.ones((I))*.15
+    k_ss_guess = np.ones((I))*.25
     kf_ss_guess = np.ones((I-1))*0
-    n_ss_guess = np.ones((I,J))*.15
-    bq_ss_guess = np.ones((I))*.15
+    n_ss_guess = np.ones((I,J))*.10
+    bq_ss_guess = np.ones((I))*.200 #.195 is the boundary
 
     #STEADY STATE INNER FSOLVE GUESS
-    c_innerfsolve_guess = np.ones((I,J))*.15
+    c_innerfsolve_guess = np.ones((I,J))*.150
 
     #Steady State
     Model.SteadyState(k_ss_guess,kf_ss_guess,n_ss_guess, bq_ss_guess,c_innerfsolve_guess\
@@ -155,9 +155,7 @@ def Multi_Country(S,I,J,sigma):
 start = time.time()
 # S-Number of Cohorts, I-Number of Countries, J-Number of Skill classes
 # S, I, J and sigma. S and I are integers. Sigma may not be.
-
-Multi_Country(30,2,2,4)
-
+Multi_Country(30,7,2,4)
 tottime=time.time()-start
 
 if TimeModel==True:
