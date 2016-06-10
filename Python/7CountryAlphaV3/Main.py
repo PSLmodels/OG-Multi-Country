@@ -57,7 +57,7 @@ def Multi_Country(S,I,J,sigma):
     ShaveTime = False #Shaves off a little more time for TPI.
 
     #For plots to display or save
-    DemogGraphs = True  #Activates graphing graphs with demographic data 
+    DemogGraphs = False  #Activates graphing graphs with demographic data 
                         #and population shares
     ShowSSGraphs = True #Activates graphs for steady-state solutions for 
                         #consumption, assets, and bequests
@@ -122,7 +122,7 @@ def Multi_Country(S,I,J,sigma):
     k_ss_guess = np.ones((I))*.25
     kf_ss_guess = np.ones((I-1))*0
     n_ss_guess = np.ones((I,J))*.10
-    bq_ss_guess = np.ones((I))*.200 #.195 is the boundary
+    bq_ss_guess = np.ones((I))*.250 #.195 is the boundary
 
     #STEADY STATE INNER FSOLVE GUESS
     c_innerfsolve_guess = np.ones((I,J))*.150
@@ -155,7 +155,7 @@ def Multi_Country(S,I,J,sigma):
 start = time.time()
 # S-Number of Cohorts, I-Number of Countries, J-Number of Skill classes
 # S, I, J and sigma. S and I are integers. Sigma may not be.
-Multi_Country(30,7,2,4)
+Multi_Country(80,2,2,4)
 tottime=time.time()-start
 
 if TimeModel==True:

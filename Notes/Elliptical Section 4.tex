@@ -531,7 +531,7 @@
 	\end{align}
 	\begin{align}
 		\hat {bq}_{it} & = \frac{\sum_{s=67}^S \sum_j \hat a_{ijst} \rho_{ijst} \hat N_{ijst}}{\sum_{s=23}^{67} \hat N_{ijst}} ; \forall i,s \label{eq_5bqfunc}\\
-    	\hat \ell_{ijst} & = \bar \ell - \left[\frac{1}{\bar \ell} \left( 1-\left(\frac{{c_{ijst}}^{-\sigma} w_{ijt} e_{sjt}}{\chi_\ell} \right)^{\frac{\mu}{1-\mu}} \right) \right]^{-\frac{1}{\mu}}; \forall i,j,s \label{eq_5elldef} \\
+    	\hat \ell_{ijst} & = \left[ 1 - \left| 1 + \left( \frac{{c_{ijst}}^{-\sigma} w_{ijt} e_{st}}{\chi_\ell} \right)^{\frac{\mu}{1-\mu}} \right|^{-\frac{1}{\mu}} \right] \bar \ell; \forall i,j,s \label{eq_5elldef} \\
 		\hat c^K_{ijst} & = \hat c_{ijst} {\chi_K}^{\frac{1}{\sigma}}; \forall i,j,s \label{eq_5cKdef} \\
 		\hat c_{ijst} & = \begin{matrix} w_{ijt} e_{sjt} (\bar \ell - \hat \ell_{ijst}) + (1+r_{it}-\delta)\hat a_{ijst} \\ +\hat bq_{ijst} - \hat a_{i,j,s+1,t+1} e^{g^A} - {KID}_{ijst} \hat c^K_{ijst}\end{matrix}; \forall i,j,s \label{eq_5BC} \\
 		& \left({\hat c_{ijst}}\right)^{-\sigma} - \beta (1-\rho_{i,j,s+1,+1}) \left(\hat c_{i,j,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,j,s \label{eq_5HH5func}\\
@@ -587,7 +587,7 @@
 	\end{align}
 	\begin{align}
 		\hat T^L_{it} & = \tau^K_{it} (\hat y_{it} - w_{it}\hat n_{it} - \delta \hat k_{it}); \forall i \\
-    	\hat \ell_{ijst} & = \bar \ell -  \left[ \frac{1}{\bar \ell} \left( 1-\left(\frac{{c_{ijst}}^{-\sigma} w_{ijt} e_{sjt}}{\chi_\ell} \right)^{\frac{\mu}{1-\mu}} \right) \right]^{-\frac{1}{\mu}}; \forall i,j,s \label{eq_6elldef} \\
+    	\hat \ell_{ijst} & = \left[ 1 - \left| 1 + \left( \frac{{c_{ijst}}^{-\sigma} w_{ijst} e_{st}}{\chi_\ell} \right)^{\frac{\mu}{1-\mu}} \right|^{-\frac{1}{\mu}} \right] \bar \ell; \forall i,j,s\label{eq_6elldef} \\
 		\hat c^K_{ijst} & = \hat c_{ijst} {\chi_K}^{\frac{1}{\sigma}}; \forall i,j,s \label{eq_6cKdef} \\
 		\hat c_{ijst} & = \begin{matrix} w_{ijt} e_{sjt} (\bar \ell - \hat \ell_{ijst}) + (1+r_{it}-\delta)\hat a_{ijst} \\ +\hat bq_{ijst} - \hat a_{i,j,s+1,t+1} e^{g^A} - {KID}_{ijst} \hat c^K_{ijst} + \hat T^L_{it} \end{matrix}; \forall i,j,s \label{eq_6BC} \\
 		& \left({\hat c_{ijst}}\right)^{-\sigma} - \beta (1-\rho_{i,j,s+1,+1}) \left(\hat c_{i,j,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,j,s \\
