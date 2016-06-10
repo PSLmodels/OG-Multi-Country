@@ -33,7 +33,7 @@ def Multi_Country(S,I,sigma):
     #For terminal output
     PrintAges = False #Prints the different key ages in the demographics
     PrintLoc = False #Displays the current locations of the program inside key TPI functions
-    PrintSSEulErrors = False #Prints the euler errors in each attempt of calculating the steady state
+    PrintSSEulErrors = True #Prints the euler errors in each attempt of calculating the steady state
     PrintSS = False #Prints the result of the Steady State functions
     Print_caTimepaths = False #Prints the consumption, assets, and bequests timepath as it gets filled in for each iteration of TPI
     Print_HH_Eulers = False #Prints whether the equations for the household decisions are satisfied (Equations 3.22, 3.19, and sum(assets) = 0)
@@ -107,7 +107,7 @@ def Multi_Country(S,I,sigma):
 #run the model.
 
 start = time.time()
-Multi_Country(30,3,2)
+Multi_Country(20,2,2)
 tottime=time.time()-start
 
 if TimeModel==True:

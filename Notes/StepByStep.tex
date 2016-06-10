@@ -479,7 +479,7 @@
 		w_{it} & = (1-\alpha) \frac{\hat y_{it}}{\hat n_{it}}; \forall i \\
 		\hat bq_{it} & = \frac{\sum_{s=67}^S \hat a_{ist} \rho_{ist} \hat N_{ist}}{\sum_{s=23}^{67} \hat N_{ist}} ; \forall i,s \\
 		\Gamma_{it} & = \left\{ \left[1 + \chi \left(\frac{\chi}{w_{it} e_{st}}\right)^{\rho-1}\right]^{\tfrac{1-\rho \sigma}{\rho-1}}  \right\}^{-\tfrac{1}{\sigma}}; \forall i,s \\
-    	\hat c_{ist} & = \frac{w_{it} e_{st} \bar \ell + (1+r_{it}-\delta)\hat a_{ist} +\hat bq_{ist} - \hat a_{i,s+1,t+1} e^{g^A}} {1 + KID_{ist}\Gamma_{it} +w_{it}e_{st} \left(\tfrac{\chi}{w_{it}e_{st}}\right)^\rho}; \forall i,s \\
+    	\hat c_{ist} & = \frac{w_{it} e_{st} \bar \ell + (1+r_{it}-\delta)\hat a_{ist} +\hat bq_{ist} - \hat a_{i,s+1,t+1} e^{g^A}} {1 + KID_{ist}\Gamma_{it} + \left(\tfrac{\chi}{w_{it}e_{st}}\right)^\rho}; \forall i,s \\
 		\hat \ell_{ist} & = \hat c_{ist} \left(\frac{\chi}{w_{it}e_{st}}\right)^\rho ; \forall i,s \\
 		\hat c^K_{ist} & = \hat c_{ist} \Gamma_{it}; \forall i,s
 	\end{align}
@@ -528,10 +528,10 @@
 	\begin{align}
 		\hat {bq}_{it} & = \frac{\sum_{s=67}^S \sum_j \hat a_{ijst} \rho_{ijst} \hat N_{ijst}}{\sum_{s=23}^{67} \hat N_{ijst}} ; \forall i,s \label{eq_5bqfunc}\\
 		\Gamma_{ijt} & = \left\{ \left[1 + \chi \left(\frac{\chi}{w_{ijt} e_{jst}}\right)^{\rho-1}\right]^{\tfrac{1-\rho \sigma}{\rho-1}} \right\}^{-\tfrac{1}{\sigma}}; \forall i,j,s \label{eq_5HH1func}\\
-    	\hat c_{ijst} & = \frac{w_{ijt} e_{jst} + (1+r_{it}-\delta)\hat a_{ijst} + \hat{bq}_{jist} - \hat a_{i,j,s+1,t+1} e^{g^A}} {1 + KID_{ist}\Gamma_{ijt} + \left(\tfrac{\chi}{w_{ijt}e_{jst}}\right)^\rho}; \forall i,j,s \\
-		\hat \ell_{ijst} & = \hat c_{ijst} \left(\frac{\chi}{w_{ijt}e_{jst}}\right)^{\frac{1-\rho}{\rho}} ; \forall i,j,s \\
+    	\hat c_{ijst} & = \frac{w_{ijt} e_{jst} \bar \ell+ (1+r_{it}-\delta)\hat a_{ijst} + \hat{bq}_{jist} - \hat a_{i,j,s+1,t+1} e^{g^A}} {1 + KID_{ist}\Gamma_{ijt} + \left(\tfrac{\chi}{w_{ijt}e_{jst}}\right)^\rho}; \forall i,j,s \\
+		\hat \ell_{ijst} & = \hat c_{ijst} \left(\frac{\chi}{w_{ijt}e_{jst}}\right)^{{\rho}} ; \forall i,j,s \\
 		\hat c^K_{ijst} & = \hat c_{ijst} \Gamma_{ijt}; \forall i,j,s \\
-		& \left({\hat c^K_{ijst}}\right)^{-\sigma} - \beta (1-\rho_{i,j,s+1,+1}) \left(\hat c^K_{i,j,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,j,s \label{eq_5HH5func}\\
+		& \left({\hat c^K_{ijst}}\right)^{-\sigma} - \beta (1-\rho_{i,j,s,t+1}) \left(\hat c^K_{i,j,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,j,s \label{eq_5HH5func}\\
 		& r_{it} - r_{1t} = 0; \forall i>1 \label{eq_5requal}\\
 		& \sum_{i=1}^I \hat k^f_{it} = 0 \label{eq_5kfsum}
 	\end{align}
@@ -618,12 +618,12 @@
 	\begin{align}
 		\Gamma_{ijt} & = \left\{ \left[1 + \chi \left(\frac{\chi}{w_{ijt} e_{jst}}\right)^{\rho-1}\right]^{\tfrac{1-\rho \sigma}{\rho-1}} \frac{\rho}{\rho-1} \right\}^{-\tfrac{1}{\sigma}}; \forall i,j,s \\
 		\hat T^L_{it} & = \tau^K_{it} (\hat y_{it} - w_{it}\hat n_{it} - \delta \hat k_{it}); \forall i \\
-    	\hat c_{ijst} & = \frac{w_{ijt} e_{jst} + (1+r_{it}-\delta)\hat a_{ijst} + \hat{bq}_{ijst} - \hat a_{i,j,s+1,t+1} e^{g^A} + \hat T^L_{it}} {1 + KID_{ist}\Gamma_{ijt} + \left(\tfrac{\chi}{w_{ijt}e_{jst}}\right)^\rho}; \forall i,s \\
+    	\hat c_{ijst} & = \frac{w_{ijt} e_{jst} \bar \ell + (1+r_{it}-\delta)\hat a_{ijst} + \hat{bq}_{ijst} - \hat a_{i,j,s+1,t+1} e^{g^A} + \hat T^L_{it}} {1 + KID_{ist}\Gamma_{ijt} + \left(\tfrac{\chi}{w_{ijt}e_{jst}}\right)^\rho}; \forall i,s \\
 		\hat \ell_{ijst} & = \hat c_{ijst} \left(\frac{\chi}{w_{ijt}e_{jst}}\right)^{\frac{1-\rho}{\rho}} ; \forall i,j,s \\
 		\hat c^K_{ijst} & = \hat c_{ijst} \Gamma_{ijt}; \forall i,j,s
 	\end{align}
 	\begin{align}
-		& \left({\hat c^K_{ijst}}\right)^{-\sigma} - \beta (1-\rho_{i,j,s+1,+1}) \left(\hat c^K_{i,j,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,j,s \\
+		& \left({\hat c^K_{ijst}}\right)^{-\sigma} - \beta (1-\rho_{i,j,s,t+1}) \left(\hat c^K_{i,j,s+1,t+1} e^{g^A}\right)^{-\sigma}(1+r_{1,t+1}-\delta) = 0; \forall i,j,s \\
 		& r_{it} - r_{1t} = 0; \forall i>1 \\
 		& \sum_{i=1}^I \hat k^f_{it} = 0
 	\end{align}

@@ -10,16 +10,19 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      8928,        306]
-NotebookOptionsPosition[      8010,        268]
-NotebookOutlinePosition[      8364,        284]
-CellTagsIndexPosition[      8321,        281]
+NotebookDataLength[      9048,        307]
+NotebookOptionsPosition[      8115,        270]
+NotebookOutlinePosition[      8471,        286]
+CellTagsIndexPosition[      8428,        283]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
 Notebook[{
+Cell[BoxData[""], "Input",
+ CellChangeTimes->{{3.6718872128543673`*^9, 3.6718872197954187`*^9}}],
 
 Cell[CellGroupData[{
+
 Cell[BoxData[
  RowBox[{"c", " ", "=", " ", 
   RowBox[{
@@ -228,8 +231,6 @@ Cell[BoxData[
  CellChangeTimes->{3.67140992738418*^9}]
 }, Open  ]],
 
-Cell[CellGroupData[{
-
 Cell[BoxData[
  RowBox[{"FullSimplify", "[", 
   RowBox[{
@@ -249,25 +250,26 @@ Cell[BoxData[
  CellChangeTimes->{{3.6714099315034037`*^9, 3.671409941714594*^9}}],
 
 Cell[BoxData[
- RowBox[{
-  SuperscriptBox["e", 
-   RowBox[{"-", "gA"}]], " ", 
-  SuperscriptBox[
-   RowBox[{"(", 
-    RowBox[{
-     RowBox[{"-", 
-      SuperscriptBox["cK", "\[Sigma]"]}], " ", "\[Beta]", " ", 
-     RowBox[{"(", 
-      RowBox[{"1", "+", "r", "-", "\[Delta]"}], ")"}], " ", 
-     RowBox[{"(", 
-      RowBox[{
-       RowBox[{"-", "1"}], "+", "\[Rho]"}], ")"}]}], ")"}], 
-   FractionBox["1", "\[Sigma]"]]}]], "Output",
- CellChangeTimes->{3.671409942425661*^9}]
-}, Open  ]]
+ StyleBox[
+  RowBox[{
+   SuperscriptBox["e", 
+    RowBox[{"-", "gA"}]], " ", 
+   SuperscriptBox[
+    RowBox[{"(", 
+     RowBox[{
+      RowBox[{"-", 
+       SuperscriptBox["cK", "\[Sigma]"]}], " ", "\[Beta]", " ", 
+      RowBox[{"(", 
+       RowBox[{"1", "+", "r", "-", "\[Delta]"}], ")"}], " ", 
+      RowBox[{"(", 
+       RowBox[{
+        RowBox[{"-", "1"}], "+", "\[Rho]"}], ")"}]}], ")"}], 
+    FractionBox["1", "\[Sigma]"]]}],
+  FontSize->72]], "Input",
+ CellChangeTimes->{3.67240605978616*^9}]
 },
-WindowSize->{808, 683},
-WindowMargins->{{Automatic, -56}, {-9, Automatic}},
+WindowSize->{1025, 1031},
+WindowMargins->{{-801, Automatic}, {Automatic, 0}},
 FrontEndVersion->"10.2 for Mac OS X x86 (32-bit, 64-bit Kernel) (July 6, \
 2015)",
 StyleDefinitions->"Default.nb"
@@ -283,31 +285,30 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
+Cell[558, 20, 96, 1, 28, "Input"],
 Cell[CellGroupData[{
-Cell[580, 22, 814, 24, 28, "Input"],
-Cell[1397, 48, 546, 15, 62, "Output"]
+Cell[679, 25, 814, 24, 28, "Input"],
+Cell[1496, 51, 546, 15, 62, "Output"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[1980, 68, 179, 4, 28, "Input"],
-Cell[2162, 74, 629, 19, 62, "Output"]
+Cell[2079, 71, 179, 4, 28, "Input"],
+Cell[2261, 77, 629, 19, 62, "Output"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[2828, 98, 179, 4, 28, "Input"],
-Cell[3010, 104, 705, 19, 46, "Output"]
+Cell[2927, 101, 179, 4, 28, "Input"],
+Cell[3109, 107, 705, 19, 46, "Output"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[3752, 128, 663, 18, 46, "Input"],
-Cell[4418, 148, 647, 19, 80, "Output"]
+Cell[3851, 131, 663, 18, 46, "Input"],
+Cell[4517, 151, 647, 19, 46, "Output"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[5102, 172, 704, 22, 28, "Input"],
-Cell[5809, 196, 531, 11, 41, "Message"],
-Cell[6343, 209, 590, 18, 45, "Output"]
+Cell[5201, 175, 704, 22, 28, "Input"],
+Cell[5908, 199, 531, 11, 24, "Message"],
+Cell[6442, 212, 590, 18, 45, "Output"]
 }, Open  ]],
-Cell[CellGroupData[{
-Cell[6970, 232, 549, 16, 45, "Input"],
-Cell[7522, 250, 472, 15, 39, "Output"]
-}, Open  ]]
+Cell[7047, 233, 549, 16, 45, "Input"],
+Cell[7599, 251, 512, 17, 296, InheritFromParent]
 }
 ]
 *)

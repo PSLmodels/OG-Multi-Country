@@ -344,7 +344,7 @@ class OLG(object):
         self.FertilityRates[:,:,self.FirstFertilityAge:self.LastFertilityAge+1,:] = \
                 self.all_FertilityRates[:,:,self.FirstFertilityAge:self.LastFertilityAge+1,\
                 self.frange:]
-
+        
     def Demographics(self, demog_ss_tol, UseSSDemog=False,VerifyDemog=False):
         """
             Description:
@@ -749,7 +749,6 @@ class OLG(object):
             lhat_ss[:,:,0] =  (1.0-np.abs(1.0+((cvec_ss[:,:,0]**(-self.sigma)*\
                     we[:,:,0])/self.chil)**(self.mu/(1-self.mu)))**(-1/self.mu))*\
                     self.lbar_ss
-
  
             for s in xrange(self.S-1):
                
@@ -759,20 +758,14 @@ class OLG(object):
                         (1-self.Mortality_ss[:,:,s]))**(1/self.sigma)
                 #5.19
                 cKvec_ss[:,:,s+1] = cvec_ss[:,:,s+1]*self.chik**(1/self.sigma)
-
                 
                 lhat_ss[:,:,s+1] =  (1.0-np.abs(1.0+((cvec_ss[:,:,s+1]**(-self.sigma)*\
                         we[:,:,s+1])/self.chil)**(self.mu/(1-self.mu)))**(-1/self.mu))*\
                         self.lbar_ss
-                #print lhat_ss[0,:,s], (1.0-((cvec_ss[0,:,s]**\
-                        #(-self.sigma)*we[0,:,s])/self.chil)**(self.mu/(1-self.mu)))
 
                 avec_ss[:,:,s+1] = np.exp(-self.g_A)*(bq_ss2[:,:,s]-cvec_ss[:,:,s]\
                         -cKvec_ss[:,:,s]*self.Kids_ss[:,:,s]+we[:,:,s]*\
                         (self.lbar_ss-lhat_ss[:,:,s])+avec_ss[:,:,s]*(1+r_ss2-self.delta))
-            
-            #print lhat_ss[0,0,:]
-
 
             avec_ss[:,:,s+2] = np.exp(-self.g_A)*(bq_ss2[:,:,s+1]-cvec_ss[:,:,s+1]-\
                     cKvec_ss[:,:,s+1]*self.Kids_ss[:,:,s+1]+we[:,:,s+1]*\
@@ -1118,50 +1111,46 @@ class OLG(object):
         kf_full[0] = -np.sum(kf_guess)
         kf_full[1:] = kf_guess
 
-
-        if np.min(n_guess)<.0001:
-            return np.ones(3*self.I-1+self.I*self.J)*9999.
         #Initializes a vector of bequests received for each individial. 
         #Will be = 0 for a block of young and a block of old cohorts
-        else:
 
-            bq_ss = np.zeros((self.I,self.S))
-            bq_ss[:,self.FirstFertilityAge:self.FirstDyingAge] = \
-                    np.einsum("i,s->is", bqindiv_ss, \
-                    np.ones(self.FirstDyingAge-self.FirstFertilityAge))
+        bq_ss = np.zeros((self.I,self.S))
+        bq_ss[:,self.FirstFertilityAge:self.FirstDyingAge] = \
+                np.einsum("i,s->is", bqindiv_ss, \
+                np.ones(self.FirstDyingAge-self.FirstFertilityAge))
 
-            #Calls self.GetSSComponents, which solves for all the other ss variables in 
-            #terms of bequests and intrest rate
-            w_ss, cvec_ss, cKvec_ss, avec_ss, r_ss, y_ss, lhat_ss = \
-                    self.GetSSComponents(k_guess,kf_full,n_guess,bq_ss, PrintSSEulErrors)
+        #Calls self.GetSSComponents, which solves for all the other ss variables in 
+        #terms of bequests and intrest rate
+        w_ss, cvec_ss, cKvec_ss, avec_ss, r_ss, y_ss, lhat_ss = \
+                self.GetSSComponents(k_guess,kf_full,n_guess,bq_ss, PrintSSEulErrors)
 
-            #Sum of all assets holdings of dead agents to be distributed evenly among 
-            #all eligible agents
-            alldeadagent_assets = np.sum(np.sum(avec_ss[:,:,self.FirstDyingAge:]*\
-                    self.Mortality_ss[:,:,self.FirstDyingAge:]*\
-                    self.Nhat_ss[:,:,self.FirstDyingAge:], axis=1),axis=1)
+        #Sum of all assets holdings of dead agents to be distributed evenly among 
+        #all eligible agents
+        alldeadagent_assets = np.sum(np.sum(avec_ss[:,:,self.FirstDyingAge:]*\
+                self.Mortality_ss[:,:,self.FirstDyingAge:]*\
+                self.Nhat_ss[:,:,self.FirstDyingAge:], axis=1),axis=1)
 
-            total_bq = np.sum(np.sum(\
-                    self.Nhat_ss[:,:,self.FirstFertilityAge:self.FirstDyingAge],axis=1),axis=1)
+        total_bq = np.sum(np.sum(\
+                self.Nhat_ss[:,:,self.FirstFertilityAge:self.FirstDyingAge],axis=1),axis=1)
 
 
-            #Equation 3.29
-            Euler_bq = bqindiv_ss - alldeadagent_assets/total_bq
+        #Equation 3.29
+        Euler_bq = bqindiv_ss - alldeadagent_assets/total_bq
 
-            Euler_kd = k_guess-kf_full-np.sum(np.sum(avec_ss*self.Nhat_ss,axis=1)\
-                    ,axis=1)
+        Euler_kd = k_guess-kf_full-np.sum(np.sum(avec_ss*self.Nhat_ss,axis=1)\
+                ,axis=1)
 
-            Euler_n = np.reshape(n_guess - np.sum(self.e_ss*(self.lbar_ss-lhat_ss)*\
-                    self.Nhat_ss,axis=2),(self.I*self.J))
+        Euler_n = np.reshape(n_guess - np.sum(self.e_ss*(self.lbar_ss-lhat_ss)*\
+                self.Nhat_ss,axis=2),(self.I*self.J))
 
-            Euler_kf = r_ss[1:] - r_ss[0]*np.ones(self.I-1)
+        Euler_kf = r_ss[1:] - r_ss[0]*np.ones(self.I-1)
 
-            Euler_all = np.concatenate((Euler_kd,Euler_kf,Euler_n,Euler_bq))
+        Euler_all = np.concatenate((Euler_kd,Euler_kf,Euler_n,Euler_bq))
 
-            self.ss_iter+=1
-            if PrintSSEulErrors: print "Euler Errors:", Euler_all, "\nIter:", self.ss_iter
+        self.ss_iter+=1
+        if PrintSSEulErrors: print "Euler Errors:", Euler_all, "\nIter:", self.ss_iter
 
-            return Euler_all
+        return Euler_all
 
     def SteadyState(self,k_ss_guess,kf_ss_guess,n_ss_guess,bq_ss_guess,ck_guess,PrintSSEulErrors=False):
         """
