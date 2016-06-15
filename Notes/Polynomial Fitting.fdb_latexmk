@@ -1,13 +1,13 @@
 # Fdb version 3
-["bibtex Polynomial Fitting"] 1466018771 "Polynomial Fitting.aux" "Polynomial Fitting.bbl" "Polynomial Fitting" 1466019638
+["bibtex Polynomial Fitting"] 1466020682 "Polynomial Fitting.aux" "Polynomial Fitting.bbl" "Polynomial Fitting" 1466022222
   "/usr/local/texlive/2014/texmf-dist/bibtex/bst/economic/aer.bst" 1389482635 26812 2ae6e48450a8c17a93d98067b7084a7a ""
   "Bibliography.bib" 1464401547 530 38ff9f02a57ace44d10adee14dc591fa ""
-  "Polynomial Fitting.aux" 1466019638 700 07fb59a6bbf6799ea66e6810570ced07 ""
+  "Polynomial Fitting.aux" 1466022221 883 fbc6d979cb918c8c909e0a9625126f1c ""
   "Polynomial Fitting.bcf" 0 -1 0 ""
   (generated)
-  "Polynomial Fitting.bbl"
   "Polynomial Fitting.blg"
-["pdflatex"] 1466019637 "Polynomial Fitting.tex" "Polynomial Fitting.pdf" "Polynomial Fitting" 1466019638
+  "Polynomial Fitting.bbl"
+["pdflatex"] 1466022221 "Polynomial Fitting.tex" "Polynomial Fitting.pdf" "Polynomial Fitting" 1466022222
   "/usr/local/texlive/2014/texmf-dist/fonts/map/fontname/texfonts.map" 1272929888 3287 e6b82fe08f5336d4d5ebc73fb1152e87 ""
   "/usr/local/texlive/2014/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmex7.tfm" 1246382020 1004 54797486969f23fa377b128694d548df ""
   "/usr/local/texlive/2014/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmex8.tfm" 1246382020 988 bdf658c3bfc2d96d3c8b02cfc1c94c20 ""
@@ -92,12 +92,12 @@
   "/usr/local/texlive/2014/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1401025944 1445653 26a0aacf3d70032b1ec192e8c7792117 ""
   "/usr/local/texlive/2014/texmf-var/web2c/pdftex/pdflatex.fmt" 1401025990 3832012 904d82bdcc8abf2b1cd296990b82553b ""
   "/usr/local/texlive/2014/texmf.cnf" 1401025936 577 a59edbde8d3a8c549d0eeaab1739e2ff ""
-  "Polynomial Fitting.aux" 1466019638 700 07fb59a6bbf6799ea66e6810570ced07 ""
-  "Polynomial Fitting.bbl" 1466018772 146 f0181bacc2eb6bbd10ce003f44bf7a80 "bibtex Polynomial Fitting"
-  "Polynomial Fitting.out" 1466019638 0 d41d8cd98f00b204e9800998ecf8427e ""
-  "Polynomial Fitting.tex" 1466019637 3094 f6a72c69456b15f6a594b6edb6660dc0 ""
+  "Polynomial Fitting.aux" 1466022221 883 fbc6d979cb918c8c909e0a9625126f1c ""
+  "Polynomial Fitting.bbl" 1466020682 146 f0181bacc2eb6bbd10ce003f44bf7a80 "bibtex Polynomial Fitting"
+  "Polynomial Fitting.out" 1466022221 107 2fe39b405c44ddfe7545c6c72898c073 ""
+  "Polynomial Fitting.tex" 1466022221 5656 1a45f197c939c7270bbaee3c0f96e581 ""
   (generated)
-  "Polynomial Fitting.out"
-  "Polynomial Fitting.pdf"
-  "Polynomial Fitting.aux"
   "Polynomial Fitting.log"
+  "Polynomial Fitting.aux"
+  "Polynomial Fitting.pdf"
+  "Polynomial Fitting.out"

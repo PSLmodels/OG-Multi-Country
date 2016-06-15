@@ -109,11 +109,13 @@ INPUT Polynomial Fitting.out
 INPUT Polynomial Fitting.out
 INPUT Polynomial Fitting.out
 INPUT Polynomial Fitting.out
+OUTPUT Polynomial Fitting.pdf
 INPUT ./Polynomial Fitting.out
 INPUT ./Polynomial Fitting.out
 OUTPUT Polynomial Fitting.out
-OUTPUT Polynomial Fitting.pdf
 INPUT /usr/local/texlive/2014/texmf-dist/fonts/tfm/public/cm/cmr17.tfm
+INPUT /usr/local/texlive/2014/texmf-dist/fonts/tfm/public/cm/cmr17.tfm
+INPUT /usr/local/texlive/2014/texmf-dist/fonts/tfm/public/cm/cmbx12.tfm
 INPUT /usr/local/texlive/2014/texmf-dist/fonts/tfm/public/cm/cmr8.tfm
 INPUT /usr/local/texlive/2014/texmf-dist/fonts/tfm/public/cm/cmr6.tfm
 INPUT /usr/local/texlive/2014/texmf-dist/fonts/tfm/public/cm/cmmi12.tfm
@@ -138,8 +140,6 @@ INPUT /usr/local/texlive/2014/texmf-dist/fonts/tfm/public/amsfonts/symbols/msbm7
 INPUT /usr/local/texlive/2014/texmf-var/fonts/map/pdftex/updmap/pdftex.map
 INPUT Polynomial Fitting.bbl
 INPUT Polynomial Fitting.bbl
-INPUT /usr/local/texlive/2014/texmf-dist/fonts/tfm/public/cm/cmr17.tfm
-INPUT /usr/local/texlive/2014/texmf-dist/fonts/tfm/public/cm/cmbx12.tfm
 INPUT Polynomial Fitting.aux
 INPUT ./Polynomial Fitting.out
 INPUT ./Polynomial Fitting.out
