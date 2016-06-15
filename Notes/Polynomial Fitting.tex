@@ -1,0 +1,87 @@
+\documentclass[letterpaper,12pt]{article}
+
+	\usepackage{threeparttable}
+	\usepackage[format=hang,font=normalsize,labelfont=bf]{caption}
+	\usepackage{amsmath}
+	\usepackage{array}
+	\usepackage{delarray}
+	\usepackage{amssymb}
+	\usepackage{amsthm}
+	\usepackage{natbib}
+	\usepackage{setspace}
+	\usepackage{float,color}
+	\usepackage[pdftex]{graphicx}
+	\usepackage{hyperref}
+	\usepackage{multirow}
+	\usepackage{enumerate}
+	\hypersetup{colorlinks,linkcolor=red,urlcolor=blue,citecolor=red}
+	\theoremstyle{definition}
+	\newtheorem{theorem}{Theorem}
+	\newtheorem{acknowledgement}[theorem]{Acknowledgement}
+	\newtheorem{algorithm}[theorem]{Algorithm}
+	\newtheorem{axiom}[theorem]{Axiom}
+	\newtheorem{case}[theorem]{Case}
+	\newtheorem{claim}[theorem]{Claim}
+	\newtheorem{conclusion}[theorem]{Conclusion}
+	\newtheorem{condition}[theorem]{Condition}
+	\newtheorem{conjecture}[theorem]{Conjecture}
+	\newtheorem{corollary}[theorem]{Corollary}
+	\newtheorem{criterion}[theorem]{Criterion}
+	\newtheorem{definition}{Definition} % Number definitions on their own
+	\newtheorem{derivation}{Derivation} % Number derivations on their own
+	\newtheorem{example}[theorem]{Example}
+	\newtheorem{exercise}[theorem]{Exercise}
+	\newtheorem{lemma}[theorem]{Lemma}
+	\newtheorem{notation}[theorem]{Notation}
+	\newtheorem{problem}[theorem]{Problem}
+	\newtheorem{proposition}{Proposition} % Number propositions on their own
+	\newtheorem{remark}[theorem]{Remark}
+	\newtheorem{solution}[theorem]{Solution}
+	\newtheorem{summary}[theorem]{Summary}
+	%\numberwithin{equation}{section}
+	\newcommand\ve{\varepsilon}
+	\graphicspath{{./figures/}}
+	\renewcommand\theenumi{\roman{enumi}}
+	\DeclareMathOperator*{\Max}{Max}
+	\bibliographystyle{aer}
+
+\begin{document}
+
+
+
+\begin{spacing}{1.5}
+
+%section 1
+
+\LARGE{Fitting Hazard Rates with Polynomials} \normalsize
+
+We have data on mortality hazard rates from age 1 to age $90$.
+
+We will fit these to the following univariate polynomial function.
+
+\begin{equation}
+	\ln \rho_{is} = \sum_{j=1}^J \beta_{is} \left(\frac{s}{90}\right)^j
+\end{equation}
+where $i$ indexes the country and $s$ is the age.  We fit each country separately in different regressions.
+
+The vector of beta coefficients, $B_i$, can be estimated using OLS
+
+\begin{equation}
+	B_i = (X'X)^{-1}X'Y_i
+\end{equation}
+where $X$ is an $S\times(J+1)$ matrix of ages raised to various powers, and $Y_i$ is a $(J+1)\times 1$ vector of the natural log of mortality hazard rates for country $i$.
+
+We fit these polynomials and save only the regression coefficients, the $B_i$s, to pass to the program.
+
+In our Python program, to generate mortality hazard rates for agents that live for $S$ periods we use the regression equation above replacing 90 with $S$.  Note this gives us the one-year hazard rate at various age intervals.  To adjust for changes in the length of the period we must do further adjustments as shown below.
+
+\begin{equation}
+	\rho_{is} = 1 - \left(1-e^{\left[\sum_{j=1}^J \beta_{is} \left(\frac{s}{S}\right)^j\right]}\right)^{\frac{70}{S}}
+\end{equation}
+
+
+\end{spacing}
+
+\newpage
+\bibliography{Bibliography}
+\end{document}
