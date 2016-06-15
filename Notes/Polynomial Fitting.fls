@@ -138,8 +138,6 @@ INPUT /usr/local/texlive/2014/texmf-dist/fonts/tfm/public/amsfonts/symbols/msbm1
 INPUT /usr/local/texlive/2014/texmf-dist/fonts/tfm/public/amsfonts/symbols/msbm10.tfm
 INPUT /usr/local/texlive/2014/texmf-dist/fonts/tfm/public/amsfonts/symbols/msbm7.tfm
 INPUT /usr/local/texlive/2014/texmf-var/fonts/map/pdftex/updmap/pdftex.map
-INPUT Polynomial Fitting.bbl
-INPUT Polynomial Fitting.bbl
 INPUT Polynomial Fitting.aux
 INPUT ./Polynomial Fitting.out
 INPUT ./Polynomial Fitting.out
