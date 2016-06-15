@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014) (preloaded format=pdflatex 2014.5.25)  15 JUN 2016 14:23
+This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014) (preloaded format=pdflatex 2014.5.25)  15 JUN 2016 14:27
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -401,28 +401,23 @@ LaTeX Font Info:    Try loading font information for U+msb on input line 64.
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 ) [1
 
-{/usr/local/texlive/2014/texmf-var/fonts/map/pdftex/updmap/pdftex.map}] [2] [3]
+{/usr/local/texlive/2014/texmf-var/fonts/map/pdftex/updmap/pdftex.map}] [2]
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 117.
+ [3]
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 117.
 
-(./Polynomial Fitting.bbl
-
-Package natbib Warning: Empty `thebibliography' environment on input line 6.
-
-)
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 119.
- [4]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 119.
- (./Polynomial Fitting.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 119.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 119.
+(./Polynomial Fitting.aux)
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 117.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 117.
 Package rerunfilecheck Info: File `"Polynomial Fitting".out' has not changed.
 (rerunfilecheck)             Checksum: 2FE39B405C44DDFE7545C6C72898C073;107.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 119.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 117.
  ) 
 Here is how much of TeX's memory you used:
- 7648 strings out of 493117
- 113435 string characters out of 6135433
+ 7642 strings out of 493117
+ 113363 string characters out of 6135433
  196361 words of memory out of 5000000
- 11005 multiletter control sequences out of 15000+600000
+ 11004 multiletter control sequences out of 15000+600000
  9190 words of font info for 35 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  36i,5n,38p,365b,398s stack positions out of 5000i,500n,10000p,200000b,80000s
@@ -438,10 +433,10 @@ local/texlive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/loc
 al/texlive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/local/
 texlive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/t
 exlive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb>
-Output written on "Polynomial Fitting.pdf" (4 pages, 120034 bytes).
+Output written on "Polynomial Fitting.pdf" (3 pages, 119254 bytes).
 PDF statistics:
- 92 PDF objects out of 1000 (max. 8388607)
- 73 compressed objects within 1 object stream
- 14 named destinations out of 1000 (max. 500000)
+ 86 PDF objects out of 1000 (max. 8388607)
+ 68 compressed objects within 1 object stream
+ 12 named destinations out of 1000 (max. 500000)
  17 words of extra memory for PDF output out of 10000 (max. 10000000)
 
