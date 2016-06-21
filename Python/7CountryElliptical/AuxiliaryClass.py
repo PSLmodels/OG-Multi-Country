@@ -4,6 +4,7 @@ import time
 import numpy as np
 import scipy as sp
 import scipy.optimize as opt
+import scipy.interpolate as interpol
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import AuxiliaryDemographics as demog
@@ -131,7 +132,7 @@ class OLG(object):
         #PARAMETER SET UP
 
         #HH Parameters
-        (self.S, self.I, beta_annual, self.sigma) = HH_Params
+        (self.S, self.I, beta_annual, self.sigma,self.Dem_Degree) = HH_Params
     
         self.beta=beta_annual**(70/self.S)
 
@@ -146,12 +147,12 @@ class OLG(object):
         self.I_dict, self.I_touse = countries
 
         #Firm Parameters
-        (self.alpha,delta_annual,self.chil,self.chik,self.mu, self.g_A)= Firm_Params
+        (self.alpha,delta_annual,self.chil,self.chik,self.mu, self.g_A)=Firm_Params
         self.delta=1-(1-delta_annual)**(70/self.S)
 
         #Lever Parameters
         (PrintAges,self.CheckerMode,self.Iterate,self.UseDiffDemog,self.UseDiffProductivities\
-                ,self.Matrix_Time,self.ShaveTime) = Lever_Params
+                ,self.Matrix_Time,self.ShaveTime,self.UseCalcDemog,self.ShowCompGraphs,self.coeff) = Lever_Params
 
         #Getting key ages for calculating demographic dynamics
         self.LeaveHouseAge, self.FirstFertilityAge, self.LastFertilityAge,\
@@ -189,7 +190,6 @@ class OLG(object):
         self.Timepath_counter = 1
 
     #DEMOGRAPHICS SET-UP
-
     def Import_Data(self):
         """
             Description:
@@ -249,6 +249,8 @@ class OLG(object):
         self.MortalityRates = np.zeros((self.I, self.S, self.T))
         self.Migrants = np.zeros((self.I, self.S, self.T))
 
+        self.MortTemp = np.zeros((self.I,90-68,51))
+
         I_all = list(sorted(self.I_dict, key=self.I_dict.get))
 
         #We loop over each country to import its demographic data
@@ -283,6 +285,80 @@ class OLG(object):
                     usecols=[index+1])[self.agestopull[:self.MaxImmigrantAge]]*100,\
                     np.ones(self.T_1))
 
+        #Based on the size of the .CSV files provided by Kotlikoff
+        Mort_Temp = np.zeros((self.I,51,90-67)) #Raw import from .CSV files of Mortality Rates
+        Fert_Temp = np.zeros((self.I,50-(-48)+1,45-22)) #Raw import from .CSV files of Fertility Rates
+        Y = np.zeros((self.I,51*23)) #Dependent vector for mortality rates
+        Y_Fert = np.zeros((self.I,99*23)) #Depend vector for fertility rates
+        X = np.ones((self.I,51*23,2*self.Dem_Degree+1)) #Independent matrix for mortality rates
+        X_Fert = np.ones((self.I,99*23,2*self.Dem_Degree+1)) #Independent matrix for fertility rates
+
+        for i in xrange(self.I): #Note that for the import, I clipped out the row and column labels to make it faster
+                                #and renamed the file "country"_mortality_edited.csv
+            Mort_Temp[i,:,:]=np.loadtxt(str("Data_Files/"+I_all[i]+"_mortality_edited.csv")\
+                    ,delimiter=',')
+            Fert_Temp[i,:,:]=np.loadtxt(str("Data_Files/"+I_all[i]+"_fertility_edited.csv")\
+                    ,delimiter=',')
+            for x in xrange(51):
+                Y[i,23*x:23*(x+1)]=Mort_Temp[i,x,:] #Converts row of CSV into part of the long column
+                for j in xrange(1,self.Dem_Degree+1):
+                    X[i,23*x:23*(x+1),j]=(np.arange(68,91)/100.)**j
+                    X[i,23*x:23*(x+1),j+self.Dem_Degree]=(x/100.)**j
+
+            for y in xrange(99):
+                Y_Fert[i,23*y:23*(y+1)]=Fert_Temp[i,y,:]
+                for j in xrange(1,self.Dem_Degree+1):
+                    X_Fert[i,23*y:23*(y+1),j]=(np.arange(23,46)/100.)**j
+                    X_Fert[i,23*y:23*(y+1),j+self.Dem_Degree]=((y-48)/100.)**j
+
+        #Output_Mat=np.zeros((self.I,2)
+
+        Y2=np.log(Y) #Natrual log of the vector of Mortality Rates vector
+        Y3=np.log(Y_Fert) #Natural log of the fertility rates vector
+
+        Mort_Output=[]#To run the regression, I use Numpy's built in command
+                      #The output has multiple pieces, so I used a list to store those outputs
+                      #for each country. The first coordinate of the list is the COUNTRY and the
+                      #second coordinate indicates which output you want.
+        Fert_Output=[]
+
+        for i in xrange(self.I):
+            Mort_Output.append(np.linalg.lstsq(X[i,:,:],Y2[i,:]))
+            Fert_Output.append(np.linalg.lstsq(X_Fert[i,:,:],Y3[i,:]))
+
+        if self.coeff:
+            for i in xrange(self.I):
+                print "Country "+str(i)+" coefficients",Mort_Output[i][0]
+
+        def Polynomial_Fit(Coefficients,s,t,S):
+            '''
+            Text
+            '''
+            Length = len(Coefficients)
+            Result = Coefficients[0]
+            for j in xrange(1,int(((Length-1)/2)+1)):
+                Result+=Coefficients[j]*(s/S)**j
+                Result+=Coefficients[j+int((Length-1)/2)]*(t/S)**j
+
+            return Result
+
+        self.Mortality_Test=np.zeros((self.I,self.S,self.T))
+        self.Fertility_Test=np.zeros((self.I,self.S,self.T))
+
+        for i in xrange(self.I):
+            for s in xrange(self.S):
+                for t in xrange(self.T):
+                    if s in xrange(self.FirstDyingAge,self.S):
+                        MTemp = Polynomial_Fit(Mort_Output[i][0],s,t,self.S)
+                        self.Mortality_Test[i,s,t]=1-(1-np.exp(MTemp))**(80/self.S)
+                    if s in xrange(self.FirstFertilityAge,self.LastFertilityAge+1):
+                        FTemp = Polynomial_Fit(Fert_Output[i][0],s,t,self.S)
+                        #self.Fertility_Test[i,s,t]=np.exp(FTemp)**(80/self.S)
+                        self.Fertility_Test[i,s,t]=(1+np.exp(FTemp))**(80/self.S)-1
+
+        self.Mortality_Test[:,-1,:]=1.0 #Sets the mortality rate for the last age equal to 1.0, since agents must be dead
+                                        #by the last age
+
         #Gets initial population share
         self.Nhat[:,:,0] = self.N[:,:,0]/np.sum(self.N[:,:,0])
 
@@ -309,6 +385,40 @@ class OLG(object):
         self.FertilityRates[:,self.FirstFertilityAge:self.LastFertilityAge+1,:] =\
                 self.all_FertilityRates[:,self.FirstFertilityAge:self.LastFertilityAge+1,\
                 self.frange:]
+        
+        if self.ShowCompGraphs:
+            plt.title("Regression Fit Mortality Year 0")
+            for i in xrange(self.I):
+                label1 = "Country "+str(i)+ " New Fit"
+                label2 = "Country "+str(i)+" Old Style"
+                plt.scatter(xrange(self.FirstDyingAge,self.S),self.Mortality_Test[i,self.FirstDyingAge:,0],label=label1)
+                plt.plot(xrange(self.FirstDyingAge,self.S),self.MortalityRates[i,self.FirstDyingAge:,0],label=label2)
+            plt.legend(loc='upper left')
+            plt.title("Mortality Rate fit")
+            plt.xlabel('Ages')
+            plt.ylabel('Mortality Rates')
+
+            plt.show()
+
+            plt.title("Regression Fit Fertility Year 0")
+            for i in xrange(self.I):
+                label1 = "Country "+str(i)+ " New Fit"
+                label2 = "Country "+str(i)+" Old Style"
+                plt.scatter(xrange(self.FirstFertilityAge,self.LastFertilityAge),self.Fertility_Test\
+                        [i,self.FirstFertilityAge:self.LastFertilityAge,0],label=label1)
+                plt.plot(xrange(self.FirstFertilityAge,self.LastFertilityAge),self.FertilityRates\
+                        [i,self.FirstFertilityAge:self.LastFertilityAge,0],label=label2)
+            plt.legend()
+            plt.title("Fertility Rate fit")
+            plt.xlabel('Ages')
+            plt.ylabel('Fertility Rates')
+
+            plt.show()
+
+        if self.UseCalcDemog:
+            self.FertilityRates=self.Fertility_Test
+            self.MortalityRates=self.Mortality_Test
+
 
     def Demographics(self, demog_ss_tol, UseSSDemog=False):
         """
@@ -518,47 +628,7 @@ class OLG(object):
 
     #STEADY STATE
 
-        """
-            Description:
-                - Gets the calculation of gamma
-
-            Inputs:
-                - w             = Array: [I,T+S] or [I], Wage rate for either the 
-                                         transition path or the steady steady-state
-                - e             = Array: [I,S,T+S] or [I,S], Labor productivities for 
-                                         either the transition path or the steady steady-state
-
-            Variables Called From Object:
-                - self.chi      = Scalar: Leisure preference parameter
-                - self.rho      = Scalar: The intratemporal elasticity of substitution
-                                          between consumption and leisure
-                - self.sigma    = Scalar: Rate of Time Preference
-
-            Variables Stored in Object:
-                - None
-
-            Other Functions Called:
-                - None
-
-            Outputs:
-                - Gamma         = Array: [I,S,T+S] or [I,S], Gamma values for each country
-
-        """
-
-        #If getting the SS
-        if e.ndim == 2:
-            we =  np.einsum("i,is->is", w, e)
-
-        #If getting transition path
-        elif e.ndim == 3:
-            we = np.einsum("it, ist -> ist", w, e)
-
-
-        Gamma = ( ( 1+self.chi*(self.chi/we)**(self.rho-1) )**\
-                ((1-self.rho*self.sigma)/(self.rho-1)) ) ** (-1/self.sigma)
-
-        return Gamma
-
+    #Getter functions
     def get_w(self,y,n):
         '''
         Notes
@@ -607,7 +677,8 @@ class OLG(object):
             Y = (k**self.alpha) * (np.einsum("i,is->is",self.A,n)**(1-self.alpha))
 
         return Y
-    
+
+    #Steady State Calclations
     def get_lifetime_decisionsSS(self, c_1, w_ss, r_ss, bq_ss):
             """
                 Description:
@@ -859,7 +930,7 @@ class OLG(object):
 
             Chained_C_Condition = cvec_ss[:,:-1]**(-self.sigma) - self.beta*\
                     (1-self.Mortality_ss[:,:-1])*(cvec_ss[:,1:]*np.exp(self.g_A))**\
-                    -self.sigma * (1+r_ss2-self.delta)
+                    (-self.sigma) * (1+r_ss2-self.delta)
 
             Leisure_Condition = lhat_ss - self.lbar_ss*(1-np.abs(1+((cvec_ss**(-self.sigma)\
                     *we)/self.chil)**(self.mu/(1-self.mu)))**(-1/self.mu))
@@ -878,10 +949,10 @@ class OLG(object):
         r_ss = self.get_r(y_ss,k_guess)
 
         #Initial guess for the first cohort's kids consumption
-        c1_guess = np.ones(self.I)*.85
+        c1_guess = self.innerguess 
 
         #Finds the optimal kids consumption for the first cohort
-        opt_c1 = opt.fsolve(householdEuler_SS, c1_guess,args =(w_ss, r_ss, bq_ss))
+        opt_c1 = opt.fsolve(householdEuler_SS,c1_guess,args =(w_ss, r_ss, bq_ss))
 
         #Gets the optimal paths for consumption, kids consumption and assets 
         #as a function of the first cohort's consumption
@@ -1168,6 +1239,7 @@ class OLG(object):
 
             #Equation 3.24
             Euler_kf = self.r_ss[1:]-self.r_ss[0]*np.ones(self.I)
+            
             print "-Euler for bq satisfied:", np.isclose(np.max(np.absolute(Euler_bq)), 0)
             print "-Euler for kd satisfied:", np.isclose(np.max(Euler_kd),0)
             print "-Euler for n satisfied:", np.isclose(np.max(Euler_n),0)
@@ -1371,7 +1443,6 @@ class OLG(object):
         #plt.show()
 
     #TIMEPATH-ITERATION
-
     def set_initial_values(self, r_init, bq_init, a_init):
         """
             Description:
