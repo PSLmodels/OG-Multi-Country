@@ -21,9 +21,12 @@ def Multi_Country(S,I,sigma):
     g_A = 0.015 #Technical growth rate
     beta_ann=.95 #Annual discount rate
     delta_ann=.08 #Annual depreciation rate
-    alpha = .3 #Capital Share of production
-    chi = 1.5 #Preference for lesiure
-    rho = .4 #Intratemporal elasticity of substitution
+    alpha = .25 #Capital Share of production
+    chil = .52
+    chik = 1.0
+    mu = 2.29
+
+    Dem_Degree = int(4) #Must be an integer, 4 is the max, otherwise there will be collinearity
 
     #Convergence Tolerances
     demog_ss_tol = 1e-8 #Used in getting ss for population share
@@ -31,7 +34,7 @@ def Multi_Country(S,I,sigma):
     #PROGRAM LEVERS:
     #For terminal output
     PrintAges = False #Displays the current locations of the program inside key TPI functions
-    PrintSSEulErrors = False #Prints the euler errors in each attempt of 
+    PrintSSEulErrors = True #Prints the euler errors in each attempt of 
                              #calculating the steady state
     PrintSS = True #Prints the result of the Steady State functions
     Print_caTimepaths = False #Prints the consumption, assets, and bequests 
@@ -40,6 +43,8 @@ def Multi_Country(S,I,sigma):
                             #are satisfied (Equations 3.22, 3.19, and sum(assets) = 0)
     Print_Fill_Matricies_Time = False #Activiates Printing the total time it takes to 
                                       #fill the upper and lower diagonal matricies
+    Print_Reg_Coefficients = False #Prints the coefficients from the regression done to fit a polynomial to
+                                   #our regression data.
     CheckerMode = False #Activates not printing much of anything, used 
                         #in conjunction with RobustChecker.py
     Iterate = True #Shows the current iteration number and the associated Eulers
@@ -49,6 +54,8 @@ def Multi_Country(S,I,sigma):
     DemogGraphs = False #Activates graphing graphs with demographic data and population shares
     ShowSSGraphs = True #Activates graphs for steady-state solutions for 
                         #consumption, assets, and bequests
+    ShowCompGraphs = False #Shows the graph which compares calculated Mortality/Fertility rates against
+                           #Their non-calculated counterparts
     iterations_to_plot = set([]) #Which iterations of the timepath fsolve you want to plot
     SaveFinalTPIPlot = True #Saves the final (and hopefully converged) time 
                             #path plot as a .png file
@@ -56,6 +63,7 @@ def Multi_Country(S,I,sigma):
     #For using differing ways to solve the model
     UseDiffDemog = True #Turns on different demographics for each country
     UseSSDemog = False #Activates using only steady state demographics for TPI calculation
+    UseCalcDemog = True #Uses the calculated mortality and fertilty rates based on regression
     UseDiffProductivities = False #Activates having e vary across cohorts
 
     #Adjusts the country list if we are using less than 7 Countries
@@ -76,39 +84,48 @@ def Multi_Country(S,I,sigma):
     ##INPUTS INTO THE CLASS###
     Country_Roster = (I_dict, I_touse)
 
-    HH_params = (S,I,beta_ann,sigma)
+    HH_params = (S,I,beta_ann,sigma,Dem_Degree)
 
-    Firm_Params = (alpha, delta_ann, chi, rho, g_A)
+    Firm_Params = (alpha, delta_ann, chil, chik, mu, g_A)
 
     Levers = (PrintAges,CheckerMode,Iterate,UseDiffDemog,UseDiffProductivities,\
-            Print_Fill_Matricies_Time,ShaveTime)
+            Print_Fill_Matricies_Time,ShaveTime,UseCalcDemog,ShowCompGraphs,Print_Reg_Coefficients)
 
     #Initialize the class instance
     Model = AUX.OLG(Country_Roster,HH_params,Firm_Params,Levers)
-
     #Demographics
     Model.Demographics(demog_ss_tol, UseSSDemog)
     if DemogGraphs: Model.plotDemographics(T_touse="default", compare_across="T", data_year=0)
     #Model.immigrationplot()
 
-    #STEADY STATE INITIAL GUESSES
-    r_ss_guess = .2
-    bq_ss_guess = np.ones(I)*.2
+    #STEADY STATE OUTER FSOLVE INITIAL GUESSES
+    k_ss_guess = np.ones(I)*.55
+    kf_ss_guess = np.ones(I-1)*.05
+    n_ss_guess = np.ones(I)*1.25
+    bq_ss_guess = np.ones(I)*.85
+
+    #STEADY STATE INNER FSVOLE INITIAL GUESSES
+    c_innerfsolve_guess = np.ones(I)*.05
 
     #Steady State
-    Model.SteadyState(r_ss_guess, bq_ss_guess, PrintSSEulErrors)
+    Model.SteadyState(k_ss_guess,kf_ss_guess,n_ss_guess, bq_ss_guess,\
+            c_innerfsolve_guess, PrintSSEulErrors)
     if PrintSS: Model.PrintSSResults()
     if ShowSSGraphs: Model.plotSSResults()
+    '''
 
     #Timepath Iteration
     r_init = Model.r_ss*1.05
     bq_init = Model.bqindiv_ss*.95
     a_init = Model.avec_ss*.7
+
     
     Model.set_initial_values(r_init, bq_init, a_init)
 
     Model.Timepath_optimize(Print_HH_Eulers, Print_caTimepaths, iterations_to_plot)
     if SaveFinalTPIPlot: Model.plot_timepaths(SAVE=False)
+
+    '''
 #Input parameters for S, I and sigma here then execute this file to
 #run the model.
 
