@@ -948,10 +948,10 @@ class OLG(object):
                                  (cvec_ss[:,:,1:]*np.exp(self.g_A))**-self.sigma ,\
                                  (1+r_ss-self.delta) )
 
-            Modified_Budget_Constraint = cvec_ss - ( we*(self.lbar_ss-\
+            Modified_Budget_Constraint = cvec_ss -  we*(self.lbar_ss-\
                     lhat_ss) +(1+r_ss2-self.delta)*avec_ss[:,:,:-1] + \
                     bq_ss2 -avec_ss[:,:,1:]*np.exp(self.g_A)-cKvec_ss*\
-                    self.Kids_ss )
+                    self.Kids_ss 
 
             
             Consumption_Ratio = cKvec_ss - cvec_ss*self.chik**(1/self.sigma)
@@ -1105,7 +1105,6 @@ class OLG(object):
         bqindiv_ss = guess[self.C:]
 
         #Forces the Foreign Owned Capital of all countries to sum to 0
-        kf_full = kf_guess
         kf_full = np.zeros((self.I))
 
         kf_full[0] = -np.sum(kf_guess)

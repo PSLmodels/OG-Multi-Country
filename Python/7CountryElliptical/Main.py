@@ -1,8 +1,8 @@
 from __future__ import division
 import time
-import numpy as np
+import numpy as np  
 import AuxiliaryClass as AUX
-np.set_printoptions(threshold = 3000, linewidth=2000, suppress=True)
+np.set_printoptions(threshold = np.nan, linewidth=2000, suppress=True)
 
 TimeModel=True #Activates timing the model
 
@@ -43,19 +43,21 @@ def Multi_Country(S,I,sigma):
                             #are satisfied (Equations 3.22, 3.19, and sum(assets) = 0)
     Print_Fill_Matricies_Time = False #Activiates Printing the total time it takes to 
                                       #fill the upper and lower diagonal matricies
-    Print_Reg_Coefficients = False #Prints the coefficients from the regression done to fit a polynomial to
-                                   #our regression data.
+    Print_Reg_Coefficients = False #Prints the coefficients from the regression done to
+                                   #fit a polynomial to our regression data.
     CheckerMode = False #Activates not printing much of anything, used 
                         #in conjunction with RobustChecker.py
     Iterate = True #Shows the current iteration number and the associated Eulers
     ShaveTime = False #Shaves off a little more time for TPI.
+    SaveToSTATA = True #Saves the Fertility and Mortality rate matricies to a 
+                        #form STATA can read. With this, we can verify Python's results.
 
     #For plots to display or save
     DemogGraphs = False #Activates graphing graphs with demographic data and population shares
     ShowSSGraphs = True #Activates graphs for steady-state solutions for 
                         #consumption, assets, and bequests
-    ShowCompGraphs = False #Shows the graph which compares calculated Mortality/Fertility rates against
-                           #Their non-calculated counterparts
+    ShowCompGraphs = True #Shows the graph which compares calculated 
+                           #Mortality/Fertility rates against Their non-calculated counterparts
     iterations_to_plot = set([]) #Which iterations of the timepath fsolve you want to plot
     SaveFinalTPIPlot = True #Saves the final (and hopefully converged) time 
                             #path plot as a .png file
@@ -89,9 +91,9 @@ def Multi_Country(S,I,sigma):
     Firm_Params = (alpha, delta_ann, chil, chik, mu, g_A)
 
     Levers = (PrintAges,CheckerMode,Iterate,UseDiffDemog,UseDiffProductivities,\
-            Print_Fill_Matricies_Time,ShaveTime,UseCalcDemog,ShowCompGraphs,Print_Reg_Coefficients)
+            Print_Fill_Matricies_Time,ShaveTime,UseCalcDemog,ShowCompGraphs,Print_Reg_Coefficients,SaveToSTATA)
 
-    #Initialize the class instance
+   #Initialize the class instance
     Model = AUX.OLG(Country_Roster,HH_params,Firm_Params,Levers)
     #Demographics
     Model.Demographics(demog_ss_tol, UseSSDemog)
@@ -132,7 +134,7 @@ def Multi_Country(S,I,sigma):
 start = time.time()
 # S-Number of Cohorts, I-Number of Countries
 # S, I, and sigma. S and I are integers. Sigma may not be.
-Multi_Country(20,2,4)
+Multi_Country(20,7,4)
 tottime=time.time()-start
 
 if TimeModel==True:
