@@ -13,17 +13,19 @@ These folders are:
                  It does successfully calculate the steady state, however, it's missing most
                  of the complex features in the fortran code.
 
-7CountryAlphaV3— Contains the current efforts on the code, which is currently adding skill classes. In this version,
-		  we transition to using a python-class to more easily organize all of the components of the model
-		  Adding skill classes hasn’t progressed beyond the steady state because of the necessary
-		  change in the solution algorithm.
+7CountryAlphaV3— Contains the current efforts on the code, which is currently adding skill 
+		  classes. In this version, we transition to using a python-class to more 
+		  easily organize all of the components of the model. Adding skill classes 
+		  hasn’t progressed beyond the steady state because of the necessary change
+		  in the solution algorithm.
 
 
-7CountryElliptical— A temporary offshoot of 7CountryAlphaV3, instead of the utility function we start with
-		     in stages 1-4, we try an Elliptical utility function based on Phillips and Evans (2015).
-		     In addition to a new utility function, this folder includes new demographics that can
-		     be easily adjusted based on the number of generations. Also, this hasn’t gone beyond the
-		     steady state calculations.
+7CountryElliptical— A temporary offshoot of 7CountryAlphaV3, instead of the utility function
+		     we start with in stages 1-4, we try an Elliptical utility function based 
+		     on Phillips and Evans (2015). In addition to a new utility function, this 
+		     folder includes new demographics that can be easily adjusted based on 
+		     the number of generations. Also, this hasn’t gone beyond the Steady 
+		     state calculations.
 
 Archive- Contains the archive of COMPLETED stages of code. We follow the stages as outlined
          in OG-Multi-Country/Notes. As of 7/11/16, this archive contains stages 1-4. Stage
