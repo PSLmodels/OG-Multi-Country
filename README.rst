@@ -16,9 +16,7 @@ The model is currently under development. Users should be forewarned that the mo
 Current Contributors
 ====================
 
-- Jeff Clawson (Brigham Young University)
-
-- Richard W. Evans (Brigham Young University)
+- Richard W. Evans (University of Chicago)
 
 - James Olmstead (Brigham Young University)
 
@@ -28,6 +26,8 @@ Contributors to Earlier Work
 ============================
 
 - Seth Benzell (Boston University)
+
+- Jeff Clawson (University of Maryland)
 
 - Laurence J. Kotlikoff (Boston University)
 
