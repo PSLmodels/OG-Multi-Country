@@ -65,8 +65,10 @@ def Multi_Country(S,I,sigma):
     #For using differing ways to solve the model
     UseDiffDemog = True #Turns on different demographics for each country
     UseSSDemog = False #Activates using only steady state demographics for TPI calculation
-    UseCalcDemog = True #Uses the calculated mortality and fertilty rates based on regression
+    UseCalcDemog = False #Uses the calculated mortality, migration and fertilty rates based
+                         #on regression
     UseDiffProductivities = False #Activates having e vary across cohorts
+    AddTime = True #Adds time into the polynomials.
 
     #Adjusts the country list if we are using less than 7 Countries
     if CheckerMode==False:
@@ -91,7 +93,7 @@ def Multi_Country(S,I,sigma):
     Firm_Params = (alpha, delta_ann, chil, chik, mu, g_A)
 
     Levers = (PrintAges,CheckerMode,Iterate,UseDiffDemog,UseDiffProductivities,\
-            Print_Fill_Matricies_Time,ShaveTime,UseCalcDemog,ShowCompGraphs,Print_Reg_Coefficients,SaveToSTATA)
+            Print_Fill_Matricies_Time,ShaveTime,UseCalcDemog,ShowCompGraphs,Print_Reg_Coefficients,SaveToSTATA,AddTime)
 
    #Initialize the class instance
     Model = AUX.OLG(Country_Roster,HH_params,Firm_Params,Levers)
@@ -114,6 +116,7 @@ def Multi_Country(S,I,sigma):
             c_innerfsolve_guess, PrintSSEulErrors)
     if PrintSS: Model.PrintSSResults()
     if ShowSSGraphs: Model.plotSSResults()
+    #TPI is commented out until the steady state part is completed.
     '''
 
     #Timepath Iteration
@@ -134,7 +137,7 @@ def Multi_Country(S,I,sigma):
 start = time.time()
 # S-Number of Cohorts, I-Number of Countries
 # S, I, and sigma. S and I are integers. Sigma may not be.
-Multi_Country(20,7,4)
+Multi_Country(100,7,4)
 tottime=time.time()-start
 
 if TimeModel==True:
