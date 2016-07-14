@@ -728,7 +728,14 @@ class OLG(object):
                     - None
 
                 Objects in Function:
-                    - None
+                    - r_ss2                     = Array: [I,J], 2-D verion of r_ss. Values
+                                                         are identical across values of J.
+                                                         Created to make calculation simpler.
+                    - bq_ss2                    = Array: [I,J,S], Similar in principle to
+                                                         r_ss2, but for bequests.
+                    - we                        = Array: [I,J,S], multiplication of w and
+                                                         e. By doing the multiplication,
+                                                         this makes coding a little easier.
 
                 Outputs:
                     - avec_ss                    = Array: [I,J,S+1], Vector of steady 
@@ -737,6 +744,8 @@ class OLG(object):
                                                           state kids consumption
                     - cvec_ss                    = Array: [I,J,S], Vector of steady 
                                                           state consumption
+                    - lhat_ss                    = Array: [I,J,S], Vector of leisure
+                                                          consumption
                 """
             cKvec_ss = np.zeros((self.I,self.J,self.S))
             cvec_ss = np.zeros((self.I,self.J,self.S))
@@ -784,8 +793,12 @@ class OLG(object):
                 - Solves for all the other variables in the model using bq_ss and r_ss
 
             Inputs:
-                - bq_ss                     = Array: [I,J,S], 
-                - r_ss                      = Scalar: Steady-state intrest rate
+                - k_guess                     = Array: [I], Initial guess for capital stock.
+                - kf_guess                    = Array: [I-1], Iniitial guess for foreign
+                                                       owned capital stock.
+                - n_guess                     = Array: [I,J], Initial guess for labor supply
+                - bq_guess                    = Array: [I], Initial guess for bequests
+                - PrintSSEulErrors            = Boolean: Activates printing errors
 
             Variables Called from Object:
                 - self.A                    = Array: [I,J], Technology level for each country
@@ -795,6 +808,8 @@ class OLG(object):
                                                      of each country for each age 
                                                      cohort and year
                 - self.I                    = Int: Number of Countries
+                - self.J                    = Int: Number of skill classes
+                - self.S                    = Int: Number of generations
                 - self.alpha                = Scalar: Capital share of production
 
             Variables Stored in Object:
@@ -809,6 +824,14 @@ class OLG(object):
                                       solve the household problem. Used by opt.fsolve
 
             Objects in Function:
+                - Household_Euler           = Array: [I,J], Final age assets. =0 if solved
+                                                     correctly.
+                - Chained_C_Condition       = Array: [I,J,S], Equation 5.19. =0 if solved
+                                                     correctly.
+                - Modified_Budget_Constraint= Array: [I,J,S], Equation 5.18. =0 if solved
+                                                     correctly.
+                - Consumption_Ratio         = Array: [I,J,S], Equation 5.17. =0 if solved
+                                                     correctly.
                 - avec_ss                   = Array: [I,J,S], Steady state assets holdings 
                                                      for each country and cohort
                 - cKvec_ss                  = Array: [I,J,S], Steady state kids consumption 
@@ -826,14 +849,13 @@ class OLG(object):
                 - n_ss                      = Array: [I,J], Steady state labor supply
                 - opt_c1                    = Array: [I,J,S], Optimal consumption of 
                                                      the youngest cohort 
-                - Gamma_ss                  = Array: [I,J,S], Steady state Gamma variable 
-                                                     (see equation 4.22)
+                - r_ss                      = Array: [I,J], Steady State interest rate
                 - w_ss                      = Array: [I,J], Steady state wage rate
                 - y_ss                      = Array: [I,J], Steady state output of each country
 
             Outputs:
-                - w_ss, cvec_ss, cKvec_ss, avec_ss, kd_ss, kf_ss, n_ss, y_ss, and lhat_ss
-        """
+                - w_ss, cvec_ss, cKvec_ss, avec_ss, r_ss, y_ss, lhat_ss
+            """
 
         def householdEuler_SS(c_1, w_ss, r_ss, bq_ss):
             """
@@ -869,6 +891,8 @@ class OLG(object):
                                                         kids consumption
                     - aseets_path              = Array: [I,J,S+1], Vector of steady 
                                                         state assets
+                    - lhat_path                = Array: [I,J,S], Vector of steady
+                                                        state leisure consumption
 
                 Outputs:
                     - Euler                     = Array: [I,J], Final assets for 
@@ -900,7 +924,7 @@ class OLG(object):
                 Inputs:
                     - cvec_ss                   = Array: [I,J,S], Steady state consumption 
                                                          for each country and cohort
-                    - cKvec_ss                  = Array: [I,J,S], Steady state kids consumption 
+                    - cKvec_ss                  = Array: [I,J,S],Steady state kids consumption 
                                                          for each country and cohort
                     - avec_ss                   = Array: [I,J,S], Steady state assets holdings 
                                                           for each country and cohort       
@@ -934,6 +958,11 @@ class OLG(object):
                 Other Functions Called:
                     - None
                 Objects in Function:
+                    - r_ss2                  = Array: [I,J], 2-D verion of r_ss. Values
+                                                      are identical across values of J.
+                                                      Created to make calculation simpler.
+                    - bq_ss2                 = Array: [I,J,S], Similar in principle to
+                                                      r_ss2, but for bequests.
                     - we                     = Array: [I,J,S], Matrix product of w and e
                 Outputs:
                     - None
