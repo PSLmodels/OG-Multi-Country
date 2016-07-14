@@ -19,6 +19,10 @@ class OLG(object):
         everywhere and it was easy to get lost in the details. The variables are 
         listed in alphabetical order of their data type, then alphabetical order of
         of their name, so Arrays are listed first, Booleans second, etc.
+
+        DOCUMENTATION HAS ONLY BEEN UPDATED THROUGH THE STEADY STATE, AS WE HAVEN'T COMPLETED
+        IT AND MOVED ON TO TIMEPATH ITERATION.
+
         For each function there are the following categories:
             Description:                    Brief description of what the function does
             Inputs:                         Lists the inputs that the function uses
@@ -62,8 +66,9 @@ class OLG(object):
                 - self.e                     = Array: [I,S,T+S], Labor Productivities
                 - self.e_ss                  = Array: [I,S], Labor produtivities 
                                                       for the Steady State
-                - self.I_High                = Array: [I], User-determined portion of the population
-                                                           that is deemed to be in the high class.
+                - self.I_High                = Array: [I], User-determined portion of the
+                                                           populatio that is deemed to be
+                                                           in the high class.
                 - self.lbar                  = Array: [T+S], Time endowment in each year
                 - self.CheckerMode           = Boolean: Used in conjunction with Checker.py, 
                                                         an MPI code that checks the robustness
@@ -125,6 +130,7 @@ class OLG(object):
                 - getkeyages = Gets the important ages for calculating 
                                demographic dynamics like FirstFertilityAge, etc. 
                 - Importdata = Imports the demographic data from CSV files
+                
             Objects in Function:
                 - beta_annual           = Scalar: Annualized value for beta. 
                                                   Adjusted by S and stored as self.beta
@@ -218,7 +224,7 @@ class OLG(object):
         self.Import_Data()
 
         #Initialize counter that will keep track of the number of 
-        #iterations thetime path solver takes
+        #iterations the time path solver takes
         self.Timepath_counter = 1
 
     #DEMOGRAPHICS SET-UP
@@ -275,7 +281,7 @@ class OLG(object):
             Outputs:
                 - None
         """
-
+        #Add one in order to compensate for working with indices
         self.frange=self.LastFertilityAge+1-self.FirstFertilityAge
 
         self.N=np.zeros((self.I,self.J,self.S,self.T))
@@ -329,7 +335,6 @@ class OLG(object):
         #Increases fertility rates to account for different number of periods lived
         self.all_FertilityRates = self.all_FertilityRates*80/self.S
         self.MortalityRates = self.MortalityRates*80/self.S
-
 
         #The last generation dies with probability 1
         self.MortalityRates[:,:,-1,:] = np.ones((self.I,self.J,self.T))
@@ -521,7 +526,7 @@ class OLG(object):
 
         #Imposing the ss for years after self.T
         temp = np.einsum("ijs,t->ijst",self.Mortality_ss,np.ones(self.S))
-        self.MortalityRates = np.concatenate((  self.MortalityRates[:,:,:,:self.T], temp )\
+        self.MortalityRates = np.concatenate((self.MortalityRates[:,:,:,:self.T], temp )\
                 ,axis=3)              
 
         #Imposing the ss for years after self.T
@@ -649,6 +654,7 @@ class OLG(object):
             for j in xrange(self.J):
                 PROD[:,j] = (self.A[:]*n[:,j])**(self.alphaj[j])
 
+            #Take the product across skill classes
             Y*=np.prod(PROD,axis=1)
 
         #elif kd.ndim== 2:
@@ -840,13 +846,8 @@ class OLG(object):
                                                      each country and cohort
                 - c1_guess                  = Array: [I,J,S], Initial guess for consumption 
                                                      of the youngest cohort
-                - kd_ss                     = Array: [I,J], Steady state total capital 
-                                                     holdings for each country
-                - kf_ss                     = Array: [I,J], Steady state foreign capital 
-                                                     in each country
                 - lhat_ss                   = Array: [I,J,S], Steady state leisure decision 
                                                      for each country and cohort
-                - n_ss                      = Array: [I,J], Steady state labor supply
                 - opt_c1                    = Array: [I,J,S], Optimal consumption of 
                                                      the youngest cohort 
                 - r_ss                      = Array: [I,J], Steady State interest rate
@@ -1122,17 +1123,18 @@ class OLG(object):
                                                       and the actual bqindiv_ss calculated 
                                                       in the system. Must = 0 for the 
                                                       ss to correctly solve.
-                - Euler_kd                  = Array: [I], Distance between domestic owned capital
-                                                     and calculated domestic owned capital in the
-                                                     system. Must = 0 for the ss to correctly solve.
+                - Euler_kd                  = Array: [I], Distance between domestic owned 
+                                                     capital and calculated domestic owned 
+                                                     capital in the system. 
+                                                     Must = 0 for the ss to correctly solve.
                                                         
                 - Euler_n                   = Array: [I*J], Distance between labor supply and
-                                                     calculated labor supply in the system. Must = 0
-                                                     for the ss to correctly solve
-                - Euler_kf                  = Array: [I-1], difference between the interest rate in 
-                                                     country zero and all of the other countries.
+                                                     calculated labor supply in the system.
                                                      Must = 0 for the ss to correctly solve
-
+                - Euler_kf                  = Array: [I-1], difference between the interest 
+                                                     rate in country zero and all of the
+                                                     other countries. Must = 0 for the ss 
+                                                     to correctly solve
             Outputs:
                 - Euler_all                 = Array: [I+1], Euler_bq and Euler_kf 
                                                      stacked together. Must = 0 for 
@@ -1262,8 +1264,8 @@ class OLG(object):
             Objects in Function:
                 - alldeadagent_assets       = Array: [I,J], Sum of assets of all the 
                                                      individuals who die in the steady state.
-                                                     Evenly distributed to 
-                                                     eligible-aged cohorts.
+                                                     Evenly distributed to eligible-aged
+                                                     cohorts.
                 - Euler_bq                  = Array: [I], Distance between bqindiv_ss 
                                                       and the actual bqindiv_ss calculated 
                                                       in the system. Must = 0 for the 
@@ -1349,9 +1351,6 @@ class OLG(object):
                     np.sum(self.e_ss*(self.lbar_ss-self.lhat_ss)*self.Nhat_ss,axis=2)
 
             Euler_kf = self.r_ss[1:] - self.r_ss[0]*np.ones(self.I-1)
-            #Euler_kf = self.kf_ss - (self.k_ss - 
-            #np.sum(np.sum(self.avec_ss*self.Nhat_ss,axis=1),axis=1))
-
 
             print "-Euler for bq satisfied:", np.isclose(np.max(np.absolute(Euler_bq)), 0)
             print "-Euler for kd satisfied:", np.isclose(np.max(np.absolute(Euler_kd)), 0)
@@ -1359,7 +1358,6 @@ class OLG(object):
             print "-Euler for kf satisfied:", np.isclose(np.max(np.absolute(Euler_kf)), 0),\
                     "\n\n"
 
-            
             print "Max Euler bq", np.max(np.absolute(Euler_bq))
             print "Max Euler kd", np.max(np.absolute(Euler_kd))
             print "Max Euler_n", np.max(np.absolute(Euler_n))
@@ -1467,7 +1465,8 @@ class OLG(object):
                     "Rental Rate", "Bequests"]
 
             for itr, var in enumerate(\
-                [self.n_ss[:,0],self.n_ss[:,1],self.w_ss[:,0],self.w_ss[:,1],self.k_ss,self.kf_ss,self.r_ss,self.bqindiv_ss]):
+                [self.n_ss[:,0],self.n_ss[:,1],self.w_ss[:,0],self.w_ss[:,1],\
+                self.k_ss,self.kf_ss,self.r_ss,self.bqindiv_ss]):
 
                 plt.subplot(241+itr)
                 plt.title(titles[itr])
